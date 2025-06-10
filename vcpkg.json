@@ -1,0 +1,9 @@
+{
+    "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+    "name": "capacity-overhaul-ng",
+    "version-string": "0.0.1",
+    "dependencies": [
+        {"name": "commonlibsse-ng", "version>=": "3.7.0"},
+        "simpleini"
+    ]
+}
