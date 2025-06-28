@@ -40,10 +40,51 @@ struct Settings
     // Debug settings
     static inline bool    bModEnabled{true};
     static inline bool    bLogContainerEvents{true};
-    static inline bool    bLogPlayerContainerEvents{false};
+    static inline bool    bLogOnlyPlayerContainerEvents{true};
+    static inline bool    bLogLoadEvents{true};
+    static inline bool    bLogMenuEvents{true};
+    static inline bool    bLogOnlyRelevantMenuEvents{true};
+    static inline bool    bLogEquipEvents{true};
+    static inline bool    bLogOnlyPlayerEquipEvents{true};
 
-    static inline bool globalLog;
-    static inline bool playerLogOnly;
+    // System-defined values
+    static inline bool globalContainerLog{false};
+    static inline bool playerContainerLogOnly{true};
+    static inline bool globalMenuLog{false};
+    static inline bool relevantMenuLogOnly{true};
+    static inline bool globalEquipLog{false};
+    static inline bool playerEquipLogOnly{true};
+
+    // ADVANCED SETTINGS (no ini choices yet)
+    // Per-race weight limit modifiers
+    static inline float fDefaultRaceMod{1};
+    static inline float fAltmerRaceMod{1.1};
+    static inline float fArgonianRaceMod{1.1};
+    static inline float fBosmerRaceMod{0.8};
+    static inline float fBretonRaceMod{0.95};
+    static inline float fDunmerRaceMod{0.9};
+    static inline float fImperialRaceMod{1};
+    static inline float fKhajiitRaceMod{0.9};
+    static inline float fNordRaceMod{1.2};
+    static inline float fOrcRaceMod{1.25};
+    static inline float fRedguardRaceMod{1.2};
+
+    // Stamina weight bonus settings/modifiers
+    static inline float fWeightPerStamina{1};
+    static inline bool  bStaminaWeightSimple{true};
+    static inline bool  bStaminaWeightDiminish{true};
+    static inline float fStaminaWeightMod{1};
+    static inline float fStaminaWeightRate{1};
+    static inline bool  bTempStaminaAddsWeight{true};
+    
+    // Level weight bonus settings/modifiers
+    static inline float fWeightPerLevel{1};
+    static inline bool  bLevelWeightSimple{true};
+    static inline bool  bLevelWeightDiminish{true};
+    static inline float fLevelWeightMod{1};
+    static inline float fLevelWeightRate{1};
+
+    static inline float GetRaceWeightMod(uint32_t formID);
 
     static void ReadBool(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, bool& a_setting);
 	static void ReadFloat(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, float& a_setting);
