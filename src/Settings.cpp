@@ -69,7 +69,8 @@ void Settings::Load(std::filesystem::path path)
     ReadBool(ini, "Debug", "bLogEquipEvents", bLogEquipEvents);
     ReadBool(ini, "Debug", "bLogOnlyPlayerEquipEvents", bLogOnlyPlayerEquipEvents);
 
-    // Advanced settings
+    // ADVANCED SETTINGS
+    // Race weight modifiers
     ReadFloat(ini, "Advanced", "fDefaultRaceMod", fDefaultRaceMod);
     ReadFloat(ini, "Advanced", "fAltmerRaceMod", fAltmerRaceMod);
     ReadFloat(ini, "Advanced", "fArgonianRaceMod", fArgonianRaceMod);
@@ -82,9 +83,28 @@ void Settings::Load(std::filesystem::path path)
     ReadFloat(ini, "Advanced", "fOrcRaceMod", fOrcRaceMod);
     ReadFloat(ini, "Advanced", "fRedguardRaceMod", fRedguardRaceMod);
 
-    // Misc. (non-ini) variables
+    // Stamina weight bonus settings 
+    ReadFloat(ini, "Advanced", "fStaminaWeightMod", fStaminaWeightMod);
+    ReadBool(ini, "Advanced", "bTempStaminaAddsWeight", bTempStaminaAddsWeight);
+    ReadBool(ini, "Advanced", "bStaminaWeightSimple", bStaminaWeightSimple);
+    ReadFloat(ini, "Advanced", "fWeightPerStamina", fWeightPerStamina);
+    ReadFloat(ini, "Advanced", "fStaminaWeightRate", fStaminaWeightRate);
+    ReadUInt32(ini, "Advanced", "uStaminaWeightPivot", uStaminaWeightPivot);
+
+    // Level weight bonus settings
+    ReadFloat(ini, "Advanced", "fLevelWeightMod", fLevelWeightMod);
+    ReadBool(ini, "Advanced", "bLevelWeightSimple", bLevelWeightSimple);
+    ReadFloat(ini, "Advanced", "fWeightPerLevel", fWeightPerLevel);
+    ReadFloat(ini, "Advanced", "fLevelWeightRate", fLevelWeightRate);
+    ReadUInt32(ini, "Advanced", "uLevelWeightPivot", uLevelWeightPivot);
+
+    // System-defined values
     globalContainerLog = bLogContainerEvents && !bLogOnlyPlayerContainerEvents;
     playerContainerLogOnly = bLogContainerEvents && bLogOnlyPlayerContainerEvents;
+    globalMenuLog = bLogMenuEvents && !bLogOnlyRelevantMenuEvents;
+    relevantMenuLogOnly = bLogMenuEvents && bLogOnlyRelevantMenuEvents;
+    globalEquipLog = bLogEquipEvents && !bLogOnlyPlayerEquipEvents;
+    playerEquipLogOnly = bLogEquipEvents && bLogOnlyPlayerEquipEvents;
 }
 
 void Settings::ReadBool(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, bool& a_setting)

@@ -47,14 +47,6 @@ struct Settings
     static inline bool    bLogEquipEvents{true};
     static inline bool    bLogOnlyPlayerEquipEvents{true};
 
-    // System-defined values
-    static inline bool globalContainerLog{false};
-    static inline bool playerContainerLogOnly{true};
-    static inline bool globalMenuLog{false};
-    static inline bool relevantMenuLogOnly{true};
-    static inline bool globalEquipLog{false};
-    static inline bool playerEquipLogOnly{true};
-
     // ADVANCED SETTINGS (no ini choices yet)
     // Per-race weight limit modifiers
     static inline float fDefaultRaceMod{1};
@@ -69,20 +61,28 @@ struct Settings
     static inline float fOrcRaceMod{1.25};
     static inline float fRedguardRaceMod{1.2};
 
-    // Stamina weight bonus settings/modifiers
-    static inline float fWeightPerStamina{1};
-    static inline bool  bStaminaWeightSimple{true};
-    static inline bool  bStaminaWeightDiminish{true};
+    // Stamina-based carry weight bonus settings/modifiers
     static inline float fStaminaWeightMod{1};
-    static inline float fStaminaWeightRate{1};
     static inline bool  bTempStaminaAddsWeight{true};
+    static inline bool  bStaminaWeightSimple{true};
+    static inline float fWeightPerStamina{1};
+    static inline float fStaminaWeightRate{0.5};
+    static inline uint32_t uStaminaWeightPivot{100};
     
-    // Level weight bonus settings/modifiers
-    static inline float fWeightPerLevel{1};
-    static inline bool  bLevelWeightSimple{true};
-    static inline bool  bLevelWeightDiminish{true};
+    // Level-based carry weight bonus settings/modifiers
     static inline float fLevelWeightMod{1};
-    static inline float fLevelWeightRate{1};
+    static inline bool  bLevelWeightSimple{true};
+    static inline float fWeightPerLevel{1};
+    static inline float fLevelWeightRate{0.5};
+    static inline uint32_t uLevelWeightPivot{100};
+
+    // System-defined values
+    static inline bool globalContainerLog;
+    static inline bool playerContainerLogOnly;
+    static inline bool globalMenuLog;
+    static inline bool relevantMenuLogOnly;
+    static inline bool globalEquipLog;
+    static inline bool playerEquipLogOnly;
 
     static inline float GetRaceWeightMod(uint32_t formID);
 

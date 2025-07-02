@@ -10,8 +10,8 @@ Built with CommonLibSSE NG, compatible with SE, AE, and VR.
 
 ## Notes
 ### Version Compatibility
-- While this mod is build with CommonLibSSE NG, and should theoretically be compatible with all versions of Skyrim Special Edition (SE, AE, VR), I have only tested this mod on AE and so any bugs or issues that may be present on SE or VR will likely be unknown to me unless already reported.
-- I may consider doing testing on SE eventually to ensure that everything functions as it should, but I lack the hardware necessary to perform any testing the VR version.
+- While this mod is built with CommonLibSSE NG - and should therefore theoretically be compatible with all versions of Skyrim Special Edition (SE, AE, VR) - I have only tested this mod on AE, and so any bugs or issues that may be present on SE or VR will likely be unknown to me unless already reported.
+- I may consider doing testing on SE eventually to ensure that everything functions as it should, but I lack the hardware necessary to perform any testing for the VR version.
 ### Translations
 - This mod is currently only available in English, but I encourage anyone with the interest and capability to translate this mod into your own languages. The localisation files can be found in the standard file location, `Data/Interface/Translations/`.
 - If you have made any translations for this mod, get in touch with me and I would be happy to include them in this repo and on the mod's Nexus page (credited, of course). Alternatively, feel free to upload it yourself as a translation on Nexus.
