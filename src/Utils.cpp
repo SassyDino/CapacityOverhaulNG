@@ -1,7 +1,51 @@
+#include <spdlog/sinks/basic_file_sink.h>
 #include "Utils.h"
 
 namespace Utils
-{
+{   
+    // Credits to Dylbill: https://github.com/Dylbill-Iroh
+    void ConvertToLowerCase(std::string& s) {
+        transform(s.begin(), s.end(), s.begin(), ::tolower);
+    }
+
+    void SetupLog() 
+    {
+        auto logsFolder = logger::log_directory();
+        if (!logsFolder) SKSE::stl::report_and_fail("SKSE log_directory not provided, logs disabled.");
+
+        //fix the bug on AE where logs are written to "My Games/Skyrim.INI/ instead of "My Games/Skyrim Special Edition/SKSE
+        // Credits to Dylbill: https://github.com/Dylbill-Iroh
+        std::filesystem::path logsFolderPath = logsFolder.value();
+        std::string sLogPath = logsFolderPath.generic_string(); 
+        ConvertToLowerCase(sLogPath);
+
+        if (sLogPath.find("my games") != std::string::npos) {
+            std::string parentPathName = logsFolderPath.filename().string();
+            ConvertToLowerCase(parentPathName);
+            while (logsFolderPath.has_parent_path() && parentPathName != "my games") {
+                logsFolderPath = logsFolderPath.parent_path();
+                parentPathName = logsFolderPath.filename().string();
+                ConvertToLowerCase(parentPathName);
+            }
+
+            if (parentPathName == "my games") {
+                logsFolderPath.append("Skyrim Special Edition");
+                logsFolderPath.append("SKSE");
+            }
+            else {
+                logsFolderPath = logsFolder.value();
+            }
+        }
+
+        auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
+        auto logFilePath = *logsFolder / std::format("{}.log", pluginName);
+        auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.string(), true);
+        auto loggerPtr = std::make_shared<spdlog::logger>("log", std::move(fileLoggerPtr));
+        spdlog::set_default_logger(std::move(loggerPtr));
+        spdlog::set_level(spdlog::level::trace);
+        spdlog::flush_on(spdlog::level::trace);
+    }
+
     void LogIniError(const char* iniKey) 
     {
         logger::error("Invalid value provided in 'Data/MCM/Settings/CapacityOverhaulNG.ini'...\n"
