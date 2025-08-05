@@ -1,0 +1,858 @@
+{
+  "$schema": "https://raw.githubusercontent.com/Exit-9B/MCM-Helper/main/docs/config.schema.json",
+  "modName": "CapacityOverhaulNG",
+  "displayName": "$CapacityOverhaulNG",
+  "minMcmVersion": 14,
+  "cursorFillMode": "topToBottom",
+  "pages": 
+  [
+    {
+    "pageDisplayName": "$CONG_ToggleFeatures_PAGE",
+    "cursorFillMode": "topToBottom",
+      "content": [
+        {
+          "text": "$CONG_ToggleFeatures_Capacity_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "bNoHandsOverCap:ToggleFeatures",
+          "text": "$CONG_ToggleFeatures_Capacity_NoHands_TEXT",
+          "type": "toggle",
+          "help": "$CONG_ToggleFeatures_Capacity_NoHands_INFO",
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bPreventPickupOverCap:ToggleFeatures",
+          "text": "$CONG_ToggleFeatures_Capacity_NoPickup_TEXT",
+          "type": "toggle",
+          "help": "$CONG_ToggleFeatures_Capacity_NoPickup_INFO",
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bSkillsAffectCapacity:ToggleFeatures",
+          "text": "$CONG_ToggleFeatures_Capacity_SkillsAffect_TEXT",
+          "type": "toggle",
+          "help": "$CONG_ToggleFeatures_Capacity_SkillsAffect_INFO",
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "text": "$CONG_ToggleFeatures_Weight_HEADER",
+          "type": "header",
+          "position": 1
+        },
+        {
+          "id": "bVanillaWeightLimit:ToggleFeatures",
+          "text": "$CONG_ToggleFeatures_Weight_VanillaLimit_TEXT",
+          "type": "toggle",
+          "help": "$CONG_ToggleFeatures_Weight_VanillaLimit_INFO",
+          "groupControl": 1,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bStaminaAffectsWeight:ToggleFeatures",
+          "text": "$CONG_ToggleFeatures_Weight_StaminaAffects_TEXT",
+          "type": "toggle",
+          "help": "$CONG_ToggleFeatures_Weight_StaminaAffects_INFO",
+          "groupCondition":{"NOT": 1},
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bLevelAffectsWeight:ToggleFeatures",
+          "text": "$CONG_ToggleFeatures_Weight_LevelAffects_TEXT",
+          "type": "toggle",
+          "help": "$CONG_ToggleFeatures_Weight_LevelAffects_INFO",
+          "groupCondition":{"NOT": 1},
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bRaceAffectsWeight:ToggleFeatures",
+          "text": "$CONG_ToggleFeatures_Weight_RaceAffects_TEXT",
+          "type": "toggle",
+          "help": "$CONG_ToggleFeatures_Weight_RaceAffects_INFO",
+          "groupCondition":{"NOT": 1},
+          "groupControl": 8,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "$CONG_BaseValues_PAGE",
+      "cursorFillMode": "topToBottom",
+      "content": [
+        {
+          "text": "$CONG_BaseValues_Capacity_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "fLargeCapacity:BaseValues",
+          "text": "$CONG_BaseValues_LargeCap_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_LargeCap_INFO",
+          "valueOptions": {
+            "min": 1,
+            "max": 1000,
+            "step": 1,
+            "sourceType": "ModSettingInt"
+          }
+        },
+        {
+          "id": "fMediumPerLarge:BaseValues",
+          "text": "$CONG_BaseValues_MediumPerLarge_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_MediumPerLarge_INFO",
+          "valueOptions": {
+            "min": 0.5,
+            "max": 100,
+            "step": 0.5,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fSmallPerMedium:BaseValues",
+          "text": "$CONG_BaseValues_SmallPerMedium_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_SmallPerMedium_INFO",
+          "valueOptions": {
+            "min": 0.5,
+            "max": 100,
+            "step": 0.5,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fTinyPerSmall:BaseValues",
+          "text": "$CONG_BaseValues_TinyPerSmall_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_TinyPerSmall_INFO",
+          "valueOptions": {
+            "min": 0.5,
+            "max": 100,
+            "step": 0.5,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fAlchemyCapacity:BaseValues",
+          "text": "$CONG_BaseValues_AlchemyCap_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_AlchemyCap_INFO",
+          "valueOptions": {
+            "min": 1,
+            "max": 1000,
+            "step": 1,
+            "sourceType": "ModSettingInt"
+          }
+        },
+        {
+          "id": "fAmmoCapacity:BaseValues",
+          "text": "$CONG_BaseValues_AmmoCap_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_AmmoCap_INFO",
+          "valueOptions": {
+            "min": 1,
+            "max": 1000,
+            "step": 1,
+            "sourceType": "ModSettingInt"
+          }
+        },
+        {
+          "id": "fCoinCapacity:BaseValues",
+          "text": "$CONG_BaseValues_CoinCap_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_CoinCap_INFO",
+          "valueOptions": {
+            "min": 1,
+            "max": 10000,
+            "step": 1,
+            "sourceType": "ModSettingInt"
+          }
+        },
+        {
+          "id": "uCoinsPerTiny:BaseValues",
+          "text": "$CONG_BaseValues_CoinsPerTiny_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_CoinsPerTiny_INFO",
+          "valueOptions": {
+            "min": 5,
+            "max": 1000,
+            "step": 5,
+            "sourceType": "ModSettingInt"
+          }
+        },
+        {
+          "text": "$CONG_BaseValues_Items_HEADER",
+          "type": "header",
+          "position": 1
+        },
+        {
+          "id": "fLargeItemWeight:BaseValues",
+          "text": "$CONG_BaseValues_LargeItemWeight_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_LargeItemWeight_INFO",
+          "valueOptions": {
+            "min": 5,
+            "max": 25,
+            "step": 0.1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fMediumItemWeight:BaseValues",
+          "text": "$CONG_BaseValues_MediumItemWeight_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_MediumItemWeight_INFO",
+          "valueOptions": {
+            "min": 0.5,
+            "max": 15,
+            "step": 0.1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fSmallItemWeight:BaseValues",
+          "text": "$CONG_BaseValues_SmallItemWeight_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_SmallItemWeight_INFO",
+          "valueOptions": {
+            "min": 0.1,
+            "max": 5,
+            "step": 0.1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "text": "$CONG_BaseValues_Weight_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "fBaseWeightLimit:BaseValues",
+          "text": "$CONG_BaseValues_BaseWeight_TEXT",
+          "type": "slider",
+          "help": "$CONG_BaseValues_BaseWeight_INFO",
+          "groupCondition":[1],
+          "valueOptions": {
+            "min": 1,
+            "max": 1000,
+            "step": 1,
+            "sourceType": "ModSettingInt"
+          }
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "$CONG_BuffsDebuffs_PAGE",
+      "cursorFillMode": "topToBottom",
+      "content": [
+        {
+          "text": "$CONG_BuffsDebuffs_Speed_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "bWeightAffectsSpeed:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Speed_Toggle_TEXT",
+          "type": "toggle",
+          "help": "$CONG_BuffsDebuffs_Speed_Toggle_INFO",
+          "groupControl": 2,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "fWeightSpeedModPos:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Speed_ModPos_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_Speed_ModPos_INFO",
+          "groupCondition":[2],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fWeightSpeedModNeg:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Speed_ModNeg_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_Speed_ModNeg_INFO",
+          "groupCondition":[2],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "text": "$CONG_BuffsDebuffs_Combat_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "bWeightAffectsCombat:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Combat_Toggle_TEXT",
+          "type": "toggle",
+          "help": "$CONG_BuffsDebuffs_Combat_Toggle_INFO",
+          "groupControl": 3,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "fWeightCombatModPos:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Combat_ModPos_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_Combat_ModPos_INFO",
+          "groupCondition":[3],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fWeightCombatModNeg:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Combat_ModNeg_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_Combat_ModNeg_INFO",
+          "groupCondition":[3],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "text": "$CONG_BuffsDebuffs_Stealth_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "bWeightAffectsStealth:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Stealth_Toggle_TEXT",
+          "type": "toggle",
+          "help": "$CONG_BuffsDebuffs_Stealth_Toggle_INFO",
+          "groupControl": 4,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "fWeightStealthModPos:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Stealth_ModPos_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_Stealth_ModPos_INFO",
+          "groupCondition":[4],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fWeightStealthModNeg:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_Stealth_ModNeg_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_Stealth_ModNeg_INFO",
+          "groupCondition":[4],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "text": "$CONG_BuffsDebuffs_StamDrain_HEADER",
+          "type": "header",
+          "position": 1
+        },
+        {
+          "id": "bWeightAffectsStamDrain:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_StamDrain_Toggle_TEXT",
+          "type": "toggle",
+          "help": "$CONG_BuffsDebuffs_StamDrain_Toggle_INFO",
+          "groupControl": 5,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "fWeightStamDrainModPos:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_StamDrain_ModPos_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_StamDrain_ModPos_INFO",
+          "groupCondition":[5],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fWeightStamDrainModNeg:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_StamDrain_ModNeg_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_StamDrain_ModNeg_INFO",
+          "groupCondition":[5],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "text": "$CONG_BuffsDebuffs_StamRegen_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "bWeightAffectsStamRegen:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_StamRegen_Toggle_TEXT",
+          "type": "toggle",
+          "help": "$CONG_BuffsDebuffs_StamRegen_Toggle_INFO",
+          "groupControl": 6,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "fWeightStamRegenModPos:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_StamRegen_ModPos_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_StamRegen_ModPos_INFO",
+          "groupCondition":[6],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fWeightStamRegenModNeg:BuffsDebuffs",
+          "text": "$CONG_BuffsDebuffs_StamRegen_ModNeg_TEXT",
+          "type": "slider",
+          "help": "$CONG_BuffsDebuffs_StamRegen_ModNeg_INFO",
+          "groupCondition":[6],
+          "valueOptions": {
+            "min": 0,
+            "max": 100,
+            "step": 1,
+            "sourceType": "ModSettingFloat"
+          }
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "$CONG_WeightModifiers_PAGE",
+      "cursorFillMode": "topToBottom",
+      "content": [
+        {
+          "text": "$CONG_WeightModifiers_Races_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "fDefaultRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_DefaultRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_DefaultRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fAltmerRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_AltmerRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_AltmerRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fArgonianRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_ArgonianRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_ArgonianRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fBosmerRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_BosmerRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_BosmerRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fBretonRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_BretonRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_BretonRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fDunmerRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_DunmerRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_DunmerRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fImperialRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_ImperialRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_ImperialRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fKhajiitRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_KhajiitRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_KhajiitRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fNordRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_NordRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_NordRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fOrcRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_OrcRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_OrcRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fRedguardRaceMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_RedguardRace_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_RedguardRace_INFO",
+          "groupCondition":[8],
+          "valueOptions": {
+            "min": 0.1,
+            "max": 2,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "text": "$CONG_WeightModifiers_Stamina_HEADER",
+          "type": "header",
+          "position": 1
+        },
+        {
+          "id": "fStaminaWeightMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Stamina_Modifier_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_Stamina_Modifier_INFO",
+          "valueOptions": {
+            "min": 0,
+            "max": 10,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "bTempStaminaAddsWeight:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Stamina_TempAddsWeight_TEXT",
+          "type": "toggle",
+          "help": "$CONG_WeightModifiers_Stamina_TempAddsWeight_INFO",
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bStaminaWeightSimple:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Stamina_Simple_TEXT",
+          "type": "toggle",
+          "help": "$CONG_WeightModifiers_Stamina_Simple_INFO",
+          "groupControl": 11,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "fWeightPerStamina:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Stamina_WeightPer_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_Stamina_WeightPer_INFO",
+          "groupCondition":[11],
+          "valueOptions": {
+            "min": 0,
+            "max": 10,
+            "step": 0.1,
+            "formatString": "{1}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fStaminaWeightRate:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Stamina_ComplexRate_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_Stamina_ComplexRate_INFO",
+          "groupCondition":{"NOT": 11},
+          "valueOptions": {
+            "min": -1,
+            "max": 0.99,
+            "step": 0.01,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "uStaminaWeightPivot:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Stamina_ComplexPivot_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_Stamina_ComplexPivot_INFO",
+          "groupCondition":{"NOT": 11},
+          "valueOptions": {
+            "min": 10,
+            "max": 500,
+            "step": 5,
+            "sourceType": "ModSettingInt"
+          }
+        },
+        {
+          "text": "$CONG_WeightModifiers_Level_HEADER",
+          "type": "header"
+        },
+        {
+          "id": "fLevelWeightMod:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Level_Modifier_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_Level_Modifier_INFO",
+          "valueOptions": {
+            "min": 0,
+            "max": 10,
+            "step": 0.05,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "bLevelWeightSimple:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Level_Simple_TEXT",
+          "type": "toggle",
+          "help": "$CONG_WeightModifiers_Level_Simple_INFO",
+          "groupControl": 12,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "fWeightPerLevel:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Level_WeightPer_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_Level_WeightPer_INFO",
+          "groupCondition":[12],
+          "valueOptions": {
+            "min": 0,
+            "max": 25,
+            "step": 0.25,
+            "formatString": "{1}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "fLevelWeightRate:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Level_ComplexRate_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_Level_ComplexRate_INFO",
+          "groupCondition":{"NOT": 12},
+          "valueOptions": {
+            "min": -1,
+            "max": 0.99,
+            "step": 0.01,
+            "formatString": "{2}",
+            "sourceType": "ModSettingFloat"
+          }
+        },
+        {
+          "id": "uLevelWeightPivot:WeightModifiers",
+          "text": "$CONG_WeightModifiers_Level_ComplexPivot_TEXT",
+          "type": "slider",
+          "help": "$CONG_WeightModifiers_Level_ComplexPivot_INFO",
+          "groupCondition":{"NOT": 12},
+          "valueOptions": {
+            "min": 10,
+            "max": 250,
+            "step": 5,
+            "sourceType": "ModSettingInt"
+          }
+        }
+      ]
+    },
+    {
+      "pageDisplayName": "$CONG_Debug_PAGE",
+      "cursorFillMode": "topToBottom",
+      "content": [
+        {
+          "id": "bModEnabled:Debug",
+          "text": "$CONG_Debug_ToggleMod_TEXT",
+          "type": "toggle",
+          "help": "$CONG_Debug_ToggleMod_INFO",
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bLogContainerEvents:Debug",
+          "text": "$CONG_Debug_LogContainerEvents_TEXT",
+          "type": "toggle",
+          "help": "$CONG_Debug_LogContainerEvents_INFO",
+          "groupControl": 7,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bLogOnlyPlayerContainerEvents:Debug",
+          "text": "$CONG_Debug_LogOnlyPlayerContainerEvents_TEXT",
+          "type": "toggle",
+          "help": "$CONG_Debug_LogOnlyPlayerContainerEvents_INFO",
+          "groupCondition":[7],
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bLogLoadEvents:Debug",
+          "text": "$CONG_Debug_LogLoadEvents_TEXT",
+          "type": "toggle",
+          "help": "$CONG_Debug_LogLoadEvents_INFO",
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bLogMenuEvents:Debug",
+          "text": "$CONG_Debug_LogMenuEvents_TEXT",
+          "type": "toggle",
+          "help": "$CONG_Debug_LogMenuEvents_INFO",
+          "groupControl":9,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bLogOnlyRelevantMenuEvents:Debug",
+          "text": "$CONG_Debug_LogOnlyRelevantMenuEvents_TEXT",
+          "type": "toggle",
+          "help": "$CONG_Debug_LogOnlyRelevantMenuEvents_INFO",
+          "groupCondition":[9],
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bLogEquipEvents:Debug",
+          "text": "$CONG_Debug_LogEquipEvents_TEXT",
+          "type": "toggle",
+          "help": "$CONG_Debug_LogEquipEvents_INFO",
+          "groupControl":10,
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        },
+        {
+          "id": "bLogOnlyPlayerEquipEvents:Debug",
+          "text": "$CONG_Debug_LogOnlyPlayerEquipEvents_TEXT",
+          "type": "toggle",
+          "help": "$CONG_Debug_LogOnlyPlayerEquipEvents_INFO",
+          "groupCondition":[10],
+          "valueOptions": {
+            "sourceType": "ModSettingBool"
+          }
+        }
+      ]
+    }
+  ]
+}
