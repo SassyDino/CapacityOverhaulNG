@@ -2,6 +2,9 @@
 
 struct Settings
 {
+	// ADD TO MCM:
+	static inline bool	bQuestItemsAffectCapacity{false};
+
     // Toggle features
     static inline bool    bNoHandsOverCap{true};
     static inline bool    bPreventPickupOverCap{true};
@@ -13,11 +16,16 @@ struct Settings
     
     // Base value modifiers
     static inline uint32_t   uLargeCapacity{5};
-    static inline uint32_t   uMediumCapacity{10};
-    static inline uint32_t   uSmallCapacity{20};
+    static inline float   fMediumPerLarge{2};
+    static inline float   fSmallPerMedium{2.5};
+    static inline float   fTinyPerSmall{5};
     static inline uint32_t   uAlchemyCapacity{25};
     static inline uint32_t   uAmmoCapacity{50};
     static inline uint32_t   uCoinCapacity{500};
+    static inline uint32_t   uCoinsPerTiny{25};
+    static inline float fLargeItemWeight{9};
+    static inline float fMediumItemWeight{5};
+    static inline float fSmallItemWeight{1};
     static inline uint32_t   uBaseWeightLimit{100};
 
     // Buff & debuff settings
@@ -47,7 +55,7 @@ struct Settings
     static inline bool    bLogEquipEvents{true};
     static inline bool    bLogOnlyPlayerEquipEvents{true};
 
-    // ADVANCED SETTINGS (no ini choices yet)
+    // ADVANCED SETTINGS
     // Per-race weight limit modifiers
     static inline float fDefaultRaceMod{1};
     static inline float fAltmerRaceMod{1.1};
@@ -76,13 +84,17 @@ struct Settings
     static inline float fLevelWeightRate{0.5};
     static inline uint32_t uLevelWeightPivot{100};
 
-    // System-defined values
+    // SYSTEM-DEFINED VALUES
     static inline bool globalContainerLog;
     static inline bool playerContainerLogOnly;
     static inline bool globalMenuLog;
     static inline bool relevantMenuLogOnly;
     static inline bool globalEquipLog;
     static inline bool playerEquipLogOnly;
+    // Multipliers used to normalise large/medium/small counts with tiny items
+    static inline int largeToTiny;
+    static inline int mediumToTiny;
+    static inline int smallToTiny;
 
     static inline float GetRaceWeightMod(uint32_t formID);
 
@@ -92,4 +104,5 @@ struct Settings
 
     static void Init();
     static void Load(std::filesystem::path path);
+    static bool Validate();
 };

@@ -4,17 +4,58 @@ void Settings::Init()
 {   
     constexpr auto defaultPath = L"Data/MCM/Config/CapacityOverhaulNG/settings.ini";
     constexpr auto mcmPath = L"Data/MCM/Settings/CapacityOverhaulNG.ini";
+    bool validSettings;
 
-    logger::info("Initialising settings...");
+    logger::info("Initialising settings");
 
     logger::info("Loading default settings...");
     Load(defaultPath);
     logger::info("...done");
+
     logger::info("Loading user settings...");
     Load(mcmPath);
     logger::info("...done");
 
-    logger::info("...initialisation success!");
+    logger::info("Validating settings...");
+    validSettings = Validate();
+
+    if (validSettings == true) {
+        logger::info("...settings validated.");
+        logger::info("Initialisation success!");
+    } else {
+        logger::info("...failed to validate settings.");
+        logger::info("Initialisation complete. Mod may not function as intended.");
+        auto logErrorBox = std::format("Capacity Overhaul NG: An error occured while validating this mod's settings. This error suggests that an incorrect or invalid value has been provided in the mod's INI file or MCM. Continuing without rectifying this issue may result in unexpected mod behaviour. Refer to the log file for more information (My Games/Skyrim Special Edition/SKSE/CapacityOverhaulNG.log).");
+        RE::DebugMessageBox(logErrorBox.c_str());
+    }
+}
+
+bool Settings::Validate()
+{
+    bool validSettings = true;
+
+    if (fSmallItemWeight >= fMediumItemWeight || fSmallItemWeight >= fLargeItemWeight) {
+        validSettings = false;
+        logger::error("User setting 'fSmallItemWeight' (Small Item Minimum Weight) must be smaller than 'fMediumItemWeight' and 'fLargeItemWeight' (Medium/Large Item Minimum Weight).");
+    }
+    if (fMediumItemWeight >= fLargeItemWeight) {
+        validSettings = false;
+        logger::error("User setting 'fMediumItemWeight' (Medium Item Minimum Weight) must be smaller than 'fLargeItemWeight' (Large Item Minimum Weight).");
+    }
+    if (!bStaminaWeightSimple) {
+        if (fStaminaWeightRate >= 1 || fStaminaWeightRate < -1) {
+            validSettings = false;
+            logger::error("User setting 'fStaminaWeightRate' must be a value between -1 and 1 (Note: A value of 1 will also return an error).");
+        }
+    }
+    if (!bLevelWeightSimple) {
+        if (fLevelWeightRate >= 1 || fLevelWeightRate < -1) {
+            validSettings = false;
+            logger::error("User setting 'fLevelWeightRate' must be a value between -1 and 1 (Note: A value of 1 will also return an error).");
+        }
+    }
+
+    return validSettings;
 }
 
 void Settings::Load(std::filesystem::path path)
@@ -35,11 +76,16 @@ void Settings::Load(std::filesystem::path path)
 
     // Base value modifiers
     ReadUInt32(ini, "BaseValueModifiers", "fLargeCapacity", uLargeCapacity);
-    ReadUInt32(ini, "BaseValueModifiers", "fMediumCapacity", uMediumCapacity);
-    ReadUInt32(ini, "BaseValueModifiers", "fSmallCapacity", uSmallCapacity);
+    ReadFloat(ini, "BaseValueModifiers", "fMediumPerLarge", fMediumPerLarge);
+    ReadFloat(ini, "BaseValueModifiers", "fSmallPerMedium", fSmallPerMedium);
+    ReadFloat(ini, "BaseValueModifiers", "fTinyPerSmall", fTinyPerSmall);
     ReadUInt32(ini, "BaseValueModifiers", "fAlchemyCapacity", uAlchemyCapacity);
     ReadUInt32(ini, "BaseValueModifiers", "fAmmoCapacity", uAmmoCapacity);
     ReadUInt32(ini, "BaseValueModifiers", "fCoinCapacity", uCoinCapacity);
+    ReadUInt32(ini, "BaseValueModifiers", "uCoinsPerTiny", uCoinsPerTiny);
+    ReadFloat(ini, "BaseValueModifiers", "fLargeItemWeight", fLargeItemWeight);
+    ReadFloat(ini, "BaseValueModifiers", "fMediumItemWeight", fMediumItemWeight);
+    ReadFloat(ini, "BaseValueModifiers", "fSmallItemWeight", fSmallItemWeight);
     ReadUInt32(ini, "BaseValueModifiers", "fBaseWeightLimit", uBaseWeightLimit);
 
     // Buff & debuff settings
@@ -98,13 +144,18 @@ void Settings::Load(std::filesystem::path path)
     ReadFloat(ini, "Advanced", "fLevelWeightRate", fLevelWeightRate);
     ReadUInt32(ini, "Advanced", "uLevelWeightPivot", uLevelWeightPivot);
 
-    // System-defined values
+    // SYSTEM-DEFINED VALUES
     globalContainerLog = bLogContainerEvents && !bLogOnlyPlayerContainerEvents;
     playerContainerLogOnly = bLogContainerEvents && bLogOnlyPlayerContainerEvents;
     globalMenuLog = bLogMenuEvents && !bLogOnlyRelevantMenuEvents;
     relevantMenuLogOnly = bLogMenuEvents && bLogOnlyRelevantMenuEvents;
     globalEquipLog = bLogEquipEvents && !bLogOnlyPlayerEquipEvents;
     playerEquipLogOnly = bLogEquipEvents && bLogOnlyPlayerEquipEvents;
+
+    largeToTiny = Settings::fMediumPerLarge * Settings::fSmallPerMedium * Settings::fTinyPerSmall;
+    mediumToTiny = Settings::fSmallPerMedium * Settings::fTinyPerSmall;
+    smallToTiny = Settings::fTinyPerSmall;
+
 }
 
 void Settings::ReadBool(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, bool& a_setting)
