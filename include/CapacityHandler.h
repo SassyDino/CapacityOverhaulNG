@@ -2,10 +2,22 @@
 
 namespace CapacityHandler
 {
-	enum ItemCategories;
+	enum ItemCategories : short;
+	
+	/*
+	struct Keywords
+	{
+		static RE::BGSKeyword *potion;
+		static RE::BGSKeyword *poison;
+		static RE::BGSKeyword *ammo;
+		static RE::BGSKeyword *coin;
+	};
+	*/
+
 
     struct Limits
     {
+		static int hugeBaseCapacity;
 		static int largeBaseCapacity;
         static int mediumBaseCapacity;
         static int smallBaseCapacity;
@@ -14,6 +26,7 @@ namespace CapacityHandler
         static int ammoBaseCapacity;
         static int coinBaseCapacity;
 
+        static int hugeCapacity;
         static int largeCapacity;
         static int mediumCapacity;
         static int smallCapacity;
@@ -41,6 +54,7 @@ namespace CapacityHandler
 
     class Player
     {
+		static int hugeCount;
 		static int largeCount;
         static int mediumCount;
         static int smallCount;
@@ -49,6 +63,9 @@ namespace CapacityHandler
         static int alchemyCount;
         static int ammoCount;
         static int coinCount;
+		static int weightlessCount;
+
+		//static std::map<int, int> categoryCountIndex;
 
         public:
 			/** 
@@ -58,7 +75,13 @@ namespace CapacityHandler
 			 * 
 			 * @returns the item count `capacityValue` for given item category `a_cat`.
 			*/
-            static int GetCapacityValue(int a_cat);
+            static int GetCategoryCount(int a_cat);
+
+			//TODO: Need to see how else I can do this, as all the switch statements is probably not the best way. Maps seem promising, but don't seem to want to behave
+			static void AllCategoriesLog();
+			static void IncreaseCategory(int a_cat, int a_count);
+			static void DecreaseCategory(int a_cat, int a_count);
+			static void ResetAllCategories();
 
 			/** 
 			 * Updates all item category counts to reflect the player's current inventory.
@@ -84,13 +107,17 @@ namespace CapacityHandler
 			 * 
 			 * @returns `itemCategory`, the representative `itemCategories` Enum appropriate for the given `a_item`.
 			*/
-            static int GetItemCategory(RE::TESObjectREFR *a_item);
+			static int GetItemCategory(RE::TESForm *a_item, bool a_quest, int a_count);
+
+			static int GetEquipCategory(RE::TESForm *a_item);
 
 			/** 
-			 * Determines where the player is considered over-capacity, based on the currently stored values for each individual item category.
+			 * Determines whether the player is considered over-capacity, based on the currently stored values for each individual item category.
 			 * 
 			 * @returns `isOver`, where a result of `true` equates to the player being considered over-capacity.
 			*/
             static bool IsOverCapacity();
+
+			static void DebuffIfOverCapacity();
     };
 }
