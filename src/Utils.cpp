@@ -1,5 +1,7 @@
 #include <spdlog/sinks/basic_file_sink.h>
 #include "Utils.h"
+#include "WeightHandler.h"
+#include "CapacityHandler.h"
 
 namespace Utils
 {   
@@ -76,7 +78,7 @@ namespace Utils
         auto playerPermAV = playerAsAV->GetPermanentActorValue(RE::ActorValue::kStamina);
         auto playerClampAV = playerAsAV->GetClampedActorValue(RE::ActorValue::kStamina);
         logger::debug("Actor value testing:\n"
-            "ActorValue: {}\nBaseActorValue: {}\nPermanentActorValue: {}\nClampedActorValue: {}",
+            "ActorValue: {}\nBaseActorValue (): {}\nPermanentActorValue (Max): {}\nClampedActorValue (Curr.): {}",
             playerAV, playerBaseAV, playerPermAV, playerClampAV
         );
     }
@@ -106,4 +108,32 @@ namespace Utils
         // Settings::raceIndex[formID]->WeightMod()
         // with the index's values being classes/structs or something
     }
+
+	void UpdateModules()
+	{
+		WeightHandler::UpdateFromSettings();
+		WeightHandler::UpdateWeightLimit();
+
+		CapacityHandler::Limits::UpdateBaseValues();
+		CapacityHandler::Limits::CalculatePlayValues();
+		CapacityHandler::Player::UpdateAllCategories();
+	}
+
+	void KeywordsToLog(RE::TESForm *a_item)
+	{
+		auto kwItem = a_item->As<RE::BGSKeywordForm>();
+
+		if (kwItem) {
+			auto kwSpan = kwItem->GetKeywords();
+			std::vector<const char*> kwList;
+
+			for (RE::BGSKeyword *kw : kwSpan) {
+				kwList.push_back(kw->GetFormEditorID());
+			}
+
+			logger::debug("'{}' Keywords: [{}]", a_item->GetName(), fmt::join(kwList, ", "));
+		} else {
+			logger::debug("'{}' has no keywords", a_item->GetName());
+		}
+	}
 }

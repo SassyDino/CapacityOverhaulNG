@@ -1,4 +1,5 @@
 #pragma once
+
 namespace Utils
 {   
     void ConvertToLowerCase(std::string& s);
@@ -10,4 +11,8 @@ namespace Utils
     void LogStaminaAVs();
 
     float GetRaceWeightMod(RE::FormID formID);
+
+	void UpdateModules();
+
+	void KeywordsToLog(RE::TESForm *a_item);
 }

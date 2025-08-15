@@ -4,6 +4,10 @@ struct Settings
 {
 	// ADD TO MCM:
 	static inline bool	bQuestItemsAffectCapacity{false};
+	static inline uint32_t	uHugeCapacity{1};
+	static inline float	fHugeItemWeight{20};
+	static inline bool	bHugeCapacityNotShared{true};
+	static inline float	fLargePerHuge{5};
 
     // Toggle features
     static inline bool    bNoHandsOverCap{true};
@@ -92,11 +96,10 @@ struct Settings
     static inline bool globalEquipLog;
     static inline bool playerEquipLogOnly;
     // Multipliers used to normalise large/medium/small counts with tiny items
+	static inline int hugeToTiny;
     static inline int largeToTiny;
     static inline int mediumToTiny;
     static inline int smallToTiny;
-
-    static inline float GetRaceWeightMod(uint32_t formID);
 
     static void ReadBool(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, bool& a_setting);
 	static void ReadFloat(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, float& a_setting);
