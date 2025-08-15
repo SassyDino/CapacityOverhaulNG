@@ -38,8 +38,11 @@ namespace Utils
         }
 
         auto pluginName = SKSE::PluginDeclaration::GetSingleton()->GetName();
-        auto logFilePath = *logsFolder / std::format("{}.log", pluginName);
-        auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logFilePath.string(), true);
+
+		std::string pluginFileName = std::format("{}.log", pluginName);
+		logsFolderPath.append(pluginFileName);
+
+        auto fileLoggerPtr = std::make_shared<spdlog::sinks::basic_file_sink_mt>(logsFolderPath.string(), true);
         auto loggerPtr = std::make_shared<spdlog::logger>("log", std::move(fileLoggerPtr));
         spdlog::set_default_logger(std::move(loggerPtr));
         spdlog::set_level(spdlog::level::trace);
