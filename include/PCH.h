@@ -3,6 +3,7 @@
 #include <RE/Skyrim.h>
 #include <SKSE/SKSE.h>
 #include <SimpleIni.h>
+
 #include "Settings.h"
 #include "Utils.h"
 

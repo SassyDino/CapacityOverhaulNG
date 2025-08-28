@@ -136,4 +136,18 @@ namespace Utils
 			logger::debug("'{}' has no keywords", a_item->GetName());
 		}
 	}
+
+	RE::CharEvent* RE3::AsCharEvent(RE::InputEvent *a_event)
+	{
+		auto eventType = a_event->GetEventType();
+		return eventType == RE::INPUT_EVENT_TYPE::kChar ? static_cast<RE::CharEvent*>(a_event) : nullptr;
+	}
+
+	const RE::CharEvent* RE3::AsCharEvent(RE::InputEvent *a_event) const
+	{
+		if (a_event->GetEventType() == RE::INPUT_EVENT_TYPE::kChar) {
+			return static_cast<const RE::CharEvent*>(a_event);
+		}
+		return nullptr;
+	}
 }

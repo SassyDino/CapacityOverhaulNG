@@ -14,12 +14,6 @@ namespace CapacityHandler
         kCoin,
         kWeightless
     };
-
-	//TODO: Try and make this not break the whole plugin, otherwise delete
-	//RE::BGSKeyword *Keywords::potion = RE::TESForm::LookupByID<RE::BGSKeyword>(0x3989B);
-	//RE::BGSKeyword *Keywords::poison = RE::TESForm::LookupByID<RE::BGSKeyword>(0x74A39);
-	//RE::BGSKeyword *Keywords::ammo = RE::TESForm::LookupByID<RE::BGSKeyword>(0x917E7);
-	//RE::BGSKeyword *Keywords::coin = RE::TESForm::LookupByID<RE::BGSKeyword>(RE::TESDataHandler::GetSingleton()->LookupFormID(0x801, "CapacityOverhaulNG.esp"));
 	
 	int Limits::hugeBaseCapacity;
 	int Limits::largeBaseCapacity;
@@ -114,7 +108,8 @@ namespace CapacityHandler
 
 	int Player::GetCategoryCount(int a_cat)
 	{
-		switch (a_cat) {
+		switch (a_cat)
+		{
 			case kHuge:
 				return hugeCount;
 				break;
@@ -159,7 +154,8 @@ namespace CapacityHandler
 
 	void Player::IncreaseCategory(int a_cat, int a_count)
 	{
-		switch (a_cat) {
+		switch (a_cat)
+		{
 			case kHuge:
 				hugeCount += a_count;
 				break;
@@ -194,7 +190,8 @@ namespace CapacityHandler
 
 	void Player::DecreaseCategory(int a_cat, int a_count)
 	{
-		switch (a_cat) {
+		switch (a_cat)
+		{
 			case kHuge:
 				hugeCount -= a_count;
 				break;
@@ -302,15 +299,6 @@ namespace CapacityHandler
 			}
 		}
 
-		//NOTE: (Un)Equipping items does not trigger ContainerChanged (as the items are staying inside the player's inv)
-		//? This means that equipped gear still counts towards capacity
-		//? (Un)Equipping to/from a container DOES trigger ContainerChanged as well as EquipEvent
-		//? Storing equipped gear does EquipEvent first, then ContainerChanged
-		//? Equipping stored gear does ContainerChanged first, then EquipEvent
-		//TODO: So basically, I need to use EquipEvent to remove a given equipped item from it's respective category
-		//TODO: And then add it back when item is unequipped
-		//? I think this should mostly avoid any potentially nasty/messy issues with regards to direct transfer between storage and equipped
-
 		UpdateTotalCount();
 		AllCategoriesLog();
 	}
@@ -319,6 +307,7 @@ namespace CapacityHandler
 	{
 		int itemCategory;
 		auto item = a_item;
+		//TODO: Figure out how to identify quest items, if at all possible
 		auto isQuestItem = a_quest;
 		auto kwItem = item->As<RE::BGSKeywordForm>();
 		auto itemType = item->GetFormType();
@@ -384,7 +373,7 @@ namespace CapacityHandler
 		auto item = a_item;
 		auto itemWeight = item->GetWeight();
 		auto kwItem = item->As<RE::BGSKeywordForm>();
-		//TODO: Quest item again
+		//TODO: Figure out how to identify quest items, if at all possible
 		auto isQuestItem = false;
 
 		if (kwItem) {

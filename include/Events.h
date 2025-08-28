@@ -4,6 +4,25 @@ namespace Events
 {
     using Result = RE::BSEventNotifyControl;
 
+	template <class T>
+	class Singleton
+	{
+		public:
+			static T* GetSingleton()
+			{
+				static T singleton;
+				return std::addressof(singleton);
+			}
+		
+			protected:
+				Singleton() = default;
+				~Singleton() = default;
+				Singleton(const Singleton&) = delete;
+				Singleton(Singleton&&) = delete;
+				Singleton& operator=(const Singleton&) = delete;
+				Singleton& operator=(Singleton&&) = delete;
+	};
+
     class CapacityEventHandler : public RE::BSTEventSink<RE::TESContainerChangedEvent>, public RE::BSTEventSink<RE::TESEquipEvent>, 
 		public RE::BSTEventSink<RE::SkillIncrease::Event>, public RE::BSTEventSink<RE::TESMagicEffectApplyEvent> {
         CapacityEventHandler() = default;
@@ -52,18 +71,10 @@ namespace Events
             static void Register();
     };
 
-    class LoadGameEventHandler : public RE::BSTEventSink<RE::TESLoadGameEvent> {
-        LoadGameEventHandler() = default;
-        ~LoadGameEventHandler() = default;
-        LoadGameEventHandler(const LoadGameEventHandler&) = delete;
-        LoadGameEventHandler(LoadGameEventHandler&&) = delete;
-        LoadGameEventHandler& operator=(const LoadGameEventHandler&) = delete;
-        LoadGameEventHandler& operator=(LoadGameEventHandler&&) = delete;
+    class UIEventHandler : public Singleton<UIEventHandler>, public RE::BSTEventSink<RE::TESLoadGameEvent> {
 
         public:
             virtual Result ProcessEvent(const RE::TESLoadGameEvent*event, RE::BSTEventSource<RE::TESLoadGameEvent>*source) override;
-
-            static LoadGameEventHandler& GetSingleton();
 
             static void Register();
     };

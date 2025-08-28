@@ -163,8 +163,8 @@ namespace Events
 		return Result::kContinue;
 	}
 
-    auto LoadGameEventHandler::ProcessEvent(const RE::TESLoadGameEvent*, RE::BSTEventSource<RE::TESLoadGameEvent>*) -> Result {
-        logger::debug("<LoadGameEventHandler::LoadGame>");
+    auto UIEventHandler::ProcessEvent(const RE::TESLoadGameEvent*, RE::BSTEventSource<RE::TESLoadGameEvent>*) -> Result {
+        logger::debug("<UIEventHandler::LoadGame>");
         
         Settings::Init();
 
@@ -196,21 +196,15 @@ namespace Events
 		RE::LevelIncrease::GetEventSource()->AddEventSink<RE::LevelIncrease::Event>(&weightEventHandler);
 		RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESMagicEffectApplyEvent>(&weightEventHandler);
     }
-
-    LoadGameEventHandler& LoadGameEventHandler::GetSingleton() {
-        static LoadGameEventHandler singleton;
-        return singleton;
-    }
-
-    void LoadGameEventHandler::Register() {
-        auto& loadGameEventHandler = LoadGameEventHandler::GetSingleton();
-        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESLoadGameEvent>(&loadGameEventHandler);
-    }
+	
+    void UIEventHandler::Register() {
+		RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESLoadGameEvent>(GetSingleton());
+	}
 
     void SinkEventHandlers() {
         CapacityEventHandler::Register();
         WeightEventHandler::Register();
-        LoadGameEventHandler::Register();
+        UIEventHandler::Register();
         logger::info("Registered all event handlers.");
     }
 

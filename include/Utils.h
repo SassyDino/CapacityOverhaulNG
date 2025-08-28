@@ -15,4 +15,10 @@ namespace Utils
 	void UpdateModules();
 
 	void KeywordsToLog(RE::TESForm *a_item);
+
+	struct RE3
+	{
+		RE::CharEvent* AsCharEvent(RE::InputEvent *a_event);
+		const RE::CharEvent* AsCharEvent(RE::InputEvent *a_event) const;
+	};
 }
