@@ -4,6 +4,7 @@
     "version-string": "0.0.1",
     "dependencies": [
         {"name": "commonlibsse-ng", "version>=": "3.7.0"},
-        "simpleini"
+        "simpleini",
+		"skse-mcp"
     ]
 }

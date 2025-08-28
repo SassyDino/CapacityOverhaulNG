@@ -2,35 +2,33 @@
 
 struct Settings
 {
-	// ADD TO MCM:
-	static inline bool	bQuestItemsAffectCapacity{false};
-	static inline uint32_t	uHugeCapacity{1};
-	static inline float	fHugeItemWeight{20};
-	static inline bool	bHugeCapacityNotShared{true};
-	static inline float	fLargePerHuge{5};
-
     // Toggle features
-    static inline bool    bNoHandsOverCap{true};
-    static inline bool    bPreventPickupOverCap{true};
-    static inline bool    bSkillsAffectCapacity{true};
-    static inline bool    bVanillaWeightLimit{false};
-    static inline bool    bStaminaAffectsWeight{true};
-    static inline bool    bLevelAffectsWeight{true};
-    static inline bool    bRaceAffectsWeight{true};
+    static inline bool		bNoHandsOverCap{true};
+    static inline bool		bPreventPickupOverCap{true};
+    static inline bool		bSkillsAffectCapacity{true};
+	static inline bool		bQuestItemsAffectCapacity{false};
+	static inline bool		bHugeCapacityNotShared{true};
+    static inline bool		bVanillaWeightLimit{false};
+    static inline bool		bStaminaAffectsWeight{true};
+    static inline bool		bLevelAffectsWeight{true};
+    static inline bool		bRaceAffectsWeight{true};
     
     // Base value modifiers
-    static inline uint32_t   uLargeCapacity{5};
-    static inline float   fMediumPerLarge{2};
-    static inline float   fSmallPerMedium{2.5};
-    static inline float   fTinyPerSmall{5};
-    static inline uint32_t   uAlchemyCapacity{25};
-    static inline uint32_t   uAmmoCapacity{50};
-    static inline uint32_t   uCoinCapacity{500};
-    static inline uint32_t   uCoinsPerTiny{25};
-    static inline float fLargeItemWeight{9};
-    static inline float fMediumItemWeight{5};
-    static inline float fSmallItemWeight{1};
-    static inline uint32_t   uBaseWeightLimit{100};
+	static inline uint32_t	uHugeCapacity{1};
+    static inline uint32_t	uLargeCapacity{5};
+	static inline float		fLargePerHuge{5};
+    static inline float		fMediumPerLarge{2};
+    static inline float		fSmallPerMedium{2.5};
+    static inline float		fTinyPerSmall{5};
+    static inline uint32_t	uAlchemyCapacity{25};
+    static inline uint32_t	uAmmoCapacity{50};
+    static inline uint32_t	uCoinCapacity{500};
+    static inline uint32_t	uCoinsPerTiny{25};
+	static inline float		fHugeItemWeight{20};
+    static inline float		fLargeItemWeight{9};
+    static inline float		fMediumItemWeight{5};
+    static inline float		fSmallItemWeight{1};
+    static inline uint32_t	uBaseWeightLimit{100};
 
     // Buff & debuff settings
     static inline bool    bWeightAffectsSpeed{true};

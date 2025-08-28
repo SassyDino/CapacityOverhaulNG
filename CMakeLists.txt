@@ -30,6 +30,7 @@ if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
 endif()
 
 
+
 file(GLOB_RECURSE source_files src/*.cpp)
 
 # Setup your SKSE plugin as an SKSE plugin!
@@ -38,6 +39,9 @@ add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${source_files})
 target_compile_features(${PROJECT_NAME} PRIVATE cxx_std_23) # <--- use C++23 standard
 target_precompile_headers(${PROJECT_NAME} PRIVATE include/PCH.h) # <--- PCH.h is required!
 target_include_directories(${PROJECT_NAME} PRIVATE include)
+
+find_path(SKSE_MCP_INCLUDE_DIRS "SKSEMCP/utils.hpp")
+target_include_directories(${PROJECT_NAME} PRIVATE	${SKSE_MCP_INCLUDE_DIRS})
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
