@@ -10,8 +10,6 @@ namespace Utils
     
     void LogStaminaAVs();
 
-    float GetRaceWeightMod(RE::FormID formID);
-
 	void UpdateModules();
 
 	void KeywordsToLog(RE::TESForm *a_item);
@@ -20,5 +18,24 @@ namespace Utils
 	{
 		RE::CharEvent* AsCharEvent(RE::InputEvent *a_event);
 		const RE::CharEvent* AsCharEvent(RE::InputEvent *a_event) const;
+	};
+
+	template <class T>
+	class Singleton
+	{
+		public:
+			static T* GetSingleton()
+			{
+				static T singleton;
+				return std::addressof(singleton);
+			}
+		
+			protected:
+				Singleton() = default;
+				~Singleton() = default;
+				Singleton(const Singleton&) = delete;
+				Singleton(Singleton&&) = delete;
+				Singleton& operator=(const Singleton&) = delete;
+				Singleton& operator=(Singleton&&) = delete;
 	};
 }

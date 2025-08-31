@@ -1,15 +1,18 @@
 #include "WeightHandler.h"
+#include "Player.h"
+#include "Calc.h"
 #include <math.h>
 
 namespace WeightHandler
 {
+/*
 	float Stamina::playerBaseStamina = 100;	// NOTE: Could do with finding a way of obtaining the DEFAULT stamina value (not base AV), in case any mods make the player's default stamina something other than 100
 	float Stamina::playerStamAV;
 	float Stamina::stamAtMaxGrad;
 
 	float Level::playerLevel;
 	float Level::levelAtMaxGrad;
-
+ 
 	void Stamina::UpdateStaminaAV()
 	{
 		auto player = RE::PlayerCharacter::GetSingleton()->AsActorValueOwner();
@@ -130,27 +133,64 @@ namespace WeightHandler
 		Stamina::GetStamAtMaxGrad();
 		Level::GetLevelAtMaxGrad();
 	}
+*/
+
+	float GetRaceWeightMod(RE::TESRace *a_race)
+    {
+        std::map<RE::FormID, const char*> raceWeightIndex {
+            {0x13743, "fAltmerRaceMod"}, {0x13740, "fArgonianRaceMod"}, {0x13749, "fBosmerRaceMod"},
+            {0x13741, "fBretonRaceMod"}, {0x13742, "fDunmerRaceMod"}, {0x13744, "fImperialRaceMod"},
+            {0x13745, "fKhajiitRaceMod"}, {0x13746, "fNordRaceMod"}, {0x13747, "fOrcRaceMod"},
+            {0x13748, "fRedguardRaceMod"}
+        };
+
+		// Use default race modifier as a fallback if player's race does not exist in index (to prevent custom races breaking this mod)v
+        auto raceWeightMod = *Settings::Get<float*>("fDefaultRaceMod");
+		auto raceID = Player::Race->GetFormID();
+        
+        if (!raceWeightIndex.at(raceID)) {
+            raceWeightMod = *Settings::Get<float*>(raceWeightIndex[raceID]);
+            auto raceName = Player::Race->GetName();
+            logger::info("Player race identified as {}. Carry weight limit modifier = x{}", raceName, raceWeightMod);
+        }
+
+		logger::warn("Unable to identify player race: reverting to Default race modifier (x{}). A custom player race is the most likely cause for this warning, and if this applies to you then you may ignore this message. Otherwise, this warning may indicate an issue with the mod which you are advised to report.", raceWeightMod);
+        return { raceWeightMod };
+        // if i need more values stored per race, maybe try something like
+        // Settings::raceIndex[formID]->WeightMod()
+        // with the index's values being classes/structs or something
+    }
+
+	void UpdateFromSettings()
+	{
+		Player::UpdateStamAtMaxGrad();
+		Player::UpdateLevelAtMaxGrad();
+	}
 
     float CalculateWeightLimit()
     {
-        RE::FormID playerRace = RE::PlayerCharacter::GetSingleton()->GetRace()->GetFormID();
-        float raceModifier = Utils::GetRaceWeightMod(playerRace);	//NOTE: Could be possible to only make this fire if/when the player changes race: check out TESSwitchRaceCompleteEvent, see whether it fires even from racemenu, console etc.
-        float weightLimit = static_cast<float>(Settings::uBaseWeightLimit);
+        float raceModifier = GetRaceWeightMod(Player::Race);	//NOTE: Could be possible to only make this fire if/when the player changes race: check out TESSwitchRaceCompleteEvent, see whether it fires even from racemenu, console etc.
+        float weightLimit = static_cast<float>(*Settings::Get<uint32_t*>("uBaseWeightLimit"));
 
-        if (Settings::bStaminaAffectsWeight) {weightLimit += (Stamina::CalculateStaminaBonus() * Settings::fStaminaWeightMod);}
-        if (Settings::bLevelAffectsWeight) {weightLimit += (Level::CalculateLevelBonus() * Settings::fLevelWeightMod);}
-        if (Settings::bRaceAffectsWeight) {weightLimit *= raceModifier;}
+        if (*Settings::Get<bool*>("bStaminaAffectsWeight")) {
+			weightLimit += (Calc::StaminaWeightBonus() * *Settings::Get<float*>("fStaminaWeightMod"));
+		}
+        if (*Settings::Get<bool*>("bLevelAffectsWeight")) {
+			weightLimit += (Calc::LevelWeightBonus() * *Settings::Get<float*>("fLevelWeightMod"));
+		}
+        if (*Settings::Get<bool*>("bRaceAffectsWeight")) {
+			weightLimit *= raceModifier;
+		}
 
-        float weightLimitInt = ceil(weightLimit);
-        logger::info("Player's carry weight limit calculated as {}, rounded up to {}", weightLimit, weightLimitInt);
-        return weightLimitInt;
+        float weightLimitRound = ceil(weightLimit);
+        logger::info("Player's carry weight limit calculated as {}, rounded up to {}", weightLimit, weightLimitRound);
+        return { weightLimitRound };
     }
 
     void UpdateWeightLimit()
     {
-        auto player = RE::PlayerCharacter::GetSingleton()->AsActorValueOwner();
         float playerWeightLimit = CalculateWeightLimit();
 
-        player->SetBaseActorValue(RE::ActorValue::kCarryWeight, playerWeightLimit);
+        Player::AsAV->SetBaseActorValue(RE::ActorValue::kCarryWeight, playerWeightLimit);
     }
 }

@@ -41,3 +41,4 @@ Required for MCM Functionality:
 - [`SkyrimScripting`](https://github.com/SkyrimScripting)/[`MrowrPurr`](https://github.com/mrowrpurr) for the [template plugin](https://github.com/SkyrimScripting/SKSE_Template_Logging) which this mod was built using.
   * I also owe a HUGE thanks to her [Youtube tutorials](https://youtube.com/playlist?list=PLektTyeQhBZeDIRp2g15SsK1GX2Ig8YVW&si=G10sz3apdL0PFQ9V), without which I am almost certain I would not have been able to figure out the whole SKSE plugin workflow.
 - [`CharmedBaryon`](https://github.com/CharmedBaryon) and the CommonLib team for whatever witchcraft it is that they do to make CommonLibSSE a reality.
+- [`Dylbill`](https://github.com/Dylbill-Iroh) for some logger code.

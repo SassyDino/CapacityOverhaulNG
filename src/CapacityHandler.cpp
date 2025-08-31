@@ -52,18 +52,18 @@ namespace CapacityHandler
 	void Limits::UpdateBaseValues()
 	{   
 		logger::info("Recalculating base capacity limits...");
-		hugeBaseCapacity = Settings::uHugeCapacity;
-		if (Settings::bHugeCapacityNotShared) {
-			largeBaseCapacity = Settings::uLargeCapacity;
+		hugeBaseCapacity = *Settings::Get<uint32_t*>("uHugeCapacity");
+		if (!*Settings::Get<bool*>("bHugeCapacityShared")) {
+			largeBaseCapacity = *Settings::Get<uint32_t*>("uLargeCapacity");
 		} else {
-			largeBaseCapacity = int(ceil(hugeBaseCapacity * Settings::fLargePerHuge));
+			largeBaseCapacity = int(ceil(hugeBaseCapacity * *Settings::Get<float*>("fLargePerHuge")));
 		}
-		mediumBaseCapacity = int(ceil(largeBaseCapacity * Settings::fMediumPerLarge));
-		smallBaseCapacity = int(ceil(mediumBaseCapacity * Settings::fSmallPerMedium));
-		tinyBaseCapacity = int(ceil(smallBaseCapacity * Settings::fTinyPerSmall));
-		alchemyBaseCapacity = Settings::uAlchemyCapacity;
-		ammoBaseCapacity = Settings::uAmmoCapacity;
-		coinBaseCapacity = Settings::uCoinCapacity;
+		mediumBaseCapacity = int(ceil(largeBaseCapacity * *Settings::Get<float*>("fMediumPerLarge")));
+		smallBaseCapacity = int(ceil(mediumBaseCapacity * *Settings::Get<float*>("fSmallPerMedium")));
+		tinyBaseCapacity = int(ceil(smallBaseCapacity * *Settings::Get<float*>("fTinyPerSmall")));
+		alchemyBaseCapacity = *Settings::Get<uint32_t*>("uAlchemyCapacity");
+		ammoBaseCapacity = *Settings::Get<uint32_t*>("uAmmoCapacity");
+		coinBaseCapacity = *Settings::Get<uint32_t*>("uCoinCapacity");
 		logger::info("...done");
 	}
 
@@ -82,7 +82,7 @@ namespace CapacityHandler
 		coinCapacity = coinBaseCapacity;
 
 		//TODO: Need to do some experimentation - GetActorValue vs GetBaseActorValue etc., and kAlchemy vs kAlchemyModifier etc.
-		if (Settings::bSkillsAffectCapacity) {
+		if (*Settings::Get<bool*>("bSkillsAffectCapacity")) {
 			auto playerAVs = RE::PlayerCharacter::GetSingleton()->AsActorValueOwner();
 			auto alchemyLvl = playerAVs->GetActorValue(RE::ActorValue::kAlchemy);
 			auto archeryLvl = playerAVs->GetActorValue(RE::ActorValue::kArchery);
@@ -268,15 +268,26 @@ namespace CapacityHandler
 
 	void Player::UpdateTotalCount()
 	{
-		if (Settings::bHugeCapacityNotShared) {
-			totalCount = (largeCount * Settings::largeToTiny) + (mediumCount * Settings::mediumToTiny) + (smallCount * Settings::smallToTiny) + tinyCount;
+		int hugeToTiny = *Settings::Get<float*>("fLargePerHuge") * 
+				*Settings::Get<float*>("fMediumPerLarge") * 
+				*Settings::Get<float*>("fSmallPerMedium") * 
+				*Settings::Get<float*>("fTinyPerSmall");
+		int largeToTiny = *Settings::Get<float*>("fMediumPerLarge") * 
+				*Settings::Get<float*>("fSmallPerMedium") * 
+				*Settings::Get<float*>("fTinyPerSmall");
+		int mediumToTiny = *Settings::Get<float*>("fSmallPerMedium") * 
+				*Settings::Get<float*>("fTinyPerSmall");
+		int smallToTiny = *Settings::Get<float*>("fTinyPerSmall");
+
+		if (!*Settings::Get<bool*>("bHugeCapacityShared")) {
+			totalCount = (largeCount * largeToTiny) + (mediumCount * mediumToTiny) + (smallCount * smallToTiny) + tinyCount;
 		} else {
-			totalCount = (hugeCount * Settings::hugeToTiny) + (largeCount * Settings::largeToTiny) + (mediumCount * Settings::mediumToTiny) + (smallCount * Settings::smallToTiny) + tinyCount;
+			totalCount = (hugeCount * hugeToTiny) + (largeCount * largeToTiny) + (mediumCount * mediumToTiny) + (smallCount * smallToTiny) + tinyCount;
 		}
 
 		if (alchemyCount > Limits::alchemyCapacity) totalCount += alchemyCount - Limits::alchemyCapacity;
 		if (ammoCount > Limits::ammoCapacity) totalCount += ammoCount - Limits::ammoCapacity;
-		if (coinCount > Limits::coinCapacity) totalCount += int(ceil((coinCount - Limits::coinCapacity)/Settings::uCoinsPerTiny));
+		if (coinCount > Limits::coinCapacity) totalCount += int(ceil((coinCount - Limits::coinCapacity) / *Settings::Get<uint32_t*>("uCoinsPerTiny")));
 
 	}
 
@@ -342,20 +353,20 @@ namespace CapacityHandler
 			return kWeightless;
 		}
 
-		if (itemWeight <= 0 || (!Settings::bQuestItemsAffectCapacity && isQuestItem)) {
+		if (itemWeight <= 0 || (!*Settings::Get<bool*>("bQuestItemsAffectCapacity") && isQuestItem)) {
 			itemCategory = kWeightless;
 			logger::debug("Item Category: kWeightless");
 		} else {
-			if (itemWeight >= Settings::fHugeItemWeight) {
+			if (itemWeight >= *Settings::Get<float*>("fHugeItemWeight")) {
 				itemCategory = kHuge;
 				logger::debug("Item Category: kHuge");
-			} else if (itemWeight >= Settings::fLargeItemWeight) {
+			} else if (itemWeight >= *Settings::Get<float*>("fLargeItemWeight")) {
 				itemCategory = kLarge;
 				logger::debug("Item Category: kLarge");
-			} else if (itemWeight >= Settings::fMediumItemWeight) {
+			} else if (itemWeight >= *Settings::Get<float*>("fMediumItemWeight")) {
 				itemCategory = kMedium;
 				logger::debug("Item Category: kMedium");
-			} else if (itemWeight >= Settings::fSmallItemWeight) {
+			} else if (itemWeight >= *Settings::Get<float*>("fSmallItemWeight")) {
 				itemCategory = kSmall;
 				logger::debug("Item Category: kSmall");
 			} else {
@@ -383,20 +394,20 @@ namespace CapacityHandler
 			}
 		}
 
-		if (itemWeight <= 0 || (!Settings::bQuestItemsAffectCapacity && isQuestItem)) {
+		if (itemWeight <= 0 || (!*Settings::Get<bool*>("bQuestItemsAffectCapacity") && isQuestItem)) {
 			itemCategory = kWeightless;
 			logger::debug("Item Category: kWeightless");
 		} else {
-			if (itemWeight >= Settings::fHugeItemWeight) {
+			if (itemWeight >= *Settings::Get<float*>("fHugeItemWeight")) {
 				itemCategory = kHuge;
 				logger::debug("Item Category: kHuge");
-			} else if (itemWeight >= Settings::fLargeItemWeight) {
+			} else if (itemWeight >= *Settings::Get<float*>("fLargeItemWeight")) {
 				itemCategory = kLarge;
 				logger::debug("Item Category: kLarge");
-			} else if (itemWeight >= Settings::fMediumItemWeight) {
+			} else if (itemWeight >= *Settings::Get<float*>("fMediumItemWeight")) {
 				itemCategory = kMedium;
 				logger::debug("Item Category: kMedium");
-			} else if (itemWeight >= Settings::fSmallItemWeight) {
+			} else if (itemWeight >= *Settings::Get<float*>("fSmallItemWeight")) {
 				itemCategory = kSmall;
 				logger::debug("Item Category: kSmall");
 			} else {
@@ -427,7 +438,7 @@ namespace CapacityHandler
 
 			if (alchemyOver) alchemyOverflow = alchemyCount - Limits::alchemyCapacity;
 			if (ammoOver) ammoOverflow = ammoCount - Limits::ammoCapacity;
-			if (coinOver) coinOverflow = (coinCount - Limits::coinCapacity)/Settings::uCoinsPerTiny;
+			if (coinOver) coinOverflow = (coinCount - Limits::coinCapacity) / *Settings::Get<uint32_t*>("uCoinsPerTiny");
 			
 			// Will only evaluate alchemy/ammo/coin overflow as "over-capacity" if the overflow into tiny storage exceeds standard capacity limits
 			if ((totalCount + alchemyOverflow + ammoOverflow + coinOverflow) > Limits::tinyCapacity) return isOver = true;

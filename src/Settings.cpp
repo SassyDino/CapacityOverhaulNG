@@ -1,5 +1,3 @@
-#include <map>
-
 void Settings::Init()
 {   
     constexpr auto defaultPath = L"Data/MCM/Config/CapacityOverhaulNG/settings.ini";
@@ -60,6 +58,7 @@ bool Settings::Validate()
     return validSettings;
 }
 
+/*
 void Settings::Load(std::filesystem::path path)
 {
     CSimpleIniA ini;
@@ -92,20 +91,10 @@ void Settings::Load(std::filesystem::path path)
 
     // Buff & debuff settings
     ReadBool(ini, "BuffsAndDebuffs", "bWeightAffectsSpeed", bWeightAffectsSpeed);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightSpeedModPos", fWeightSpeedModPos);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightSpeedModNeg", fWeightSpeedModNeg);
     ReadBool(ini, "BuffsAndDebuffs", "bWeightAffectsCombat", bWeightAffectsCombat);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightCombatModPos", fWeightCombatModPos);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightCombatModNeg", fWeightCombatModNeg);
     ReadBool(ini, "BuffsAndDebuffs", "bWeightAffectsStealth", bWeightAffectsStealth);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightStealthModPos", fWeightStealthModPos);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightStealthModNeg", fWeightStealthModNeg);
     ReadBool(ini, "BuffsAndDebuffs", "bWeightAffectsStamDrain", bWeightAffectsStamDrain);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightDrainModPos", fWeightStamDrainModPos);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightDrainModNeg", fWeightStamDrainModNeg);
     ReadBool(ini, "BuffsAndDebuffs", "bWeightAffectsStamRegen", bWeightAffectsStamRegen);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightRegenModPos", fWeightStamRegenModPos);
-    ReadFloat(ini, "BuffsAndDebuffs", "fWeightRegenModNeg", fWeightStamRegenModNeg);
 
     // Debug settings
     ReadBool(ini, "Debug", "bModEnabled", bModEnabled);
@@ -161,6 +150,7 @@ void Settings::Load(std::filesystem::path path)
 
 }
 
+
 void Settings::ReadBool(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, bool& a_setting)
 {
 	const char* bFound = nullptr;
@@ -188,3 +178,134 @@ void Settings::ReadUInt32(CSimpleIniA& a_ini, const char* a_sectionName, const c
 		a_setting = static_cast<uint32_t>(a_ini.GetLongValue(a_sectionName, a_settingName));
 	}
 }
+*/
+
+void Settings::ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName)
+{
+	const char* bFound = nullptr;
+	bFound = a_ini.GetValue(a_sectionName, a_settingName);
+	if (!bFound) { return; }
+
+	auto test = get<bool*>(settingMap["bNoHandsOverCap"]);
+	*test = false;
+
+	if (a_settingName[0] == "b"[0]) {
+		bool *settingPtr = get<bool*>(settingMap[a_settingName]);
+		*settingPtr = a_ini.GetBoolValue(a_sectionName, a_settingName);
+	} else if (a_settingName[0] == "f"[0]) {
+		float *settingPtr = get<float*>(settingMap[a_settingName]);
+		*settingPtr = static_cast<float>(a_ini.GetDoubleValue(a_sectionName, a_settingName));
+	} else if (a_settingName[0] == "u"[0]) {
+		uint32_t *settingPtr = get<uint32_t*>(settingMap[a_settingName]);
+		*settingPtr = static_cast<uint32_t>(a_ini.GetLongValue(a_sectionName, a_settingName));
+	}
+}
+
+void Settings::Load(std::filesystem::path path)
+{
+    CSimpleIniA ini;
+    ini.SetUnicode();
+
+    ini.LoadFile(path.string().c_str());
+
+	std::list<CSimpleIniA::Entry> iniSections;
+	ini.GetAllSections(iniSections);
+
+	for (CSimpleIniA::Entry sectionName : iniSections) {
+		auto section = *ini.GetSection(sectionName.pItem);
+		for (std::multimap<CSimpleIniA::Entry, const char *, CSimpleIniA::Entry::KeyOrder>::iterator it = section.begin(); it != section.end(); ++it) {
+			ReadIniSetting(ini, sectionName.pItem, (*it).first.pItem);
+		}
+	}
+
+	globalContainerLog = bLogContainerEvents && !bLogOnlyPlayerContainerEvents;
+    playerContainerLogOnly = bLogContainerEvents && bLogOnlyPlayerContainerEvents;
+    globalMenuLog = bLogMenuEvents && !bLogOnlyRelevantMenuEvents;
+    relevantMenuLogOnly = bLogMenuEvents && bLogOnlyRelevantMenuEvents;
+    globalEquipLog = bLogEquipEvents && !bLogOnlyPlayerEquipEvents;
+    playerEquipLogOnly = bLogEquipEvents && bLogOnlyPlayerEquipEvents;
+}
+/*
+bool* Settings::GetBool(const char* a_setting)
+{
+	const auto cfg = Settings::GetSingleton();
+
+	if (a_setting == "bNoHandsOverCap") { return {&cfg->bNoHandsOverCap}; }
+	if (a_setting == "bPreventPickupOverCap") { return {&cfg->bPreventPickupOverCap}; }
+	if (a_setting == "bSkillsAffectCapacity") { return {&cfg->bSkillsAffectCapacity}; }
+	if (a_setting == "bQuestItemsAffectCapacity") { return {&cfg->bQuestItemsAffectCapacity}; }
+
+	if (a_setting == "bVanillaWeightLimit") { return {&cfg->bVanillaWeightLimit}; }
+	if (a_setting == "bStaminaAffectsWeight") { return {&cfg->bStaminaAffectsWeight}; }
+	if (a_setting == "bLevelAffectsWeight") { return {&cfg->bLevelAffectsWeight}; }
+	if (a_setting == "bRaceAffectsWeight") { return {&cfg->bRaceAffectsWeight}; }
+
+	if (a_setting == "bHugeCapacityShared") { return {&cfg->bHugeCapacityShared}; }
+
+	if (a_setting == "bModEnabled") { return {&cfg->bModEnabled}; }
+
+	if (a_setting == "bTempStaminaAddsWeight") { return {&cfg->bTempStaminaAddsWeight}; }
+	if (a_setting == "bStaminaWeightSimple") { return {&cfg->bStaminaWeightSimple}; }
+
+	if (a_setting == "bLevelWeightSimple") { return {&cfg->bLevelWeightSimple}; }
+
+	return { nullptr };
+}
+
+float* Settings::GetFloat(const char* a_setting)
+{
+	const auto cfg = Settings::GetSingleton();
+
+	if (a_setting == "fLargePerHuge") { return {&cfg->fLargePerHuge}; }
+	if (a_setting == "fMediumPerLarge") { return {&cfg->fMediumPerLarge}; }
+	if (a_setting == "fSmallPerMedium") { return {&cfg->fSmallPerMedium}; }
+	if (a_setting == "fTinyPerSmall") { return {&cfg->fTinyPerSmall}; }
+
+	if (a_setting == "fHugeItemWeight") { return {&cfg->fHugeItemWeight}; }
+	if (a_setting == "fLargeItemWeight") { return {&cfg->fLargeItemWeight}; }
+	if (a_setting == "fMediumItemWeight") { return {&cfg->fMediumItemWeight}; }
+	if (a_setting == "fSmallItemWeight") { return {&cfg->fSmallItemWeight}; }
+	
+	if (a_setting == "fAltmerRaceMod") { return {&cfg->fAltmerRaceMod}; }
+	if (a_setting == "fArgonianRaceMod") { return {&cfg->fArgonianRaceMod}; }
+	if (a_setting == "fBosmerRaceMod") { return {&cfg->fBosmerRaceMod}; }
+	if (a_setting == "fBretonRaceMod") { return {&cfg->fBretonRaceMod}; }
+	if (a_setting == "fDunmerRaceMod") { return {&cfg->fDunmerRaceMod}; }
+	if (a_setting == "fImperialRaceMod") { return {&cfg->fImperialRaceMod}; }
+	if (a_setting == "fKhajiitRaceMod") { return {&cfg->fKhajiitRaceMod}; }
+	if (a_setting == "fNordRaceMod") { return {&cfg->fNordRaceMod}; }
+	if (a_setting == "fOrcRaceMod") { return {&cfg->fOrcRaceMod}; }
+	if (a_setting == "fRedguardRaceMod") { return {&cfg->fRedguardRaceMod}; }
+	if (a_setting == "fDefaultRaceMod") { return {&cfg->fDefaultRaceMod}; }
+
+	if (a_setting == "fStaminaWeightMod") { return {&cfg->fStaminaWeightMod}; }
+	if (a_setting == "fWeightPerStamina") { return {&cfg->fWeightPerStamina}; }
+	if (a_setting == "fStaminaWeightRate") { return {&cfg->fStaminaWeightRate}; }
+
+	if (a_setting == "fLevelWeightMod") { return {&cfg->fLevelWeightMod}; }
+	if (a_setting == "fWeightPerLevel") { return {&cfg->fWeightPerLevel}; }
+	if (a_setting == "fLevelWeightRate") { return {&cfg->fLevelWeightRate}; }
+
+	return { nullptr };
+}
+
+uint32_t* Settings::GetUInt(const char* a_setting)
+{
+	const auto cfg = Settings::GetSingleton();
+
+	if (a_setting == "uHugeCapacity") { return {&cfg->uHugeCapacity}; }
+	if (a_setting == "uLargeCapacity") { return {&cfg->uLargeCapacity}; }
+	if (a_setting == "uAlchemyCapacity") { return {&cfg->uAlchemyCapacity}; }
+	if (a_setting == "uAmmoCapacity") { return {&cfg->uAmmoCapacity}; }
+	if (a_setting == "uCoinCapacity") { return {&cfg->uCoinCapacity}; }
+	if (a_setting == "uCoinsPerTiny") { return {&cfg->uCoinsPerTiny}; }
+
+	if (a_setting == "uBaseWeightLimit") { return {&cfg->uBaseWeightLimit}; }
+
+	if (a_setting == "uStaminaWeightPivot") { return {&cfg->uStaminaWeightPivot}; }
+
+	if (a_setting == "uLevelWeightPivot") { return {&cfg->uLevelWeightPivot}; }
+
+	return { nullptr };
+}
+*/

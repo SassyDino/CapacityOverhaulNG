@@ -2,6 +2,7 @@
 
 namespace WeightHandler
 {
+/* 	
     class Stamina
     {
 		static float playerBaseStamina;
@@ -25,6 +26,8 @@ namespace WeightHandler
 			static void GetLevelAtMaxGrad();
             static float CalculateLevelBonus();
     };
+*/
+	float GetRaceWeightMod(RE::TESRace *a_race);
 
 	void UpdateFromSettings();
 

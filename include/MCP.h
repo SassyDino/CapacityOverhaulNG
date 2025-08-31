@@ -3,6 +3,21 @@
 
 namespace GUI::MCP
 {
+	class TestSettings final : public Utils::Singleton<TestSettings>
+	{
+		public:
+			bool noHands = true;
+			bool noPickup = true;
+			bool capacitySkills = true;
+			bool capacityQuest = false;
+			bool hugeNotShared = true;
+
+			bool vanillaWeight = false;
+			bool staminaWeight = true;
+			bool levelWeight = true;
+			bool raceWeight = true;
+	};
+
 	void Register();
 
 	namespace ToggleFeatures {
@@ -18,14 +33,21 @@ namespace GUI::MCP
 	}
 
 	namespace AdvWeightConfigs {
+		static RE::PlayerCharacter *player;
+		static RE::ActorValueOwner *playerAsAV;
+		static float playerStamina;
+		static int playerLevel;
+
 		void __stdcall Render();
+		//float StaminaEquation();
+		//float LevelEquation();
 	}
 
 	namespace AdvDebug {
 		void __stdcall Render();
 	}
 
-	
+
 	
 	namespace Example4 {
 		inline std::string TitleText = "This is an " + FontAwesome::UnicodeToUtf8(0xf2b4) + " Font Awesome usage example";

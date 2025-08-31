@@ -83,32 +83,6 @@ namespace Utils
         );
     }
 
-    float GetRaceWeightMod(RE::FormID formID)
-    {
-        std::map<RE::FormID, float> raceWeightIndex {
-            {0x13743, Settings::fAltmerRaceMod}, {0x13740, Settings::fArgonianRaceMod}, {0x13749, Settings::fBosmerRaceMod},
-            {0x13741, Settings::fBretonRaceMod}, {0x13742, Settings::fDunmerRaceMod}, {0x13744, Settings::fImperialRaceMod},
-            {0x13745, Settings::fKhajiitRaceMod}, {0x13746, Settings::fNordRaceMod}, {0x13747, Settings::fOrcRaceMod},
-            {0x13748, Settings::fRedguardRaceMod}
-        };
-
-        float raceWeightMod;
-        // Fallback to default race modifier (x1) if player's race does not exist in index (to prevent custom races breaking this mod)
-        if (raceWeightIndex.at(formID)) {
-            raceWeightMod = raceWeightIndex[formID];
-            auto raceName = RE::TESRace::LookupByID(formID)->GetName();
-            logger::info("Player race identified as {}. Carry weight limit modifier = x{}", raceName, raceWeightMod);
-        } else {
-            raceWeightMod = Settings::fDefaultRaceMod;
-            logger::warn("Unable to identify player race: reverting to Default race modifier (x{}). A custom player race is the most likely cause for this warning, and if this applies to you then you may ignore this message. Otherwise, this warning may indicate an issue with the mod which you are advised to report.", raceWeightMod);
-        }
-
-        return raceWeightMod;
-        // if i need more values stored per race, maybe try something like
-        // Settings::raceIndex[formID]->WeightMod()
-        // with the index's values being classes/structs or something
-    }
-
 	void UpdateModules()
 	{
 		WeightHandler::UpdateFromSettings();

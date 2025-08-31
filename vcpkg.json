@@ -5,6 +5,7 @@
     "dependencies": [
         {"name": "commonlibsse-ng", "version>=": "3.7.0"},
         "simpleini",
-		"skse-mcp"
+		"skse-mcp",
+		"implot"
     ]
 }

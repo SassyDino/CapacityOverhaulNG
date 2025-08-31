@@ -29,9 +29,10 @@ if(DEFINED ENV{SKYRIM_MODS_FOLDER} AND IS_DIRECTORY "$ENV{SKYRIM_MODS_FOLDER}")
     set(OUTPUT_FOLDER "$ENV{SKYRIM_MODS_FOLDER}/${PROJECT_NAME}")
 endif()
 
-
-
 file(GLOB_RECURSE source_files src/*.cpp)
+
+find_package(implot CONFIG REQUIRED)
+find_package(imgui CONFIG REQUIRED)
 
 # Setup your SKSE plugin as an SKSE plugin!
 find_package(CommonLibSSE CONFIG REQUIRED)
@@ -42,6 +43,13 @@ target_include_directories(${PROJECT_NAME} PRIVATE include)
 
 find_path(SKSE_MCP_INCLUDE_DIRS "SKSEMCP/utils.hpp")
 target_include_directories(${PROJECT_NAME} PRIVATE	${SKSE_MCP_INCLUDE_DIRS})
+
+target_link_libraries(
+	${PROJECT_NAME} 
+	PRIVATE 
+		implot::implot
+		imgui::imgui
+)
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
