@@ -144,17 +144,27 @@ namespace WeightHandler
             {0x13748, "fRedguardRaceMod"}
         };
 
-		// Use default race modifier as a fallback if player's race does not exist in index (to prevent custom races breaking this mod)v
+		// Use default race modifier as a fallback if player's race does not exist in index (to prevent custom races breaking this mod)
+		logger::debug("Getting fDefaultRaceMod...");
         auto raceWeightMod = *Settings::Get<float*>("fDefaultRaceMod");
+		logger::debug("...Got fDefaultRaceMod!");
+		logger::debug("Getting player's race...");
 		auto raceID = Player::Race->GetFormID();
+		logger::debug("...Got player's race!");
         
-        if (!raceWeightIndex.at(raceID)) {
+		logger::debug("Checking if player's race is valid...");
+        if (raceWeightIndex.at(raceID)) {
+			logger::debug("...Player's race valid! Getting race weight modifier...");
             raceWeightMod = *Settings::Get<float*>(raceWeightIndex[raceID]);
+			logger::debug("...Got race modifier! Getting race name...");
             auto raceName = Player::Race->GetName();
             logger::info("Player race identified as {}. Carry weight limit modifier = x{}", raceName, raceWeightMod);
-        }
+        } else {
+			//TODO: If/when I fix whatever's broken here, move the "raceWeightMod = fDefaultRaceMod" definiton into here
+			logger::warn("Unable to identify player race: reverting to Default race modifier (x{}). A custom player race is the most likely cause for this warning, and if this applies to you then you may ignore this message. Otherwise, this warning may indicate an issue with the mod which you are advised to report.", raceWeightMod);
+		}
 
-		logger::warn("Unable to identify player race: reverting to Default race modifier (x{}). A custom player race is the most likely cause for this warning, and if this applies to you then you may ignore this message. Otherwise, this warning may indicate an issue with the mod which you are advised to report.", raceWeightMod);
+		logger::debug("...<GetRaceWeightMod()> resolved successfully! Returning raceWeightMod;");
         return { raceWeightMod };
         // if i need more values stored per race, maybe try something like
         // Settings::raceIndex[formID]->WeightMod()
@@ -170,7 +180,7 @@ namespace WeightHandler
     float CalculateWeightLimit()
     {
         float raceModifier = GetRaceWeightMod(Player::Race);	//NOTE: Could be possible to only make this fire if/when the player changes race: check out TESSwitchRaceCompleteEvent, see whether it fires even from racemenu, console etc.
-        float weightLimit = static_cast<float>(*Settings::Get<uint32_t*>("uBaseWeightLimit"));
+        float weightLimit = static_cast<float>(*Settings::Get<uint32_t*>("uBaseCarryWeight"));
 
         if (*Settings::Get<bool*>("bStaminaAffectsWeight")) {
 			weightLimit += (Calc::StaminaWeightBonus() * *Settings::Get<float*>("fStaminaWeightMod"));

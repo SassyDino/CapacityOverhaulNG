@@ -2,6 +2,7 @@
 #include "WeightHandler.h"
 #include "CapacityHandler.h"
 #include "BuffsDebuffs.h"
+#include "Player.h"
 
 namespace Events
 {

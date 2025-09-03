@@ -185,18 +185,21 @@ void Settings::ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, con
 	const char* bFound = nullptr;
 	bFound = a_ini.GetValue(a_sectionName, a_settingName);
 	if (!bFound) { return; }
-
-	auto test = get<bool*>(settingMap["bNoHandsOverCap"]);
-	*test = false;
+	std::string settingNameStr = a_settingName;
+	
+	logger::debug("Section name: Char[{}], Str[{}]", a_settingName, settingNameStr);
 
 	if (a_settingName[0] == "b"[0]) {
-		bool *settingPtr = get<bool*>(settingMap[a_settingName]);
+		logger::debug("Setting = bool");
+		bool *settingPtr = get<bool*>(settingMap[settingNameStr]);
 		*settingPtr = a_ini.GetBoolValue(a_sectionName, a_settingName);
 	} else if (a_settingName[0] == "f"[0]) {
-		float *settingPtr = get<float*>(settingMap[a_settingName]);
+		logger::debug("Setting = float");
+		float *settingPtr = get<float*>(settingMap[settingNameStr]);
 		*settingPtr = static_cast<float>(a_ini.GetDoubleValue(a_sectionName, a_settingName));
 	} else if (a_settingName[0] == "u"[0]) {
-		uint32_t *settingPtr = get<uint32_t*>(settingMap[a_settingName]);
+		logger::debug("Setting = uint32_t");
+		uint32_t *settingPtr = get<uint32_t*>(settingMap[settingNameStr]);
 		*settingPtr = static_cast<uint32_t>(a_ini.GetLongValue(a_sectionName, a_settingName));
 	}
 }

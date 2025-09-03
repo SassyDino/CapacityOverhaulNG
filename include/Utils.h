@@ -20,6 +20,8 @@ namespace Utils
 		const RE::CharEvent* AsCharEvent(RE::InputEvent *a_event) const;
 	};
 
+	void MessageListener(SKSE::MessagingInterface::Message* message);
+
 	template <class T>
 	class Singleton
 	{

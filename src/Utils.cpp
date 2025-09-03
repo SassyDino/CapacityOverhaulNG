@@ -2,6 +2,7 @@
 #include "Utils.h"
 #include "WeightHandler.h"
 #include "CapacityHandler.h"
+#include "Player.h"
 
 namespace Utils
 {   
@@ -49,6 +50,8 @@ namespace Utils
         spdlog::set_default_logger(std::move(loggerPtr));
         spdlog::set_level(spdlog::level::trace);
         spdlog::flush_on(spdlog::level::trace);
+
+		logger::info("Logger initialised successfully!");
     }
 
     void LogIniError(const char* iniKey) 
@@ -123,5 +126,19 @@ namespace Utils
 			return static_cast<const RE::CharEvent*>(a_event);
 		}
 		return nullptr;
+	}
+
+	void MessageListener(SKSE::MessagingInterface::Message* message) {
+		switch (message->type) {
+			case SKSE::MessagingInterface::kDataLoaded:
+				logger::info("MessagingInterface::kDataLoaded");
+				Player::Char = RE::PlayerCharacter::GetSingleton();
+				Player::AsAV = Player::Char->AsActorValueOwner();
+				Player::Race = Player::Char->GetRace();
+				
+				break;
+			default:
+				break;
+		}
 	}
 }

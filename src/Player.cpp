@@ -5,11 +5,11 @@ float Player::StamPermAV;
 float Player::StamAV;
 int Player::Level;
 
-RE::PlayerCharacter* Player::Char = RE::PlayerCharacter::GetSingleton();
-RE::ActorValueOwner* Player::AsAV = Player::Char->AsActorValueOwner();
+RE::PlayerCharacter* Player::Char;
+RE::ActorValueOwner* Player::AsAV;
 
 int Player::ID = 0x14;
-RE::TESRace* Player::Race = Player::Char->GetRace();
+RE::TESRace* Player::Race;
 float Player::BaseStam = 100;
 float Player::StamAtMaxGrad;
 float Player::LevelAtMaxGrad;
@@ -79,7 +79,7 @@ void Player::UpdateLevelAtMaxGrad(float a_rate, uint32_t a_pivot)
 
 void Player::UpdateLevelAtMaxGrad()
 {
-	float rate = *Settings::Get<float*>("flevelWeightRate");
+	float rate = *Settings::Get<float*>("fLevelWeightRate");
 	uint32_t pivot = *Settings::Get<uint32_t*>("uLevelWeightPivot");
 
 	UpdateLevelAtMaxGrad(rate, pivot);

@@ -44,7 +44,7 @@ float Calc::GradientAtStamina(float stamVal, float a_rate, uint32_t a_pivot)
 
 float Calc::LevelWeightBonus(float a_Lvl, float maxGradLvl)
 {
-	float rate = *Settings::Get<float*>("flevelWeightRate");
+	float rate = *Settings::Get<float*>("fLevelWeightRate");
 	uint32_t pivot = *Settings::Get<uint32_t*>("uLevelWeightPivot");
 
 	float eq1;
