@@ -44,7 +44,7 @@ void __stdcall GUI::MCP::CapacityConfigs::Render()
 	//TODO: Provide options to enable/disable misc categories
 	//TODO: Also need to see if i can step the sliders, e.g. increment 5 or 10 per step
 	MCP_API::SeparatorText("Category Capacities");
-	MCP_API::SliderInt("Huge Items", (int*)(Settings::Get<float*>("uHugeCapacity")), 1, 10);
+	MCP_API::SliderInt("Huge Items", (int*)(Settings::Get<uint32_t*>("uHugeCapacity")), 1, 10);
 	MCP_API::Checkbox("Huge Items Share Storage Space With Other Items", Settings::Get<bool*>("bHugeCapacityShared"));
 	//TODO: Need to make availability of large items slide conditional based on above setting
 	MCP_API::SliderInt("Large Items", (int*)(Settings::Get<uint32_t*>("uLargeCapacity")), 1, 25);
@@ -97,30 +97,38 @@ void __stdcall GUI::MCP::WeightConfigs::Render()
 
 void __stdcall GUI::MCP::AdvWeightConfigs::Render()
 {
-	MCP_API::SeparatorText("Configure Advanced Carry Weight Calculation Parameters");
-	MCP_API::SliderInt("Stamina Bonus Pivot", (int*)(Settings::Get<uint32_t*>("uStaminaWeightPivot")), 10, 500);
-	MCP_API::SliderFloat("Stamina Bonus Growth Rate", Settings::Get<float*>("fStaminaWeightRate"), -1, 0.99);
-	MCP_API::SliderInt("Level Bonus Pivot", (int*)(Settings::Get<uint32_t*>("uLevelWeightPivot")), 10, 250);
-	MCP_API::SliderFloat("Level Bonus Growth Rate", Settings::Get<float*>("fLevelWeightRate"), -1, 0.99);
-	
+	static float stamRateTemp = *Settings::Get<float*>("fStaminaWeightRate");
+	static int stamPivotTemp = *Settings::Get<uint32_t*>("uStaminaWeightPivot");
+	static float lvlRateTemp = *Settings::Get<float*>("fLevelWeightRate");
+	static int lvlPivotTemp = *Settings::Get<uint32_t*>("uLevelWeightPivot");
+	static uint32_t baseCarryTemp = *Settings::Get<uint32_t*>("uBaseCarryWeight");
+
+	static float maxGradStam = Player::CalcStamAtMaxGrad(stamRateTemp, stamPivotTemp, baseCarryTemp);
+	static float maxGradLvl = Player::CalcLevelAtMaxGrad(lvlRateTemp, lvlPivotTemp, baseCarryTemp);
+	static int stamMaxX = 500;
+	static int lvlMaxX = 250;
+
 	struct Funcs
 	{
-		static float StamBonus(void*, int i) { return 
-			Calc::StaminaWeightBonus(i, 
-			Player::UpdateAndGetStamAtMaxGrad(*Settings::Get<float*>("fStaminaWeightRate"), *Settings::Get<uint32_t*>("uStaminaWeightPivot"))); 
+		static float StamBonus(void*, int i) {
+			return Calc::StaminaWeightBonus(i, stamRateTemp, stamPivotTemp, baseCarryTemp, maxGradStam);
+		}
+		static float LvlBonus(void*, int i) {
+			return Calc::LevelWeightBonus(i, lvlRateTemp, lvlPivotTemp, baseCarryTemp, maxGradLvl);
 		}
 	};
 
-	float (*func)(void*, int) = Funcs::StamBonus;
-	MCP_API::PlotLines("Stamina Bonus", func, NULL, 500, 0, NULL, 0.0f, 1000.0f, SKSEMenuFramework::ImVec2(0, 80));
+	MCP_API::SeparatorText("Configure Advanced Carry Weight Calculation Parameters");
 
-	/*
-	static MCP_API::ImS8 data[10] = {1,2,3,4,5,6,7,8,9,10};
-	if (ImPlot::BeginPlot("Bar Plot")) {
-		ImPlot::PlotBars("Vertical", data, 10, 0.7, 1);
-		ImPlot::EndPlot();
-	}
-	*/
+	MCP_API::SliderFloat("Stamina Bonus Growth Rate", &stamRateTemp, -1.0f, 0.99f);
+	MCP_API::SliderInt("Stamina Bonus Pivot", &stamPivotTemp, 10, 500);
+	float (*func1)(void*, int) = Funcs::StamBonus;
+	MCP_API::PlotLines("Stamina Bonus", func1, NULL, stamMaxX, 0, NULL, 0.0f, 1000.0f, SKSEMenuFramework::ImVec2(0, 320));
+
+	MCP_API::SliderFloat("Level Bonus Growth Rate", &lvlRateTemp, -1.0f, 0.99f);
+	MCP_API::SliderInt("Level Bonus Pivot", &lvlPivotTemp, 10, 250);
+	float (*func2)(void*, int) = Funcs::LvlBonus;
+	MCP_API::PlotLines("Level Bonus", func2, NULL, lvlMaxX, 0, NULL, 0.0f, 1000.0f, SKSEMenuFramework::ImVec2(0, 320));
 }
 
 

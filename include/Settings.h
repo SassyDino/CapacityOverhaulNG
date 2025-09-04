@@ -166,37 +166,14 @@ class Settings final : public Utils::Singleton<Settings>
 		template <typename T> 
 		static T Get(std::string a_settingName)
 		{
-			SKSE::log::debug("Function <Settings::Get()> called -> Getting setting [{}]...", a_settingName);
-			//if (settingMap.at(a_settingName) == false) { SKSE::log::error(">>> INVALID SETTING KEY!!! <<<"); }
-
 			T setting;
 			if constexpr (std::is_same_v<T, bool*> || std::is_same_v<T, float*> || std::is_same_v<T, uint32_t*>) {
-				
-				SKSE::log::debug("...'if' condition met (T == type*)...");
-				if (std::holds_alternative<bool*>(settingMap[a_settingName])) { SKSE::log::debug("HOLDS ALT = <bool*> [index={}]", settingMap[a_settingName].index()); }
-				if (std::holds_alternative<float*>(settingMap[a_settingName])) { SKSE::log::debug("HOLDS ALT = <float*> [index={}]", settingMap[a_settingName].index()); }
-				if (std::holds_alternative<uint32_t*>(settingMap[a_settingName])) { SKSE::log::debug("HOLDS ALT = <uint32_t*> [index={}]", settingMap[a_settingName].index()); }
-				
-				SKSE::log::debug("...Attempting to obtain setting value...");
 				setting = get<T>(settingMap[a_settingName]);
-				SKSE::log::debug("...Setting value found...");
-
 			} else if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, float> || std::is_same_v<T, uint32_t>) {
-
-				SKSE::log::debug("...'else if' condition met (T == type)...");
-				if (std::holds_alternative<bool>(settingMap[a_settingName])) { SKSE::log::debug("HOLDS ALT = <bool> [index={}]", settingMap[a_settingName].index()); }
-				if (std::holds_alternative<float>(settingMap[a_settingName])) { SKSE::log::debug("HOLDS ALT = <float> [index={}]", settingMap[a_settingName].index()); }
-				if (std::holds_alternative<uint32_t>(settingMap[a_settingName])) { SKSE::log::debug("HOLDS ALT = <uint32_t> [index={}]", settingMap[a_settingName].index()); }
-
-				SKSE::log::debug("...Attempting to obtain setting value...");
 				setting = *get<T*>(settingMap[a_settingName]);
-				SKSE::log::debug("...Setting value found...");
-
 			} else {
 				SKSE::log::error("Provided [Settings::<type>Get()] type did not match either valid condition set.");
 			}
-			
-			SKSE::log::debug("...Returning found setting value...");
 			return { setting };
 		}
 };

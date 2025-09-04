@@ -26,11 +26,9 @@ class Player
 		static float GetStamAV();
 		static float UpdateAndGetStamAV();
 
-		static void UpdateStamAtMaxGrad(float a_rate, uint32_t a_pivot);
+		static float CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry);
 		static void UpdateStamAtMaxGrad();
-		static float UpdateAndGetStamAtMaxGrad(float a_rate, uint32_t a_pivot);
 
-
-		static void UpdateLevelAtMaxGrad(float a_rate, uint32_t a_pivot);
+		static float CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry);
 		static void UpdateLevelAtMaxGrad();
 };

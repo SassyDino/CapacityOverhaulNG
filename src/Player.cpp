@@ -44,7 +44,7 @@ float Player::UpdateAndGetStamAV()
 	return { StamAV };
 }
 
-void Player::UpdateStamAtMaxGrad(float a_rate, uint32_t a_pivot)
+float Player::CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
 {
 	static float sqrt2 = float(sqrt(2));
 
@@ -52,35 +52,33 @@ void Player::UpdateStamAtMaxGrad(float a_rate, uint32_t a_pivot)
 	float peakStam2 = (20 * sqrt2 * a_rate) + (20 * sqrt2 * a_pivot);
 	float peakStam3 = 20 * sqrt2 * a_rate;
 
-	StamAtMaxGrad = floor(((sqrt(*Settings::Get<uint32_t*>("uBaseCarryWeight") * peakStam1) - peakStam2) / peakStam3) + Player::BaseStam);
+	float peakStam = floor(((sqrt(*Settings::Get<uint32_t*>("uBaseCarryWeight") * peakStam1) - peakStam2) / peakStam3) + Player::BaseStam);
+	return { peakStam };
 }
 
 void Player::UpdateStamAtMaxGrad()
 {
 	float rate = *Settings::Get<float*>("fStaminaWeightRate");
 	uint32_t pivot = *Settings::Get<uint32_t*>("uStaminaWeightPivot");
+	uint32_t baseCarry = *Settings::Get<uint32_t*>("uBaseCarryWeight");
 
-	UpdateStamAtMaxGrad(rate, pivot);
+	StamAtMaxGrad = CalcStamAtMaxGrad(rate, pivot, baseCarry);
 }
 
-float Player::UpdateAndGetStamAtMaxGrad(float a_rate, uint32_t a_pivot)
+float Player::CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
 {
-	UpdateStamAtMaxGrad(a_rate, a_pivot);
-	return { StamAtMaxGrad };
-}
-
-void Player::UpdateLevelAtMaxGrad(float a_rate, uint32_t a_pivot)
-{
-	float peakLvl1 = *Settings::Get<uint32_t*>("uBaseCarryWeight") * (1 - a_rate) * (a_rate + a_pivot);
+	float peakLvl1 = baseCarry * (1 - a_rate) * (a_rate + a_pivot);
 	float peakLvl2 = (20 * a_rate) + (20 * a_pivot);
 
-	LevelAtMaxGrad = floor(-((sqrt(peakLvl1) - peakLvl2) / (20 * a_rate)));
+	float peakLvl = floor(-((sqrt(peakLvl1) - peakLvl2) / (20 * a_rate)));
+	return { peakLvl };
 }
 
 void Player::UpdateLevelAtMaxGrad()
 {
 	float rate = *Settings::Get<float*>("fLevelWeightRate");
 	uint32_t pivot = *Settings::Get<uint32_t*>("uLevelWeightPivot");
+	uint32_t baseCarry = *Settings::Get<uint32_t*>("uBaseCarryWeight");
 
-	UpdateLevelAtMaxGrad(rate, pivot);
+	LevelAtMaxGrad = CalcLevelAtMaxGrad(rate, pivot, baseCarry);
 }

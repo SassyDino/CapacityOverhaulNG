@@ -183,10 +183,10 @@ namespace WeightHandler
         float weightLimit = static_cast<float>(*Settings::Get<uint32_t*>("uBaseCarryWeight"));
 
         if (*Settings::Get<bool*>("bStaminaAffectsWeight")) {
-			weightLimit += (Calc::StaminaWeightBonus() * *Settings::Get<float*>("fStaminaWeightMod"));
+			weightLimit += (Calc::StaminaWeightBonusCurrent() * *Settings::Get<float*>("fStaminaWeightMod"));
 		}
         if (*Settings::Get<bool*>("bLevelAffectsWeight")) {
-			weightLimit += (Calc::LevelWeightBonus() * *Settings::Get<float*>("fLevelWeightMod"));
+			weightLimit += (Calc::LevelWeightBonusCurrent() * *Settings::Get<float*>("fLevelWeightMod"));
 		}
         if (*Settings::Get<bool*>("bRaceAffectsWeight")) {
 			weightLimit *= raceModifier;
