@@ -1,7 +1,10 @@
+const char *Settings::defaultPath = "Data/MCM/Config/CapacityOverhaulNG/settings.ini";
+const char *Settings::userPath = "Data/MCM/Settings/CapacityOverhaulNG.ini";
+
 void Settings::Init()
 {   
-    constexpr auto defaultPath = L"Data/MCM/Config/CapacityOverhaulNG/settings.ini";
-    constexpr auto mcmPath = L"Data/MCM/Settings/CapacityOverhaulNG.ini";
+    //constexpr auto defaultPath = L"Data/MCM/Config/CapacityOverhaulNG/settings.ini";
+    //constexpr auto mcmPath = L"Data/MCM/Settings/CapacityOverhaulNG.ini";
     bool validSettings;
 
     logger::info("Initialising settings");
@@ -11,7 +14,7 @@ void Settings::Init()
     logger::info("...done");
 
     logger::info("Loading user settings...");
-    Load(mcmPath);
+    Load(userPath);
     logger::info("...done");
 
     logger::info("Validating settings...");
@@ -186,20 +189,15 @@ void Settings::ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, con
 	bFound = a_ini.GetValue(a_sectionName, a_settingName);
 	if (!bFound) { return; }
 	std::string settingNameStr = a_settingName;
-	
-	logger::debug("Section name: Char[{}], Str[{}]", a_settingName, settingNameStr);
 
 	if (a_settingName[0] == "b"[0]) {
-		logger::debug("Setting = bool");
-		bool *settingPtr = get<bool*>(settingMap[settingNameStr]);
+		bool *settingPtr = get<bool*>(settingMap[settingNameStr].first);
 		*settingPtr = a_ini.GetBoolValue(a_sectionName, a_settingName);
 	} else if (a_settingName[0] == "f"[0]) {
-		logger::debug("Setting = float");
-		float *settingPtr = get<float*>(settingMap[settingNameStr]);
+		float *settingPtr = get<float*>(settingMap[settingNameStr].first);
 		*settingPtr = static_cast<float>(a_ini.GetDoubleValue(a_sectionName, a_settingName));
 	} else if (a_settingName[0] == "u"[0]) {
-		logger::debug("Setting = uint32_t");
-		uint32_t *settingPtr = get<uint32_t*>(settingMap[settingNameStr]);
+		uint32_t *settingPtr = get<uint32_t*>(settingMap[settingNameStr].first);
 		*settingPtr = static_cast<uint32_t>(a_ini.GetLongValue(a_sectionName, a_settingName));
 	}
 }
@@ -228,87 +226,38 @@ void Settings::Load(std::filesystem::path path)
     globalEquipLog = bLogEquipEvents && !bLogOnlyPlayerEquipEvents;
     playerEquipLogOnly = bLogEquipEvents && bLogOnlyPlayerEquipEvents;
 }
-/*
-bool* Settings::GetBool(const char* a_setting)
+
+void Settings::WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> a_settingEntry)
 {
-	const auto cfg = Settings::GetSingleton();
-
-	if (a_setting == "bNoHandsOverCap") { return {&cfg->bNoHandsOverCap}; }
-	if (a_setting == "bPreventPickupOverCap") { return {&cfg->bPreventPickupOverCap}; }
-	if (a_setting == "bSkillsAffectCapacity") { return {&cfg->bSkillsAffectCapacity}; }
-	if (a_setting == "bQuestItemsAffectCapacity") { return {&cfg->bQuestItemsAffectCapacity}; }
-
-	if (a_setting == "bVanillaWeightLimit") { return {&cfg->bVanillaWeightLimit}; }
-	if (a_setting == "bStaminaAffectsWeight") { return {&cfg->bStaminaAffectsWeight}; }
-	if (a_setting == "bLevelAffectsWeight") { return {&cfg->bLevelAffectsWeight}; }
-	if (a_setting == "bRaceAffectsWeight") { return {&cfg->bRaceAffectsWeight}; }
-
-	if (a_setting == "bHugeCapacityShared") { return {&cfg->bHugeCapacityShared}; }
-
-	if (a_setting == "bModEnabled") { return {&cfg->bModEnabled}; }
-
-	if (a_setting == "bTempStaminaAddsWeight") { return {&cfg->bTempStaminaAddsWeight}; }
-	if (a_setting == "bStaminaWeightSimple") { return {&cfg->bStaminaWeightSimple}; }
-
-	if (a_setting == "bLevelWeightSimple") { return {&cfg->bLevelWeightSimple}; }
-
-	return { nullptr };
+	auto settingKey = a_settingEntry.first.c_str();
+	auto section = a_settingEntry.second.second.c_str();
+	if (settingKey == "b") {
+		auto settingVal = *get<bool*>(a_settingEntry.second.first);
+		a_ini.SetBoolValue(section, settingKey, settingVal);
+	} else if (settingKey == "f") {
+		auto settingVal = *get<float*>(a_settingEntry.second.first);
+		a_ini.SetDoubleValue(section, settingKey, settingVal);
+	} else if (settingKey == "u") {
+		auto settingVal = *get<uint32_t*>(a_settingEntry.second.first);
+		a_ini.SetLongValue(section, settingKey, settingVal);
+	} else {
+		logger::error("WriteIniSetting failed on setting [{}]: Invalid datatype key (setting name must begin with 'b', 'f', or 'u')", settingKey);
+	}
 }
 
-float* Settings::GetFloat(const char* a_setting)
+void Settings::SaveToFile(const char *path)
 {
-	const auto cfg = Settings::GetSingleton();
+	logger::info("Saving settings to ini configuration file...");
+	CSimpleIniA ini;
+    ini.SetUnicode();
+	ini.LoadFile(path);
+	ini.Reset();
 
-	if (a_setting == "fLargePerHuge") { return {&cfg->fLargePerHuge}; }
-	if (a_setting == "fMediumPerLarge") { return {&cfg->fMediumPerLarge}; }
-	if (a_setting == "fSmallPerMedium") { return {&cfg->fSmallPerMedium}; }
-	if (a_setting == "fTinyPerSmall") { return {&cfg->fTinyPerSmall}; }
+	for (auto it = settingMap.begin(); it != settingMap.end(); it++) {
+		std::pair settingEntry = {it->first, it->second};
+		WriteIniSetting(ini, settingEntry);
+	}
 
-	if (a_setting == "fHugeItemWeight") { return {&cfg->fHugeItemWeight}; }
-	if (a_setting == "fLargeItemWeight") { return {&cfg->fLargeItemWeight}; }
-	if (a_setting == "fMediumItemWeight") { return {&cfg->fMediumItemWeight}; }
-	if (a_setting == "fSmallItemWeight") { return {&cfg->fSmallItemWeight}; }
-	
-	if (a_setting == "fAltmerRaceMod") { return {&cfg->fAltmerRaceMod}; }
-	if (a_setting == "fArgonianRaceMod") { return {&cfg->fArgonianRaceMod}; }
-	if (a_setting == "fBosmerRaceMod") { return {&cfg->fBosmerRaceMod}; }
-	if (a_setting == "fBretonRaceMod") { return {&cfg->fBretonRaceMod}; }
-	if (a_setting == "fDunmerRaceMod") { return {&cfg->fDunmerRaceMod}; }
-	if (a_setting == "fImperialRaceMod") { return {&cfg->fImperialRaceMod}; }
-	if (a_setting == "fKhajiitRaceMod") { return {&cfg->fKhajiitRaceMod}; }
-	if (a_setting == "fNordRaceMod") { return {&cfg->fNordRaceMod}; }
-	if (a_setting == "fOrcRaceMod") { return {&cfg->fOrcRaceMod}; }
-	if (a_setting == "fRedguardRaceMod") { return {&cfg->fRedguardRaceMod}; }
-	if (a_setting == "fDefaultRaceMod") { return {&cfg->fDefaultRaceMod}; }
-
-	if (a_setting == "fStaminaWeightMod") { return {&cfg->fStaminaWeightMod}; }
-	if (a_setting == "fWeightPerStamina") { return {&cfg->fWeightPerStamina}; }
-	if (a_setting == "fStaminaWeightRate") { return {&cfg->fStaminaWeightRate}; }
-
-	if (a_setting == "fLevelWeightMod") { return {&cfg->fLevelWeightMod}; }
-	if (a_setting == "fWeightPerLevel") { return {&cfg->fWeightPerLevel}; }
-	if (a_setting == "fLevelWeightRate") { return {&cfg->fLevelWeightRate}; }
-
-	return { nullptr };
+	ini.SaveFile(path);
+	logger::info("...Configuration file saved!");
 }
-
-uint32_t* Settings::GetUInt(const char* a_setting)
-{
-	const auto cfg = Settings::GetSingleton();
-
-	if (a_setting == "uHugeCapacity") { return {&cfg->uHugeCapacity}; }
-	if (a_setting == "uLargeCapacity") { return {&cfg->uLargeCapacity}; }
-	if (a_setting == "uAlchemyCapacity") { return {&cfg->uAlchemyCapacity}; }
-	if (a_setting == "uAmmoCapacity") { return {&cfg->uAmmoCapacity}; }
-	if (a_setting == "uCoinCapacity") { return {&cfg->uCoinCapacity}; }
-	if (a_setting == "uCoinsPerTiny") { return {&cfg->uCoinsPerTiny}; }
-
-	if (a_setting == "uBaseWeightLimit") { return {&cfg->uBaseWeightLimit}; }
-
-	if (a_setting == "uStaminaWeightPivot") { return {&cfg->uStaminaWeightPivot}; }
-
-	if (a_setting == "uLevelWeightPivot") { return {&cfg->uLevelWeightPivot}; }
-
-	return { nullptr };
-}
-*/

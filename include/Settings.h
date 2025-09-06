@@ -3,6 +3,9 @@
 
 class Settings final : public Utils::Singleton<Settings>
 {
+	static const char *defaultPath;
+    static const char *userPath;
+
 	// Toggle features
 	static inline bool		bNoHandsOverCap{true};
 	static inline bool		bPreventPickupOverCap{true};
@@ -14,7 +17,7 @@ class Settings final : public Utils::Singleton<Settings>
 	static inline bool		bLevelAffectsWeight{true};
 	static inline bool		bRaceAffectsWeight{true};
 	
-	// Base value modifiers
+	// Capacity settings
 	static inline bool		bHugeCapacityShared{false};
 	static inline uint32_t	uHugeCapacity{1};
 	static inline uint32_t	uLargeCapacity{5};
@@ -89,67 +92,66 @@ class Settings final : public Utils::Singleton<Settings>
 
 	static inline uint32_t uTestSetting{69};
 
-	static inline std::unordered_map <std::string, std::variant<bool*, float*, uint32_t*>> settingMap = {
-		{"bNoHandsOverCap", &bNoHandsOverCap}, 
-		{"bPreventPickupOverCap", &bPreventPickupOverCap},
-		{"bPreventPickupOverCap", &bPreventPickupOverCap},
-		{"bSkillsAffectCapacity", &bSkillsAffectCapacity},
-		{"bQuestItemsAffectCapacity", &bQuestItemsAffectCapacity},
-		{"bVanillaWeightLimit", &bVanillaWeightLimit},
-		{"bStaminaAffectsWeight", &bStaminaAffectsWeight},
-		{"bLevelAffectsWeight", &bLevelAffectsWeight},
-		{"bRaceAffectsWeight", &bRaceAffectsWeight},
-		{"bHugeCapacityShared", &bHugeCapacityShared},
-		{"uHugeCapacity", &uHugeCapacity},
-		{"uLargeCapacity", &uLargeCapacity},
-		{"fLargePerHuge", &fLargePerHuge},
-		{"fMediumPerLarge", &fMediumPerLarge},
-		{"fSmallPerMedium", &fSmallPerMedium},
-		{"fTinyPerSmall", &fTinyPerSmall},
-		{"uAlchemyCapacity", &uAlchemyCapacity},
-		{"uAmmoCapacity", &uAmmoCapacity},
-		{"uCoinCapacity", &uCoinCapacity},
-		{"uCoinsPerTiny", &uCoinsPerTiny},
-		{"fHugeItemWeight", &fHugeItemWeight},
-		{"fLargeItemWeight", &fLargeItemWeight},
-		{"fMediumItemWeight", &fMediumItemWeight},
-		{"fSmallItemWeight", &fSmallItemWeight},
-		{"bWeightAffectsSpeed", &bWeightAffectsSpeed},
-		{"bWeightAffectsCombat", &bWeightAffectsCombat},
-		{"bWeightAffectsStealth", &bWeightAffectsStealth},
-		{"bWeightAffectsStamDrain", &bWeightAffectsStamDrain},
-		{"bWeightAffectsStamRegen", &bWeightAffectsStamRegen},
-		{"bModEnabled", &bModEnabled},
-		{"bLogContainerEvents", &bLogContainerEvents},
-		{"bLogOnlyPlayerContainerEvents", &bLogOnlyPlayerContainerEvents},
-		{"bLogLoadEvents", &bLogLoadEvents},
-		{"bLogMenuEvents", &bLogMenuEvents},
-		{"bLogOnlyRelevantMenuEvents", &bLogOnlyRelevantMenuEvents},
-		{"bLogEquipEvents", &bLogEquipEvents},
-		{"bLogOnlyPlayerEquipEvents", &bLogOnlyPlayerEquipEvents},
-		{"uBaseCarryWeight", &uBaseCarryWeight},
-		{"fDefaultRaceMod", &fDefaultRaceMod},
-		{"fAltmerRaceMod", &fAltmerRaceMod},
-		{"fArgonianRaceMod", &fArgonianRaceMod},
-		{"fBosmerRaceMod", &fBosmerRaceMod},
-		{"fBretonRaceMod", &fBretonRaceMod},
-		{"fDunmerRaceMod", &fDunmerRaceMod},
-		{"fImperialRaceMod", &fImperialRaceMod},
-		{"fKhajiitRaceMod", &fKhajiitRaceMod},
-		{"fNordRaceMod", &fNordRaceMod},
-		{"fOrcRaceMod", &fOrcRaceMod},
-		{"fRedguardRaceMod", &fRedguardRaceMod},
-		{"fStaminaWeightMod", &fStaminaWeightMod},
-		{"bTempStaminaAddsWeight", &bTempStaminaAddsWeight},
-		{"bStaminaWeightSimple", &bStaminaWeightSimple},
-		{"fWeightPerStamina", &fWeightPerStamina},
-		{"fStaminaWeightRate", &fStaminaWeightRate},
-		{"uStaminaWeightPivot", &uStaminaWeightPivot},
-		{"fLevelWeightMod", &fLevelWeightMod},
-		{"bLevelWeightSimple", &bLevelWeightSimple},
-		{"fWeightPerLevel", &fWeightPerLevel},
-		{"fLevelWeightRate", &fLevelWeightRate},
-		{"uLevelWeightPivot", &uLevelWeightPivot}
+	static inline std::unordered_map <std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> settingMap = {
+		{"bNoHandsOverCap", {&bNoHandsOverCap, "ToggleFeatures"}},
+		{"bPreventPickupOverCap", {&bPreventPickupOverCap, "ToggleFeatures"}},
+		{"bSkillsAffectCapacity", {&bSkillsAffectCapacity, "ToggleFeatures"}},
+		{"bQuestItemsAffectCapacity", {&bQuestItemsAffectCapacity, "ToggleFeatures"}},
+		{"bVanillaWeightLimit", {&bVanillaWeightLimit, "ToggleFeatures"}},
+		{"bStaminaAffectsWeight", {&bStaminaAffectsWeight, "ToggleFeatures"}},
+		{"bLevelAffectsWeight", {&bLevelAffectsWeight, "ToggleFeatures"}},
+		{"bRaceAffectsWeight", {&bRaceAffectsWeight, "ToggleFeatures"}},
+		{"bHugeCapacityShared", {&bHugeCapacityShared, "CapacitySettings"}},
+		{"uHugeCapacity", {&uHugeCapacity, "CapacitySettings"}},
+		{"uLargeCapacity", {&uLargeCapacity, "CapacitySettings"}},
+		{"fLargePerHuge", {&fLargePerHuge, "CapacitySettings"}},
+		{"fMediumPerLarge", {&fMediumPerLarge, "CapacitySettings"}},
+		{"fSmallPerMedium", {&fSmallPerMedium, "CapacitySettings"}},
+		{"fTinyPerSmall", {&fTinyPerSmall, "CapacitySettings"}},
+		{"uAlchemyCapacity", {&uAlchemyCapacity, "CapacitySettings"}},
+		{"uAmmoCapacity", {&uAmmoCapacity, "CapacitySettings"}},
+		{"uCoinCapacity", {&uCoinCapacity, "CapacitySettings"}},
+		{"uCoinsPerTiny", {&uCoinsPerTiny, "CapacitySettings"}},
+		{"fHugeItemWeight", {&fHugeItemWeight, "CapacitySettings"}},
+		{"fLargeItemWeight", {&fLargeItemWeight, "CapacitySettings"}},
+		{"fMediumItemWeight", {&fMediumItemWeight, "CapacitySettings"}},
+		{"fSmallItemWeight", {&fSmallItemWeight, "CapacitySettings"}},
+		{"bWeightAffectsSpeed", {&bWeightAffectsSpeed, "BuffsDebuffs"}},
+		{"bWeightAffectsCombat", {&bWeightAffectsCombat, "BuffsDebuffs"}},
+		{"bWeightAffectsStealth", {&bWeightAffectsStealth, "BuffsDebuffs"}},
+		{"bWeightAffectsStamDrain", {&bWeightAffectsStamDrain, "BuffsDebuffs"}},
+		{"bWeightAffectsStamRegen", {&bWeightAffectsStamRegen, "BuffsDebuffs"}},
+		{"bModEnabled", {&bModEnabled, "Debug"}},
+		{"bLogContainerEvents", {&bLogContainerEvents, "Debug"}},
+		{"bLogOnlyPlayerContainerEvents", {&bLogOnlyPlayerContainerEvents, "Debug"}},
+		{"bLogLoadEvents", {&bLogLoadEvents, "Debug"}},
+		{"bLogMenuEvents", {&bLogMenuEvents, "Debug"}},
+		{"bLogOnlyRelevantMenuEvents", {&bLogOnlyRelevantMenuEvents, "Debug"}},
+		{"bLogEquipEvents", {&bLogEquipEvents, "Debug"}},
+		{"bLogOnlyPlayerEquipEvents", {&bLogOnlyPlayerEquipEvents, "Debug"}},
+		{"uBaseCarryWeight", {&uBaseCarryWeight, "WeightModifiers"}},
+		{"fDefaultRaceMod", {&fDefaultRaceMod, "WeightModifiers"}},
+		{"fAltmerRaceMod", {&fAltmerRaceMod, "WeightModifiers"}},
+		{"fArgonianRaceMod", {&fArgonianRaceMod, "WeightModifiers"}},
+		{"fBosmerRaceMod", {&fBosmerRaceMod, "WeightModifiers"}},
+		{"fBretonRaceMod", {&fBretonRaceMod, "WeightModifiers"}},
+		{"fDunmerRaceMod", {&fDunmerRaceMod, "WeightModifiers"}},
+		{"fImperialRaceMod", {&fImperialRaceMod, "WeightModifiers"}},
+		{"fKhajiitRaceMod", {&fKhajiitRaceMod, "WeightModifiers"}},
+		{"fNordRaceMod", {&fNordRaceMod, "WeightModifiers"}},
+		{"fOrcRaceMod", {&fOrcRaceMod, "WeightModifiers"}},
+		{"fRedguardRaceMod", {&fRedguardRaceMod, "WeightModifiers"}},
+		{"fStaminaWeightMod", {&fStaminaWeightMod, "WeightModifiers"}},
+		{"bTempStaminaAddsWeight", {&bTempStaminaAddsWeight, "WeightModifiers"}},
+		{"bStaminaWeightSimple", {&bStaminaWeightSimple, "WeightModifiers"}},
+		{"fWeightPerStamina", {&fWeightPerStamina, "WeightModifiers"}},
+		{"fStaminaWeightRate", {&fStaminaWeightRate, "WeightModifiers"}},
+		{"uStaminaWeightPivot", {&uStaminaWeightPivot, "WeightModifiers"}},
+		{"fLevelWeightMod", {&fLevelWeightMod, "WeightModifiers"}},
+		{"bLevelWeightSimple", {&bLevelWeightSimple, "WeightModifiers"}},
+		{"fWeightPerLevel", {&fWeightPerLevel, "WeightModifiers"}},
+		{"fLevelWeightRate", {&fLevelWeightRate, "WeightModifiers"}},
+		{"uLevelWeightPivot", {&uLevelWeightPivot, "WeightModifiers"}}
 	};
 
 	static void ReadBool(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, bool& a_setting);
@@ -157,20 +159,22 @@ class Settings final : public Utils::Singleton<Settings>
 	static void ReadUInt32(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, uint32_t& a_setting);
 
 	static void ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName);
+	static void WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> a_settingEntry);
 
 	public:
 		static void Init();
 		static void Load(std::filesystem::path path);
 		static bool Validate();
+		static void SaveToFile(const char *path);
 
 		template <typename T> 
 		static T Get(std::string a_settingName)
 		{
 			T setting;
 			if constexpr (std::is_same_v<T, bool*> || std::is_same_v<T, float*> || std::is_same_v<T, uint32_t*>) {
-				setting = get<T>(settingMap[a_settingName]);
+				setting = get<T>(settingMap[a_settingName].first);
 			} else if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, float> || std::is_same_v<T, uint32_t>) {
-				setting = *get<T*>(settingMap[a_settingName]);
+				setting = *get<T*>(settingMap[a_settingName].first);
 			} else {
 				SKSE::log::error("Provided [Settings::<type>Get()] type did not match either valid condition set.");
 			}
