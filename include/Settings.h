@@ -3,9 +3,6 @@
 
 class Settings final : public Utils::Singleton<Settings>
 {
-	static const char *defaultPath;
-    static const char *userPath;
-
 	// Toggle features
 	static inline bool		bNoHandsOverCap{true};
 	static inline bool		bPreventPickupOverCap{true};
@@ -162,6 +159,9 @@ class Settings final : public Utils::Singleton<Settings>
 	static void WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> a_settingEntry);
 
 	public:
+		static const char *defaultPath;
+    	static const char *userPath;
+
 		static void Init();
 		static void Load(std::filesystem::path path);
 		static bool Validate();

@@ -10,7 +10,7 @@ namespace Calc
 
 	float LevelWeightBonus(float a_Lvl, float a_rate, uint32_t a_pivot, uint32_t baseCarry, float maxGradLvl);
 	float LevelWeightBonusCurrent();
-	float GradientAtLevel(float a_Lvl, float a_rate, uint32_t a_pivot);
+	float GradientAtLevel(float a_Lvl, float a_rate, uint32_t a_pivot, uint32_t baseCarry);
 
 	float* GetStaminaPlotData(int x_max, float a_rate, uint32_t a_pivot, uint32_t baseCarry, int sampleRate);
 	float* GetLevelPlotData();

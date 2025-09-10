@@ -3,6 +3,8 @@
 
 float Calc::StaminaWeightBonus(float a_stamVal, float a_rate, uint32_t a_pivot, uint32_t baseCarry, float maxGradStam)
 {
+	if (a_stamVal <= Player::BaseStam) {return { 0.0f };}
+
 	float eq1;
 	float eq2 = (a_rate - (a_rate * (a_stamVal - Player::BaseStam)) + a_pivot);
 	float eq3 = baseCarry / 4;
@@ -51,13 +53,14 @@ float Calc::LevelWeightBonus(float a_Lvl, float a_rate, uint32_t a_pivot, uint32
 	float eq3 = baseCarry / 2;
 	float eq4;
 
-	float eqGrad = GradientAtLevel(a_Lvl, a_rate, a_pivot);
+	float eqGrad = GradientAtLevel(a_Lvl, a_rate, a_pivot, baseCarry);
 
 	// With +ve values of fLevelWeightRate, as level increases, eq2 gets smaller - as it approaches 0, the value of levelBonus grows to infinity
 	// At -ve eq2 values, the graph flips and levelBonus remains at a value lower than at a player level of 0
 	// Here we just need to check that this hasn't happened (as it entirely depends on the user-set values of fLevelWeightRate and uLevelWeightPivot)
 	// And if it has happened, swap to a placeholder growth rate (eq4, 200 weight per level) to stop the whole calculation breaking
 	if (eq2 <= 0 || eqGrad > 200) {
+		//if (eqGrad > 200) {logger::debug("[eqGrad > 200] at Level {}", a_Lvl);}
 		eq1 = maxGradLvl - (a_rate * maxGradLvl);
 		eq2 = a_rate - (a_rate * maxGradLvl) + a_pivot;
 		eq4 = (a_Lvl - maxGradLvl) * 200;
@@ -65,6 +68,8 @@ float Calc::LevelWeightBonus(float a_Lvl, float a_rate, uint32_t a_pivot, uint32
 		eq1 = a_Lvl - (a_rate * a_Lvl);
 		eq4 = 0;
 	}
+
+	//logger::debug("Level = {} | eqGrad = {} | maxGradLvl = {} | eq1 = {} | eq2 = {} | eq3 = {} | eq4 = {}", a_Lvl, eqGrad, maxGradLvl, eq1, eq2, eq3, eq4);
 
 	float levelBonus = ((eq1/eq2) * eq3) + eq4;
 
@@ -82,13 +87,13 @@ float Calc::LevelWeightBonusCurrent()
 	) };
 }
 
-float Calc::GradientAtLevel(float a_Lvl, float a_rate, uint32_t a_pivot)
+float Calc::GradientAtLevel(float a_Lvl, float a_rate, uint32_t a_pivot, uint32_t baseCarry)
 {
-	float grad1 = (a_rate - 1) * (a_rate + a_pivot);
+	float grad1 = baseCarry * (1 - a_rate) * (a_rate + a_pivot);
 	float grad2 = a_rate + a_pivot - (a_rate * a_Lvl);
-	float grad = grad1 / float(pow(grad2, 2));
+	float grad = grad1 / (2 * float(pow(grad2, 2)));
 
-	return grad;
+	return { grad };
 }
 
 float* Calc::GetStaminaPlotData(int x_max, float a_rate, uint32_t a_pivot, uint32_t baseCarry, int sampleRate)

@@ -230,18 +230,19 @@ void Settings::Load(std::filesystem::path path)
 void Settings::WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> a_settingEntry)
 {
 	auto settingKey = a_settingEntry.first.c_str();
+	auto settingType = settingKey[0];
 	auto section = a_settingEntry.second.second.c_str();
-	if (settingKey == "b") {
+	if (settingType == "b"[0]) {
 		auto settingVal = *get<bool*>(a_settingEntry.second.first);
 		a_ini.SetBoolValue(section, settingKey, settingVal);
-	} else if (settingKey == "f") {
+	} else if (settingType == "f"[0]) {
 		auto settingVal = *get<float*>(a_settingEntry.second.first);
 		a_ini.SetDoubleValue(section, settingKey, settingVal);
-	} else if (settingKey == "u") {
+	} else if (settingType == "u"[0]) {
 		auto settingVal = *get<uint32_t*>(a_settingEntry.second.first);
 		a_ini.SetLongValue(section, settingKey, settingVal);
 	} else {
-		logger::error("WriteIniSetting failed on setting [{}]: Invalid datatype key (setting name must begin with 'b', 'f', or 'u')", settingKey);
+		logger::error("WriteIniSetting failed on setting [{}]: Invalid datatype identifier [{}] (setting name must begin with 'b', 'f', or 'u' )", settingKey, settingType);
 	}
 }
 

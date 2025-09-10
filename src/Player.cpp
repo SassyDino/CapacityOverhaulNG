@@ -52,7 +52,7 @@ float Player::CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCar
 	float peakStam2 = (20 * sqrt2 * a_rate) + (20 * sqrt2 * a_pivot);
 	float peakStam3 = 20 * sqrt2 * a_rate;
 
-	float peakStam = floor(((sqrt(*Settings::Get<uint32_t*>("uBaseCarryWeight") * peakStam1) - peakStam2) / peakStam3) + Player::BaseStam);
+	float peakStam = floor(((sqrt(baseCarry * peakStam1) - peakStam2) / peakStam3) + Player::BaseStam);
 	return { peakStam };
 }
 
