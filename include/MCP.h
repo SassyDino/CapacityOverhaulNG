@@ -18,6 +18,8 @@ namespace GUI::MCP
 			bool raceWeight = true;
 	};
 
+	extern bool showSeparateWindow;
+
 	void Register();
 
 	namespace ToggleFeatures {

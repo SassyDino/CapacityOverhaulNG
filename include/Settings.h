@@ -8,6 +8,7 @@ class Settings final : public Utils::Singleton<Settings>
 	static inline bool		bPreventPickupOverCap{true};
 	static inline bool		bSkillsAffectCapacity{true};
 	static inline bool		bQuestItemsAffectCapacity{false};
+	static inline bool		bSeparateWeaponCategories{true};
 
 	static inline bool		bVanillaWeightLimit{false};
 	static inline bool		bStaminaAffectsWeight{true};
@@ -15,6 +16,8 @@ class Settings final : public Utils::Singleton<Settings>
 	static inline bool		bRaceAffectsWeight{true};
 	
 	// Capacity settings
+	static inline bool		bCapacityVisualiserBaseValues{true};
+	static inline bool		bCapacityVisualiserShowFilled{true};
 	static inline bool		bHugeCapacityShared{false};
 	static inline uint32_t	uHugeCapacity{1};
 	static inline uint32_t	uLargeCapacity{5};
@@ -26,6 +29,13 @@ class Settings final : public Utils::Singleton<Settings>
 	static inline uint32_t	uAmmoCapacity{50};
 	static inline uint32_t	uCoinCapacity{500};
 	static inline uint32_t	uCoinsPerTiny{25};
+	static inline bool		bGemsInCoinCategory{true};
+	static inline uint32_t	uCoinCapacityPerGem{15};
+	static inline uint32_t	uLargeWeaponCapacity{1};
+	static inline uint32_t	uMediumWeaponCapacity{2};
+	static inline uint32_t	uSmallWeaponCapacity{4};
+	static inline uint32_t	uRangedWeaponCapacity{1};
+	static inline uint32_t	uShieldCapacity{1};
 	static inline float		fHugeItemWeight{20};
 	static inline float		fLargeItemWeight{9};
 	static inline float		fMediumItemWeight{5};
@@ -94,10 +104,13 @@ class Settings final : public Utils::Singleton<Settings>
 		{"bPreventPickupOverCap", {&bPreventPickupOverCap, "ToggleFeatures"}},
 		{"bSkillsAffectCapacity", {&bSkillsAffectCapacity, "ToggleFeatures"}},
 		{"bQuestItemsAffectCapacity", {&bQuestItemsAffectCapacity, "ToggleFeatures"}},
+		{"bSeparateWeaponCategories", {&bSeparateWeaponCategories, "ToggleFeatures"}},
 		{"bVanillaWeightLimit", {&bVanillaWeightLimit, "ToggleFeatures"}},
 		{"bStaminaAffectsWeight", {&bStaminaAffectsWeight, "ToggleFeatures"}},
 		{"bLevelAffectsWeight", {&bLevelAffectsWeight, "ToggleFeatures"}},
 		{"bRaceAffectsWeight", {&bRaceAffectsWeight, "ToggleFeatures"}},
+		{"bCapacityVisualiserBaseValues", {&bCapacityVisualiserBaseValues, "CapacitySettings"}},
+		{"bCapacityVisualiserShowFilled", {&bCapacityVisualiserShowFilled, "CapacitySettings"}},
 		{"bHugeCapacityShared", {&bHugeCapacityShared, "CapacitySettings"}},
 		{"uHugeCapacity", {&uHugeCapacity, "CapacitySettings"}},
 		{"uLargeCapacity", {&uLargeCapacity, "CapacitySettings"}},
@@ -109,6 +122,13 @@ class Settings final : public Utils::Singleton<Settings>
 		{"uAmmoCapacity", {&uAmmoCapacity, "CapacitySettings"}},
 		{"uCoinCapacity", {&uCoinCapacity, "CapacitySettings"}},
 		{"uCoinsPerTiny", {&uCoinsPerTiny, "CapacitySettings"}},
+		{"bGemsInCoinCategory", {&bGemsInCoinCategory, "CapacitySettings"}},
+		{"uCoinCapacityPerGem", {&uCoinCapacityPerGem, "CapacitySettings"}},
+		{"uLargeWeaponCapacity", {&uLargeWeaponCapacity, "CapacitySettings"}},
+		{"uMediumWeaponCapacity", {&uMediumWeaponCapacity, "CapacitySettings"}},
+		{"uSmallWeaponCapacity", {&uSmallWeaponCapacity, "CapacitySettings"}},
+		{"uRangedWeaponCapacity", {&uRangedWeaponCapacity, "CapacitySettings"}},
+		{"uShieldCapacity", {&uShieldCapacity, "CapacitySettings"}},
 		{"fHugeItemWeight", {&fHugeItemWeight, "CapacitySettings"}},
 		{"fLargeItemWeight", {&fLargeItemWeight, "CapacitySettings"}},
 		{"fMediumItemWeight", {&fMediumItemWeight, "CapacitySettings"}},
@@ -161,6 +181,7 @@ class Settings final : public Utils::Singleton<Settings>
 	public:
 		static const char *defaultPath;
     	static const char *userPath;
+		static bool settingsLoaded;
 
 		static void Init();
 		static void Load(std::filesystem::path path);
