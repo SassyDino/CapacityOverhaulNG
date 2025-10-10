@@ -1,6 +1,8 @@
 const char *Settings::defaultPath = "Data/MCM/Config/CapacityOverhaulNG/settings.ini";
 const char *Settings::userPath = "Data/MCM/Settings/CapacityOverhaulNG.ini";
 
+bool Settings::settingsLoaded = false;
+
 void Settings::Init()
 {   
     //constexpr auto defaultPath = L"Data/MCM/Config/CapacityOverhaulNG/settings.ini";
@@ -30,6 +32,7 @@ void Settings::Init()
         RE::DebugMessageBox(logErrorBox.c_str());
     }
 
+	settingsLoaded = true;
 	Utils::UpdateModules();
 }
 

@@ -91,8 +91,8 @@ namespace Utils
 		WeightHandler::UpdateFromSettings();
 		WeightHandler::UpdateWeightLimit();
 
-		CapacityHandler::Limits::UpdateBaseValues();
-		CapacityHandler::Limits::CalculatePlayValues();
+		CapacityHandler::Base::UpdateBaseCapacities();
+		CapacityHandler::Player::CalculateActualCapacities();
 		CapacityHandler::Player::UpdateAllCategories();
 	}
 

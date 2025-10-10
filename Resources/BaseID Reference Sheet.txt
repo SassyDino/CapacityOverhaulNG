@@ -1,0 +1,29 @@
+Keywords [KYWD]:
+VendorItemPotion: 0x8CDEC
+VendorItemPoison: 0x8CDED
+VendorItemGem: 0x914ED
+ArmorShield: 0x965B2
+
+Miscellaneous [MISC]:
+BYOHMaterialLog - 'Sawn Log': 0xHF00300E
+
+
+
+Custom:
+[KYWD] CONG_CoinItem: 0x801~CapacityOverhaulNG.esp
+
+
+
+kHuge, MCP_API::GetColorU32(ImVec4(168 , 0, 91, 1.0f))},
+kLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(186 , 66, 47, 1.0f))},
+kMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(168 , 122, 0, 1.0f))},
+kSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(123 , 167, 45, 1.0f))},
+kTiny, MCP_API::ColorConvertFloat4ToU32(ImVec4(0 , 204, 133, 1.0f))},
+kAlchemy, MCP_API::ColorConvertFloat4ToU32(ImVec4(192 , 80, 175, 1.0f))},
+kAmmo, MCP_API::ColorConvertFloat4ToU32(ImVec4(166 , 79, 214, 1.0f))},
+kCoin, MCP_API::ColorConvertFloat4ToU32(ImVec4(99 , 91, 255, 1.0f))},
+kWeaponLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(41 , 47, 86, 1.0f))},
+kWeaponMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(108 , 68, 115, 1.0f))},
+kWeaponSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(173 , 90, 125, 1.0f))},
+kWeaponRanged, MCP_API::ColorConvertFloat4ToU32(ImVec4(224 , 126, 120, 1.0f))},
+kShield, MCP_API::ColorConvertFloat4ToU32(ImVec4(250 , 178, 112, 1.0f))}

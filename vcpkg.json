@@ -6,6 +6,7 @@
         {"name": "commonlibsse-ng", "version>=": "3.7.0"},
         "simpleini",
 		"skse-mcp",
+		"imgui",
 		"implot"
     ]
 }
