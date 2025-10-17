@@ -108,7 +108,7 @@ namespace Utils
 				kwList.push_back(kw->GetFormEditorID());
 			}
 
-			logger::debug("'{}' Keywords: [{}]", a_item->GetName(), fmt::join(kwList, ", "));
+			//logger::debug("'{}' Keywords: [{}]", a_item->GetName(), fmt::join(kwList, ", "));
 		} else {
 			logger::debug("'{}' has no keywords", a_item->GetName());
 		}
