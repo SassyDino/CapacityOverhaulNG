@@ -3,7 +3,7 @@
 
 namespace GUI::MCP
 {
-	class TestSettings final : public Utils::Singleton<TestSettings>
+	class TestSettings final : public REX::Singleton<TestSettings>
 	{
 		public:
 			bool noHands = true;

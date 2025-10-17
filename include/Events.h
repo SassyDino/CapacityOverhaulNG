@@ -1,17 +1,12 @@
 #pragma once
+#include "REX/REX/Singleton.h"
 
 namespace Events
 {
     using Result = RE::BSEventNotifyControl;
 
-    class CapacityEventHandler : public RE::BSTEventSink<RE::TESContainerChangedEvent>, public RE::BSTEventSink<RE::TESEquipEvent>, 
+    class CapacityEventHandler : public REX::Singleton<CapacityEventHandler>, public RE::BSTEventSink<RE::TESContainerChangedEvent>, public RE::BSTEventSink<RE::TESEquipEvent>, 
 		public RE::BSTEventSink<RE::SkillIncrease::Event>, public RE::BSTEventSink<RE::TESMagicEffectApplyEvent> {
-        CapacityEventHandler() = default;
-        ~CapacityEventHandler() = default;
-        CapacityEventHandler(const CapacityEventHandler&) = delete;
-        CapacityEventHandler(CapacityEventHandler&&) = delete;
-        CapacityEventHandler& operator=(const CapacityEventHandler&) = delete;
-        CapacityEventHandler& operator=(CapacityEventHandler&&) = delete;
 
         public:
 			// Trigger capacity system methods (adjust count for relevant item category) upon player-centric ContainerChangedEvents (e.g. picking up or dropping an item).
@@ -23,19 +18,11 @@ namespace Events
 
 			virtual Result ProcessEvent(const RE::TESMagicEffectApplyEvent*event, RE::BSTEventSource<RE::TESMagicEffectApplyEvent>*source) override;
 
-            static CapacityEventHandler& GetSingleton();
-
             static void Register();
     };
 
-    class WeightEventHandler : public RE::BSTEventSink<RE::MenuOpenCloseEvent>, public RE::BSTEventSink<RE::TESEquipEvent>, 
+    class WeightEventHandler : public REX::Singleton<WeightEventHandler>, public RE::BSTEventSink<RE::MenuOpenCloseEvent>, public RE::BSTEventSink<RE::TESEquipEvent>, 
 		public RE::BSTEventSink<RE::LevelIncrease::Event>, public RE::BSTEventSink<RE::TESMagicEffectApplyEvent> {
-        WeightEventHandler() = default;
-        ~WeightEventHandler() = default;
-        WeightEventHandler(const WeightEventHandler&) = delete;
-        WeightEventHandler(WeightEventHandler&&) = delete;
-        WeightEventHandler& operator=(const WeightEventHandler&) = delete;
-        WeightEventHandler& operator=(WeightEventHandler&&) = delete;
 
         public:
 			// Trigger weight system methods (recalculate carry capacity) upon certain MenuOpenCloseEvents.
@@ -47,12 +34,10 @@ namespace Events
 
 			virtual Result ProcessEvent(const RE::TESMagicEffectApplyEvent*event, RE::BSTEventSource<RE::TESMagicEffectApplyEvent>*source) override;
 
-            static WeightEventHandler& GetSingleton();
-
             static void Register();
     };
 
-    class UIEventHandler : public Utils::Singleton<UIEventHandler>, public RE::BSTEventSink<RE::TESLoadGameEvent> {
+    class UIEventHandler : public REX::Singleton<UIEventHandler>, public RE::BSTEventSink<RE::TESLoadGameEvent> {
 
         public:
             virtual Result ProcessEvent(const RE::TESLoadGameEvent*event, RE::BSTEventSource<RE::TESLoadGameEvent>*source) override;

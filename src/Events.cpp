@@ -175,31 +175,19 @@ namespace Events
 
         return Result::kContinue;
     }
-
-    CapacityEventHandler& CapacityEventHandler::GetSingleton() {
-        static CapacityEventHandler singleton;
-        return singleton;
-    }
-
+	
     void CapacityEventHandler::Register() {
-        auto& capacityEventHandler = CapacityEventHandler::GetSingleton();
-        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESContainerChangedEvent>(&capacityEventHandler);
-        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESEquipEvent>(&capacityEventHandler);
-		RE::SkillIncrease::GetEventSource()->AddEventSink<RE::SkillIncrease::Event>(&capacityEventHandler);
-		RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESMagicEffectApplyEvent>(&capacityEventHandler);
-    }
-
-    WeightEventHandler& WeightEventHandler::GetSingleton() {
-        static WeightEventHandler singleton;
-        return singleton;
+        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESContainerChangedEvent>(GetSingleton());
+        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESEquipEvent>(GetSingleton());
+		RE::SkillIncrease::GetEventSource()->AddEventSink<RE::SkillIncrease::Event>(GetSingleton());
+		RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESMagicEffectApplyEvent>(GetSingleton());
     }
 
     void WeightEventHandler::Register() {
-        auto& weightEventHandler = WeightEventHandler::GetSingleton();
-        RE::UI::GetSingleton()->AddEventSink<RE::MenuOpenCloseEvent>(&weightEventHandler);
-        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESEquipEvent>(&weightEventHandler);
-		RE::LevelIncrease::GetEventSource()->AddEventSink<RE::LevelIncrease::Event>(&weightEventHandler);
-		RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESMagicEffectApplyEvent>(&weightEventHandler);
+        RE::UI::GetSingleton()->AddEventSink<RE::MenuOpenCloseEvent>(GetSingleton());
+        RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESEquipEvent>(GetSingleton());
+		RE::LevelIncrease::GetEventSource()->AddEventSink<RE::LevelIncrease::Event>(GetSingleton());
+		RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESMagicEffectApplyEvent>(GetSingleton());
     }
 	
     void UIEventHandler::Register() {

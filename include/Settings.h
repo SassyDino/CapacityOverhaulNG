@@ -1,7 +1,7 @@
 #pragma once
 #include "Utils.h"
 
-class Settings final : public Utils::Singleton<Settings>
+class Settings final : public REX::Singleton<Settings>
 {
 	// Toggle features
 	static inline bool		bNoHandsOverCap{true};
