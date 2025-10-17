@@ -82,7 +82,7 @@ namespace CapacityHandler
 
 	const std::unordered_map<int, int*> Player::countMap = {
 		{kHuge, &hugeCount}, {kLarge, &largeCount}, {kMedium, &mediumCount}, {kSmall, &smallCount}, {kTiny, &tinyCount},
-		{kAlchemy, &alchemyCapacity}, {kAmmo, &ammoCount}, {kCoin, &coinCount},
+		{kAlchemy, &alchemyCount}, {kAmmo, &ammoCount}, {kCoin, &coinCount},
 		{kWeaponLarge, &weaponLargeCount}, {kWeaponMedium, &weaponMediumCount}, {kWeaponSmall, &weaponSmallCount}, {kWeaponRanged, &weaponRangedCount}, {kShield, &shieldCount},
 		{kWeightless, &weightlessCount}
 	};

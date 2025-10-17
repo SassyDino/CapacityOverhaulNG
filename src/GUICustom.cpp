@@ -6,6 +6,9 @@ namespace MCPDraw = MCP_API::ImDrawListManager;
 
 namespace GUI::MCP
 {	
+	const float borderThick = 1.0f;
+	const float borderThin = 1.0f;
+
 	const std::unordered_map<CapacityHandler::ItemCategories, const char *> categoryTooltips = {
 			{CapacityHandler::ItemCategories::kHuge, "Huge Items"},
 			{CapacityHandler::ItemCategories::kLarge, "Large Items"},
@@ -98,6 +101,43 @@ namespace GUI::MCP
 		}
 	}
 
+	void DrawHatchFill(ImDrawList *drawList, ImVec2 p0, ImVec2 p1)
+	{
+		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
+		float w = p1.x - p0.x;
+		float h = p1.y - p0.y;
+
+		float spacing = 15.0f;
+
+		for (float offset = -h; offset < w; offset += spacing)
+		{
+			float x_start = p0.x + std::max(0.0f, offset);
+			float y_start = p1.y + std::max(0.0f, -offset);
+			
+			if ((p0.x + offset) > p0.x) {
+				x_start = p0.x + offset;
+				y_start = p1.y;
+			} else {
+				x_start = p0.x;
+				y_start = p1.y + offset;
+			}
+
+			float x_end = x_start + h;
+			float y_end = y_start - h;
+
+			if (x_end > p1.x) {
+				y_end += (x_end - p1.x);
+				x_end = p1.x;
+			}
+			if (y_end < p0.y) {
+				x_end -= (p0.y - y_end);
+				y_end = p0.y;
+			}
+
+			MCPDraw::AddLine(drawList, ImVec2(x_start, y_start), ImVec2(x_end, y_end), borderCol, borderThick);
+		}
+	}
+
 	void CapacityVisualiser()
 	{
 		CapacityHandler::Base::UpdateBaseCapacities();
@@ -159,10 +199,7 @@ namespace GUI::MCP
 		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
 		ImDrawList *drawList = MCP_API::GetWindowDrawList();
-		
-		auto borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
-		auto borderThick = 1.0f;
-		auto borderThin = 1.0f;
+		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
 		// Determine row/column dimensions depending on what data is being shown
 		int rowCount = (Settings::Get<bool>("bHugeCapacityShared")) ? 5 : 4;
@@ -198,11 +235,19 @@ namespace GUI::MCP
 			);
 
 			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-				MCPDraw::AddRectFilled(drawList, 
-					ImVec2(p0.x, p0.y), 
-					ImVec2(p0.x+(hugeDivGap*CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kHuge)), p0.y+mainRowGap), 
-					fillColour, 0.0f, 0
-				);
+				if (CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kHuge) < CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kHuge)) {
+					MCPDraw::AddRectFilled(drawList, 
+						ImVec2(p0.x, p0.y), 
+						ImVec2(p0.x+(hugeDivGap*CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kHuge)), p0.y+mainRowGap), 
+						fillColour, 0.0f, 0
+					);
+				} else {
+					MCPDraw::AddRectFilled(drawList, 
+						ImVec2(p0.x, p0.y), 
+						ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), 
+						fillColour, 0.0f, 0
+					);
+				}
 			}
 			
 			CapacityCategoryTooltip(p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), categoryTooltips.at(CapacityHandler::ItemCategories::kHuge), CapacityHandler::ItemCategories::kHuge);
@@ -234,11 +279,20 @@ namespace GUI::MCP
 				fillColour = PercentageColour(CapacityHandler::GetCountForGUI(category), CapacityHandler::GetCapacityForGUI(category));
 
 				// Draw progress bar
-				MCPDraw::AddRectFilled(drawList, 
-					ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
-					ImVec2(p0.x+(dividerVec[itDiv]*(CapacityHandler::GetCountForGUI(category))), p0.y+(mainRowGap*itRow2)), 
-					fillColour, 0.0f, 0
-				);
+				if (CapacityHandler::GetCountForGUI(category) < CapacityHandler::GetCapacityForGUI(category)) {
+					MCPDraw::AddRectFilled(drawList, 
+						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
+						ImVec2(p0.x+(dividerVec[itDiv]*(CapacityHandler::GetCountForGUI(category))), p0.y+(mainRowGap*itRow2)), 
+						fillColour, 0.0f, 0
+					);
+				} else {
+					MCPDraw::AddRectFilled(drawList, 
+						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
+						ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), 
+						fillColour, 0.0f, 0
+					);
+				}
+				
 			}
 
 			CapacityCategoryTooltip(ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), categoryTooltips.at(category), category);
@@ -288,9 +342,7 @@ namespace GUI::MCP
 		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
 		ImDrawList *drawList = MCP_API::GetWindowDrawList();
-		
-		auto borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
-		auto borderThick = 1.0f;
+		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
 		ImVec2 boxSize = ImVec2(MCP_API::GetWindowWidth()-35.0f, 40.0f);
 
@@ -421,6 +473,7 @@ namespace GUI::MCP
 
 		if (refitMult < 1) {
 			MCPDraw::AddLine(drawList, ImVec2(p0.x+(boxSize.x*refitMult), p0.y), ImVec2(p0.x+(boxSize.x*refitMult), p0.y+boxSize.y), borderCol, 5.0f);
+			DrawHatchFill(drawList, ImVec2(p0.x+(boxSize.x*refitMult)+2.0f, p0.y+1.0f), ImVec2(p0.x+boxSize.x-1.0f, p0.y+boxSize.y-1.0f));
 		}
 
 		MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+boxSize.x, p0.y+boxSize.y), borderCol, 0.0f, 0, borderThick);
@@ -432,10 +485,8 @@ namespace GUI::MCP
 		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
 		ImDrawList *drawList = MCP_API::GetWindowDrawList();
+		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
-		auto borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
-		auto borderThick = 1.0f;
-		auto borderThin = 1.0f;
 		auto barGap = 10.0f;
 
 		ImVec2 boxSize = ImVec2(40.0f, (y_max-p0.y));
@@ -503,10 +554,7 @@ namespace GUI::MCP
 		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
 		ImDrawList *drawList = MCP_API::GetWindowDrawList();
-		
-		auto borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
-		auto borderThick = 1.0f;
-		auto borderThin = 1.0f;
+		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
 		// Determine row/column dimensions depending on what data is being shown
 		int rowCount = 5;
@@ -541,11 +589,19 @@ namespace GUI::MCP
 				fillColour = PercentageColour(CapacityHandler::GetCountForGUI(category), CapacityHandler::GetCapacityForGUI(category));
 
 				// Draw progress bar
-				MCPDraw::AddRectFilled(drawList, 
-					ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
-					ImVec2(p0.x+(dividerVec[itDiv]*(CapacityHandler::GetCountForGUI(category))), p0.y+(mainRowGap*itRow2)), 
-					fillColour, 0.0f, 0
-				);
+				if (CapacityHandler::GetCountForGUI(category) < CapacityHandler::GetCapacityForGUI(category)) {
+					MCPDraw::AddRectFilled(drawList, 
+						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
+						ImVec2(p0.x+(dividerVec[itDiv]*(CapacityHandler::GetCountForGUI(category))), p0.y+(mainRowGap*itRow2)), 
+						fillColour, 0.0f, 0
+					);
+				} else {
+					MCPDraw::AddRectFilled(drawList, 
+						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
+						ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), 
+						fillColour, 0.0f, 0
+					);
+				}
 			}
 
 			const char *tooltipText;
