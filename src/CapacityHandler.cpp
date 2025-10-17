@@ -428,7 +428,7 @@ namespace CapacityHandler
 
 		auto itemType = a_item->GetFormType();
 		auto itemWeight = a_item->GetWeight();
-		logger::trace("{}x {} [{}:0x{:X}] - Weight: {} | Quest Item: {}", a_count, a_item->GetName(), itemType, a_item->GetFormID(), itemWeight, is_questItem);
+		logger::trace("{}x {} [{}:0x{:X}] - Weight: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, is_questItem);
 
 		auto coinKWID = RE::TESDataHandler::GetSingleton()->LookupFormID(0x801, "CapacityOverhaulNG.esp");
 

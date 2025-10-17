@@ -5,6 +5,8 @@ cmake_minimum_required(VERSION 4.0.2)
 # Set your project name. This will be the name of your SKSE .dll file.
 project(CapacityOverhaulNG VERSION 0.0.1 LANGUAGES CXX)
 
+set(BUILD_TESTS OFF)
+
 #
 # YOU DO NOT NEED TO EDIT ANYTHING BELOW HERE
 #
@@ -58,8 +60,6 @@ target_link_libraries(
 	PUBLIC
 		CommonLibSSE::CommonLibSSE
 )
-
-set(BUILD_TESTS OFF)
 
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
