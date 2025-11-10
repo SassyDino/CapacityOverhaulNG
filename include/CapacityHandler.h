@@ -177,7 +177,7 @@ namespace CapacityHandler
 			 * 
 			 * @returns `isOver`, where a result of `true` equates to the player being considered over-capacity.
 			 */
-            static bool IsOverCapacity();
+            static void CheckIfOverCapacity();
 
 			/**
 			 * @brief 

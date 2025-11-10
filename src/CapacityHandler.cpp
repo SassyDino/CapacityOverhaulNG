@@ -1,4 +1,6 @@
 #include "CapacityHandler.h"
+#include "ExtraStorage.h"
+#include "Player.h"
 #undef GetObject
 
 namespace CapacityHandler
@@ -141,7 +143,6 @@ namespace CapacityHandler
 
 	void Player::CalculateActualCapacities()
 	{
-		//TODO: Remember to complete this function to add capacity buffs from backpacks etc.
 		logger::info("Recalculating adjusted capacity limits...");
 
 		hugeCapacity = Base::hugeBaseCapacity;
@@ -172,13 +173,19 @@ namespace CapacityHandler
 			//TODO: Consider making these configurable rather than hardcoded
 			auto alchemySkillMod = 1 + (alchemyLvl/100);
 			auto archerySkillMod = 1 + (archeryLvl/100);
-			auto goldSkillMod = 1 + ((speechLvl + lockpickLvl + pickpocketLvl/3) / 100);
+			auto goldSkillMod = 1 + (((speechLvl + lockpickLvl + pickpocketLvl)/3) / 100);
 
 			alchemyCapacity = int(ceil(alchemyCapacity * alchemySkillMod));
 			ammoCapacity = int(ceil(ammoCapacity * archerySkillMod));
 			coinCapacity = int(ceil(coinCapacity * goldSkillMod));
 		}
-		
+
+		//TODO: Remember to complete this function to add capacity buffs from backpacks etc.
+		for (const auto& [category, bonus] : Bonus::GetEquippedStorage()) {
+			if (bonus != 0) {
+				*Player::capacityMap.at(category) += bonus;
+			}
+		}
 
 		logger::info("...done");
 	}
@@ -318,6 +325,7 @@ namespace CapacityHandler
 
 	void Player::ZeroAllCategories()
 	{
+		Bonus::equippedStorageItems.clear();
 		hugeCount = 0;
 		largeCount = 0;
 		mediumCount = 0;
@@ -352,17 +360,17 @@ namespace CapacityHandler
 			// Also, ignore the 20 sawn logs (ID: HF00300E) that appear in the player's inventory when they own a Hearthfire house.
 			if ((data.first > 0) && (itemID != 0x300300E)) {
 				itemCategory = Player::GetItemCategory(item, isQuestItem, data.first);
-				logger::trace("<CapacityHandler::Player::UpdateAllCategories> Item Category: {}", categoryNames.at(itemCategory));
+				bool isStorage = Bonus::ItemIsStorage(item);
 				if (!data.second->IsWorn() || (Settings::Get<bool>("bSeparateWeaponCategories") && std::ranges::contains(CapacityHandler::weaponCategories, itemCategory))) {
 					IncreaseCategory(itemCategory, data.first);
 				} else {
 					logger::trace("{} is Worn", item->GetName());
+					if (isStorage) { Bonus::AddEquippedStorage(itemID); }
 				}
 			}
 		}
 
 		UpdateTotalCount();
-		LogAllCategories();
 	}
 
 	void Player::UpdateTotalCount()
@@ -379,7 +387,7 @@ namespace CapacityHandler
 				Settings::Get<float>("fTinyPerSmall");
 		int smallToTiny = Settings::Get<float>("fTinyPerSmall");
 
-		if (!*Settings::Get<bool*>("bHugeCapacityShared")) {
+		if (!Settings::Get<bool>("bHugeCapacityShared")) {
 			totalCount = (largeCount * largeToTiny) + (mediumCount * mediumToTiny) + (smallCount * smallToTiny) + tinyCount;
 		} else {
 			totalCount = (hugeCount * hugeToTiny) + (largeCount * largeToTiny) + (mediumCount * mediumToTiny) + (smallCount * smallToTiny) + tinyCount;
@@ -409,7 +417,6 @@ namespace CapacityHandler
 
 		if (a_event->baseObj != 0x300300E) {
 			RE::FormID itemCategory = Player::GetItemCategory(item, isQuestItem, itemCount);
-			logger::trace("<CapacityHandler::Player::AdjustSingleCategory> Item Category: {}", categoryNames.at(itemCategory));
 
 			if (oldContainer == 0x14) { // If moving item out of inventory
 				DecreaseCategory(itemCategory, itemCount);
@@ -430,6 +437,7 @@ namespace CapacityHandler
 		auto itemWeight = a_item->GetWeight();
 		logger::trace("{}x {} [{}:0x{:X}] - Weight: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, is_questItem);
 
+		//auto coinKWID = RE::TESDataHandler::GetSingleton()->LookupFormID(0x801, "CapacityOverhaulNG.esp");
 		auto coinKWID = RE::TESDataHandler::GetSingleton()->LookupFormID(0x801, "CapacityOverhaulNG.esp");
 
 		if (kwItem) {
@@ -447,7 +455,6 @@ namespace CapacityHandler
 				return kGemstone;
 			} else if (Settings::Get<bool>("bSeparateWeaponCategories") && (a_item->Is(RE::FormType::Armor) || a_item->Is(RE::FormType::Weapon))) {
 				if (int weapCat = GetWeaponCategory(a_item); weapCat != kWeightless) {
-					logger::trace("<CapacityHandler::Player::GetItemCategory> Item Category: {}", categoryNames.at(weapCat));
 					return weapCat;
 				}
 			}
@@ -507,7 +514,7 @@ namespace CapacityHandler
 			itemCategory = kTiny;
 		}
 
-		logger::trace("<CapacityHandler::Player::GetBasicCategory> Item Category: {}", categoryNames.at(itemCategory));
+		logger::trace("Item Category: {}", categoryNames.at(itemCategory));
 		return itemCategory;
 	}
 
@@ -532,13 +539,19 @@ namespace CapacityHandler
 		return kWeightless;
 	}
 
-	bool Player::IsOverCapacity()
+	void Player::CheckIfOverCapacity()
 	{
 		// If any or all the large, medium, small, or tiny categories are over-capacity, then the total category is guaranteed be over-capacity
 		if (totalCount > tinyCapacity) {
-			return true;
+			if (PlayerStatus::GetOverCapacityStatus() == false) {
+				PlayerStatus::UpdateCapacityStatus(true);
+				RE::DebugNotification("You are carrying more than you have space for!");
+			}
 		} else {
-			return false;
+			if (PlayerStatus::GetOverCapacityStatus() == true) {
+				PlayerStatus::UpdateCapacityStatus(false);
+				RE::DebugNotification("Your storage is no longer overflowing.");
+			}
 		}
 	};
 

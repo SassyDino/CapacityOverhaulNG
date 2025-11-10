@@ -1,0 +1,69 @@
+################################################################################################################################
+# INFO AND GUIDANCE:
+# - Ensure that the mod name is spelt correctly, and that the file extension is correct (esp/esl/esm).
+#
+# - The names of the items are not required to be exact for the mod to recognise them, but it is helpful to ensure that they
+#   are at least identifiable and in the correct order, for clarity and readability.
+#
+# However, it IS important that the Form IDs provided are correct, and formatted as expected by the mod:
+# - For ESLs and ESL-flagged ESPs (i.e. Form IDs beginning with "FE"), "0x" should be followed by the last three characters 
+#   of the item's full 8-character FormID: e.g. the Form ID "FE017B18" would be written here as "0xB18".
+# - For ESPs and ESMs, "0x" should be followed by the last six characters of the item's full 8-character Form ID: e.g.
+#   the Form ID "3B2C821E" would be written as "0x2C821E".
+# - When written into a config file for this mod, Form IDs MUST be prefixed with "0x".
+# - Optionally, leading zeroes may be removed, such that "0x00A" or "0x00000A" may be written as "0xA" etc.
+# 
+# The following storage categories are all of the valid options that may be added to a group of items:
+# - "huge", "large", "medium", "small", "tiny", "alchemy", "ammo", "coins", "weaponlarge", "weaponmedium", "weaponsmall", "weaponranged", "shield"
+# - To add a capacity bonus to a storage item (or group of storage items), insert a new line in the group you wish to create/edit, with
+#   "capacity" followed by the category you wish to add the bonus for, and separated by a period ("capacity.ammo", "capacity.weaponranged", etc.)
+# - Note that, as per normal mod behaviour, tiny, small, medium, large, and (depending on mod settings) huge categories all share
+#   the same "space". Therefore, adding a capacity bonus to "large" items will also increase the capacity available for medium,
+#   small, and tiny items, etc.
+#
+# Also note that indentation does not matter for this config file (but it does help readability!).
+# For more information on TOML syntax, read here: https://toml.io/
+################################################################################################################################
+
+mod = "ccfsvsse001-backpacks.esl"
+
+[[storageItems]]
+names = [
+	"Leather Backpack",
+	"Leather Backpack with Bedroll",
+	"Fine Leather Backpack",
+	"Fine Leather Backpack with Bedroll",
+	"Dark Leather Backpack",
+	"Dark Leather Backpack with Bedroll",
+	"Fur Backpack",
+	"Fur Backpack with Bedroll"
+]
+formids = [0x801, 0x802, 0x803, 0x804, 0x805, 0x806, 0x807, 0x808]
+capacity.large = 1
+
+[[storageItems]]
+names = ["Adventurer Backpack", "Adventurer Backpack with Bedroll"]
+formids = [0x809, 0x80A]
+capacity.large = 1
+capacity.alchemy = 5
+capacity.weaponmedium = 1
+
+[[storageItems]]
+names = ["Mage Backpack", "Mage Backpack with Bedroll"]
+formids = [0x80B, 0x80C]
+capacity.large = 1
+capacity.alchemy = 10
+
+[[storageItems]]
+names = ["Hunter Backpack", "Hunter Backpack with Bedroll"]
+formids = [0x80D, 0x80E]
+capacity.large = 1
+capacity.ammo = 25
+capacity.weaponsmall = 1
+
+[[storageItems]]
+names = ["Thief Backpack", "Thief Backpack with Bedroll"]
+formids = [0x80F, 0x810]
+capacity.large = 1
+capacity.coins = 100
+capacity.weaponsmall = 1

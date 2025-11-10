@@ -3,6 +3,7 @@
 #include "WeightHandler.h"
 #include "CapacityHandler.h"
 #include "Player.h"
+#include "ExtraStorage.h"
 
 namespace Utils
 {   
@@ -92,8 +93,9 @@ namespace Utils
 		WeightHandler::UpdateWeightLimit();
 
 		CapacityHandler::Base::UpdateBaseCapacities();
-		CapacityHandler::Player::CalculateActualCapacities();
 		CapacityHandler::Player::UpdateAllCategories();
+		CapacityHandler::Player::CalculateActualCapacities();
+		CapacityHandler::Player::LogAllCategories();
 	}
 
 	void KeywordsToLog(RE::TESForm *a_item)
@@ -114,27 +116,16 @@ namespace Utils
 		}
 	}
 
-	RE::CharEvent* RE3::AsCharEvent(RE::InputEvent *a_event)
-	{
-		auto eventType = a_event->GetEventType();
-		return eventType == RE::INPUT_EVENT_TYPE::kChar ? static_cast<RE::CharEvent*>(a_event) : nullptr;
-	}
-
-	const RE::CharEvent* RE3::AsCharEvent(RE::InputEvent *a_event) const
-	{
-		if (a_event->GetEventType() == RE::INPUT_EVENT_TYPE::kChar) {
-			return static_cast<const RE::CharEvent*>(a_event);
-		}
-		return nullptr;
-	}
-
 	void MessageListener(SKSE::MessagingInterface::Message* message) {
 		switch (message->type) {
 			case SKSE::MessagingInterface::kDataLoaded:
 				logger::info("MessagingInterface::kDataLoaded");
-				Player::Char = RE::PlayerCharacter::GetSingleton();
-				Player::AsAV = Player::Char->AsActorValueOwner();
-				Player::Race = Player::Char->GetRace();
+
+				PlayerStatus::Char = RE::PlayerCharacter::GetSingleton();
+				PlayerStatus::AsAV = PlayerStatus::Char->AsActorValueOwner();
+				PlayerStatus::Race = PlayerStatus::Char->GetRace();
+
+				CapacityHandler::Bonus::ParseAllTOMLFiles();
 				
 				break;
 			default:

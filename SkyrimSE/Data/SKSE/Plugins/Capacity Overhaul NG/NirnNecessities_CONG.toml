@@ -1,0 +1,69 @@
+mod = "evgnnsmpaccessories.esp"
+
+[[storageItems]]
+names = ["Patchwork Satchel"]
+formids = [0x803, 0x80B]
+
+[[storageItems]]
+names = ["Toothlock Satchel"]
+formids = [0x809, 0x80A]
+
+[[storageItems]]
+names = ["Sturdy Pouch (Left)"]
+formids = [0x814, 0x815]
+
+[[storageItems]]
+names = ["Sturdy Pouch (Right)"]
+formids = [0xDF3, 0xDF4]
+
+[[storageItems]]
+names = ["Reinforced Satchel"]
+formids = [0x80D, 0x811]
+
+[[storageItems]]
+names = ["Reinforced Backpack"]
+formids = [0x83A, 0x83B, 0x89F, 0xDE7]
+
+[[storageItems]]
+names = ["Reinforced Backpack and Lantern"]
+formids = [0x83E, 0x83F, 0x8A0, 0xDE8]
+
+[[storageItems]]
+names = ["Glowdust Gem Backpack"]
+formids = [0x84A, 0x84C, 0x853]
+
+[[storageItems]]
+names = ["Trader's Resource"]
+formids = [0x856, 0xDC4, 0xDC6]
+
+[[storageItems]]
+names = ["Trader's Resource and Lantern"]
+formids = [0xDBA, 0xDC5, 0xDC7]
+
+# There does not appear to be any models for the Tied Linen Pouches in the mod's files, so I'm not sure if it shows up in-game or not
+[[storageItems]]
+names = ["Tied Linen Pouch (Left)"]
+formids = [0x86F, 0x870]
+
+[[storageItems]]
+names = ["Tied Linen Pouch (Right)"]
+formids = [0xDF5, 0xDF6]
+
+
+
+[[storageItems]]
+names = ["example"]
+formids = [0x000]
+capacity.huge = 1
+capacity.large = 1
+capacity.medium = 1
+capacity.small = 1
+capacity.tiny = 1
+capacity.alchemy = 1
+capacity.ammo = 1
+capacity.coins = 1
+capacity.weaponlarge = 1
+capacity.weaponmedium = 1
+capacity.weaponsmall = 1
+capacity.weaponranged = 1
+capacity.shield = 1
