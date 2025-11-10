@@ -1,11 +1,12 @@
 #pragma once
 
-class Player
+class PlayerStatus
 {
 	static float StamBaseAV;
 	static float StamPermAV;
 	static float StamAV;
 	static int Level;
+	static bool isOverCapacity;
 
 	public:
 		static RE::PlayerCharacter* Char;
@@ -17,6 +18,9 @@ class Player
 
 		static float StamAtMaxGrad;
 		static float LevelAtMaxGrad;
+
+		static void UpdateCapacityStatus(bool overCapacityStatus);
+		static bool GetOverCapacityStatus();
 
 		static void UpdateLevel();
 		static int GetLevel();

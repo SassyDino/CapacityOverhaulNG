@@ -146,11 +146,11 @@ namespace WeightHandler
 
 		// Use default race modifier as a fallback if player's race does not exist in index (to prevent custom races breaking this mod)
         auto raceWeightMod = *Settings::Get<float*>("fDefaultRaceMod");
-		auto raceID = Player::Race->GetFormID();
+		auto raceID = PlayerStatus::Race->GetFormID();
         
         if (raceWeightIndex.at(raceID)) {
             raceWeightMod = *Settings::Get<float*>(raceWeightIndex[raceID]);
-            auto raceName = Player::Race->GetName();
+            auto raceName = PlayerStatus::Race->GetName();
             logger::info("Player race identified as {}. Carry weight limit modifier = x{}", raceName, raceWeightMod);
         } else {
 			//TODO: If/when I fix whatever's broken here, move the "raceWeightMod = fDefaultRaceMod" definiton into here
@@ -165,13 +165,13 @@ namespace WeightHandler
 
 	void UpdateFromSettings()
 	{
-		Player::UpdateStamAtMaxGrad();
-		Player::UpdateLevelAtMaxGrad();
+		PlayerStatus::UpdateStamAtMaxGrad();
+		PlayerStatus::UpdateLevelAtMaxGrad();
 	}
 
     float CalculateWeightLimit()
     {
-        float raceModifier = GetRaceWeightMod(Player::Race);	//NOTE: Could be possible to only make this fire if/when the player changes race: check out TESSwitchRaceCompleteEvent, see whether it fires even from racemenu, console etc.
+        float raceModifier = GetRaceWeightMod(PlayerStatus::Race);	//NOTE: Could be possible to only make this fire if/when the player changes race: check out TESSwitchRaceCompleteEvent, see whether it fires even from racemenu, console etc.
         float weightLimit = static_cast<float>(*Settings::Get<uint32_t*>("uBaseCarryWeight"));
 
         if (*Settings::Get<bool*>("bStaminaAffectsWeight")) {
@@ -193,6 +193,6 @@ namespace WeightHandler
     {
         float playerWeightLimit = CalculateWeightLimit();
 
-        Player::AsAV->SetBaseActorValue(RE::ActorValue::kCarryWeight, playerWeightLimit);
+        PlayerStatus::AsAV->SetBaseActorValue(RE::ActorValue::kCarryWeight, playerWeightLimit);
     }
 }

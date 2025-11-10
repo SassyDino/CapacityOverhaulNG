@@ -1,30 +1,35 @@
 #include "Player.h"
 
-float Player::StamBaseAV;
-float Player::StamPermAV;
-float Player::StamAV;
-int Player::Level;
+float PlayerStatus::StamBaseAV;
+float PlayerStatus::StamPermAV;
+float PlayerStatus::StamAV;
+int PlayerStatus::Level;
+bool PlayerStatus::isOverCapacity = false;
 
-RE::PlayerCharacter* Player::Char;
-RE::ActorValueOwner* Player::AsAV;
+RE::PlayerCharacter* PlayerStatus::Char;
+RE::ActorValueOwner* PlayerStatus::AsAV;
 
-int Player::ID = 0x14;
-RE::TESRace* Player::Race;
-float Player::BaseStam = 100;
-float Player::StamAtMaxGrad;
-float Player::LevelAtMaxGrad;
+int PlayerStatus::ID = 0x14;
+RE::TESRace* PlayerStatus::Race;
+float PlayerStatus::BaseStam = 100;
+float PlayerStatus::StamAtMaxGrad;
+float PlayerStatus::LevelAtMaxGrad;
 
-void Player::UpdateLevel() { Level = Char->GetLevel(); }
+void PlayerStatus::UpdateCapacityStatus(bool overCapacityStatus) { isOverCapacity = overCapacityStatus; }
 
-int Player::GetLevel() { return { Level }; }
+bool PlayerStatus::GetOverCapacityStatus() { return isOverCapacity; }
 
-int Player::UpdateAndGetLevel()
+void PlayerStatus::UpdateLevel() { Level = Char->GetLevel(); }
+
+int PlayerStatus::GetLevel() { return { Level }; }
+
+int PlayerStatus::UpdateAndGetLevel()
 {
 	Level = Char->GetLevel();
 	return { Level };
 }
 
-void Player::UpdateStamina()
+void PlayerStatus::UpdateStamina()
 {
 	StamPermAV = AsAV->GetPermanentActorValue(RE::ActorValue::kStamina);
 	StamBaseAV = AsAV->GetBaseActorValue(RE::ActorValue::kStamina);
@@ -36,15 +41,15 @@ void Player::UpdateStamina()
 	}
 }
 
-float Player::GetStamAV() { return { StamAV }; }
+float PlayerStatus::GetStamAV() { return { StamAV }; }
 
-float Player::UpdateAndGetStamAV()
+float PlayerStatus::UpdateAndGetStamAV()
 {
-	Player::UpdateStamina();
+	PlayerStatus::UpdateStamina();
 	return { StamAV };
 }
 
-float Player::CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
+float PlayerStatus::CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
 {
 	static float sqrt2 = float(sqrt(2));
 
@@ -52,11 +57,11 @@ float Player::CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCar
 	float peakStam2 = (20 * sqrt2 * a_rate) + (20 * sqrt2 * a_pivot);
 	float peakStam3 = 20 * sqrt2 * a_rate;
 
-	float peakStam = floor(((sqrt(baseCarry * peakStam1) - peakStam2) / peakStam3) + Player::BaseStam);
+	float peakStam = floor(((sqrt(baseCarry * peakStam1) - peakStam2) / peakStam3) + PlayerStatus::BaseStam);
 	return { peakStam };
 }
 
-void Player::UpdateStamAtMaxGrad()
+void PlayerStatus::UpdateStamAtMaxGrad()
 {
 	float rate = *Settings::Get<float*>("fStaminaWeightRate");
 	uint32_t pivot = *Settings::Get<uint32_t*>("uStaminaWeightPivot");
@@ -65,7 +70,7 @@ void Player::UpdateStamAtMaxGrad()
 	StamAtMaxGrad = CalcStamAtMaxGrad(rate, pivot, baseCarry);
 }
 
-float Player::CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
+float PlayerStatus::CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
 {
 	float peakLvl1 = baseCarry * (1 - a_rate) * (a_rate + a_pivot);
 	float peakLvl2 = (20 * a_rate) + (20 * a_pivot);
@@ -74,7 +79,7 @@ float Player::CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCa
 	return { peakLvl };
 }
 
-void Player::UpdateLevelAtMaxGrad()
+void PlayerStatus::UpdateLevelAtMaxGrad()
 {
 	float rate = *Settings::Get<float*>("fLevelWeightRate");
 	uint32_t pivot = *Settings::Get<uint32_t*>("uLevelWeightPivot");

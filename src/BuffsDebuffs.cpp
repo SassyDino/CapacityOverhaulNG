@@ -1,10 +1,11 @@
 #include "BuffsDebuffs.h"
 #include "CapacityHandler.h"
+#include "Player.h"
 
 void Debuffs::CapacityEffects()
 {
-	auto overCapacity = CapacityHandler::Player::IsOverCapacity();
-	if (overCapacity) {
+	CapacityHandler::Player::CheckIfOverCapacity();
+	if (PlayerStatus::GetOverCapacityStatus()) {
 		//TODO: Debuff manager
 		logger::debug("Exceeding total capacity.");
 	} else {

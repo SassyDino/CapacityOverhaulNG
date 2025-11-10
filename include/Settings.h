@@ -171,10 +171,6 @@ class Settings final : public REX::Singleton<Settings>
 		{"uLevelWeightPivot", {&uLevelWeightPivot, "WeightModifiers"}}
 	};
 
-	static void ReadBool(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, bool& a_setting);
-	static void ReadFloat(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, float& a_setting);
-	static void ReadUInt32(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName, uint32_t& a_setting);
-
 	static void ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName);
 	static void WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> a_settingEntry);
 
@@ -197,7 +193,7 @@ class Settings final : public REX::Singleton<Settings>
 			} else if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, float> || std::is_same_v<T, uint32_t>) {
 				setting = *get<T*>(settingMap[a_settingName].first);
 			} else {
-				SKSE::log::error("Provided [Settings::<type>Get()] type did not match either valid condition set.");
+				SKSE::log::error("Provided [Settings::<type>Get()] type did not match either valid condition set. Ensure all setting values are valid.");
 			}
 			return { setting };
 		}

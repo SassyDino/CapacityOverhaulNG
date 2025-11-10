@@ -14,11 +14,5 @@ namespace Utils
 
 	void KeywordsToLog(RE::TESForm *a_item);
 
-	struct RE3
-	{
-		RE::CharEvent* AsCharEvent(RE::InputEvent *a_event);
-		const RE::CharEvent* AsCharEvent(RE::InputEvent *a_event) const;
-	};
-
 	void MessageListener(SKSE::MessagingInterface::Message* message);
 }

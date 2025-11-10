@@ -3,6 +3,7 @@
 #include "CapacityHandler.h"
 #include "BuffsDebuffs.h"
 #include "Player.h"
+#include "ExtraStorage.h"
 
 namespace Events
 {
@@ -29,7 +30,7 @@ namespace Events
 
 		// Consuming or dropping items triggers ContainerChangedEvents with a newContainer of 0x0, but dropping items provides a refHandle we can use to filter out consumption triggers
 		if ((event->newContainer > 0x0) || refHandle) {
-			logger::trace("<CapacityEventHandler::ContainerChanged> -> {}x '{}' from '{}' <0x{:x}> ---> '{}' <0x{:x}> | uID = {}", 
+			logger::trace("<CapacityEventHandler::ContainerChanged> -> {}x '{}' from '{}' <0x{:X}> ---> '{}' <0x{:X}> | uID = {}", 
 				event->itemCount, item, from, event->oldContainer, to, event->newContainer, event->uniqueID);
 
 			CapacityHandler::Player::AdjustSingleCategory(event);
@@ -48,23 +49,19 @@ namespace Events
 		bool validType = item->Is(RE::FormType::Armor) || item->Is(RE::FormType::Weapon) || item->Is(RE::FormType::AlchemyItem) || item->Is(RE::FormType::Ingredient);
 		if (!(playerEvent && validType)) { return Result::kContinue; }
 
-		logger::trace("<CapacityEventHandler::Equip> -> BaseObj: '{} [0x{:x}]', Equipped: '{}'", item->GetName(), item->GetFormID(), event->equipped);
-
-		// What to do if the item being equipped is expected to increase the player's item capacity
-		//TODO: Complete this once backpack system is implemented
-		bool storageItem = false;
-		if (storageItem) {
-			CapacityHandler::Player::CalculateActualCapacities();
-		}
+		logger::trace("<CapacityEventHandler::Equip> -> BaseObj: '{} [0x{:X}]', Equipped: '{}'", item->GetName(), item->GetFormID(), event->equipped);
 
 		// Prevent equipped apparel from taking up storage space/capacity slots
 		auto itemCategory = CapacityHandler::Player::GetCategoryForEquip(item);
-		logger::trace("<CapacityEventHandler::Equip> Item Category: {}", CapacityHandler::categoryNames.at(itemCategory));
+
 		if (!std::ranges::contains(CapacityHandler::weaponCategories, itemCategory)) {
+			bool isBag = CapacityHandler::Bonus::ItemIsStorage(item);
 			if (event->equipped) {
 				CapacityHandler::Player::DecreaseCategory(itemCategory, 1);
+				if (isBag) { CapacityHandler::Bonus::AddEquippedStorage(event->baseObject); }
 			} else {
 				CapacityHandler::Player::IncreaseCategory(itemCategory, 1);
+				if (isBag) { CapacityHandler::Bonus::RemoveEquippedStorage(event->baseObject); }
 			}
 		}
 
@@ -81,6 +78,7 @@ namespace Events
 
 		CapacityHandler::Player::CalculateActualCapacities();
 		CapacityHandler::Player::LogAllCategories();
+		Debuffs::CapacityEffects();
 
 		return Result::kContinue;
 	}
@@ -100,6 +98,7 @@ namespace Events
 
 			CapacityHandler::Player::CalculateActualCapacities();
 			CapacityHandler::Player::LogAllCategories();
+			Debuffs::CapacityEffects();
 		}
 
 		return Result::kContinue;
@@ -131,7 +130,7 @@ namespace Events
 			std::string actorName = equipActor->GetName();
 			std::string itemName = item->GetName();
 
-            logger::trace("<WeightEventHandler::Equip> -> Actor: '{}', BaseObj: '{} [0x{:X}]', Equipped: '{}', oRef: '0x{:x}', uID: '{}'", 
+            logger::trace("<WeightEventHandler::Equip> -> Actor: '{}', BaseObj: '{} [0x{:X}]', Equipped: '{}', oRef: '0x{:X}', uID: '{}'", 
                 actorName, itemName, event->baseObject, event->equipped, event->originalRefr, event->uniqueID);
 			
 			WeightHandler::UpdateWeightLimit();

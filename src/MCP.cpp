@@ -188,10 +188,10 @@ void __stdcall GUI::MCP::AdvWeightConfigs::Render()
 	struct Funcs
 	{
 		static float StamBonus(void*, int i) {
-			return Calc::StaminaWeightBonus(i, *stamRateTemp, *stamPivotTemp, *baseCarryTemp, Player::CalcStamAtMaxGrad(*stamRateTemp, *stamPivotTemp, *baseCarryTemp));
+			return Calc::StaminaWeightBonus(i, *stamRateTemp, *stamPivotTemp, *baseCarryTemp, PlayerStatus::CalcStamAtMaxGrad(*stamRateTemp, *stamPivotTemp, *baseCarryTemp));
 		}
 		static float LvlBonus(void*, int i) {
-			return Calc::LevelWeightBonus(i, *lvlRateTemp, *lvlPivotTemp, *baseCarryTemp, Player::CalcLevelAtMaxGrad(*lvlRateTemp, *lvlPivotTemp, *baseCarryTemp));
+			return Calc::LevelWeightBonus(i, *lvlRateTemp, *lvlPivotTemp, *baseCarryTemp, PlayerStatus::CalcLevelAtMaxGrad(*lvlRateTemp, *lvlPivotTemp, *baseCarryTemp));
 		}
 	};
 
