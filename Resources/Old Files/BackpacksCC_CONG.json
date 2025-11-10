@@ -1,0 +1,28 @@
+{
+	"plugin": "ccfsvsse001-backpacks.esl",
+	"storageItems": [
+		{
+			"names": ["Leather Backpack", "Leather Backpack with Bedroll"],
+			"formids": ["801", "802"],
+			"capacityStats": [
+				{"kLarge": 1}
+			]
+		},
+		{
+			"names": ["Mage Backpack", "Mage Backpack with Bedroll"],
+			"formids": ["80B", "80C"],
+			"capacityStats": [
+				{"kLarge": 1},
+				{"kAlchemy": 10}
+			]
+		},
+		{
+			"names": ["Hunter Backpack", "Hunter Backpack with Bedroll"],
+			"formids": ["80D", "80E"],
+			"capacityStats": [
+				{"kLarge": 1},
+				{"kAmmo": 25}
+			]
+		}
+	]
+}
