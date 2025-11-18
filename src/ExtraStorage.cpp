@@ -1,6 +1,7 @@
 #include "ExtraStorage.h"
 #include "FileHandler.h"
 #include <ClibUtil/distribution.hpp>
+#include <ClibUtil/timer.hpp>
 
 
 namespace CapacityHandler
@@ -10,7 +11,7 @@ namespace CapacityHandler
 
 	const std::unordered_map<std::string_view, ItemCategories> Bonus::keyEnumMap = {
 		{"huge", kHuge}, {"large", kLarge}, {"medium", kMedium}, {"small", kSmall}, {"tiny", kTiny}, 
-		{"alchemy", kAlchemy}, {"ammo", kAmmo}, {"coin", kCoin},
+		{"alchemy", kAlchemy}, {"ammo", kAmmo}, {"coins", kCoin},
 		{"weaponlarge", kWeaponLarge}, {"weaponmedium", kWeaponMedium}, {"weaponsmall", kWeaponSmall}, {"weaponranged", kWeaponRanged}, {"shield", kShield}
 	};
 
@@ -54,8 +55,6 @@ namespace CapacityHandler
 
 	std::unordered_map<ItemCategories, uint32_t> Bonus::StorageItem::GetBonuses()
 	{
-		logger::debug("inside <GetBonuses> rn");
-		logger::debug("getting bonuses for {}", this->GetItemName());
 		return capacityBonuses;
 	}
 
@@ -63,19 +62,34 @@ namespace CapacityHandler
 	{
 		auto newStorageItem = StorageItem::StorageItem(a_mod, a_name, a_rawID, bonusMap);
 		storageItems.insert({newStorageItem.GetLoadOrderID(), newStorageItem});
-		logger::trace("Storage item registered: '{}' [0x{:X}] -> {}", newStorageItem.GetItemName(), newStorageItem.GetLoadOrderID(), newStorageItem.GetBonusesAsString());
+
+		if ((bonusMap.size() == 0) || (bonusMap.contains(kWeightless))) {
+			logger::trace("Storage item registered: '{}' [0x{:X}] -> No Capacity Bonuses Found", newStorageItem.GetItemName(), newStorageItem.GetLoadOrderID());
+		} else {
+			logger::trace("Storage item registered: '{}' [0x{:X}] -> {}", newStorageItem.GetItemName(), newStorageItem.GetLoadOrderID(), newStorageItem.GetBonusesAsString());
+		}
 	}
 
 	void Bonus::ParseAllTOMLFiles()
 	{
+		clib_util::Timer timer;
 		bool tomlFilesFound = FileHandler::TOML::LoadTOMLData();
 
-		if (!tomlFilesFound) { return; }
+		if (!tomlFilesFound) {
+			logger::info("No TOML config files to parse...");
+			return;
+		} else {
+			logger::info("Parsing TOML files...");
+			timer.start();
+		}
 
 		for (const auto& [path, data] : FileHandler::TOML::tomlDataMap){
 			logger::debug("Parsing TOML file: '{}'", path.string());
 			ParseItemsFromFile(path.string(), data);
 		}
+
+		timer.stop();
+		logger::info("All TOML config files parsed successfully! Time taken: {}μs / {}ms\n{}", timer.duration_μs(), timer.duration_ms(), std::string(100, '='));
 	}
 
 	void Bonus::ParseItemsFromFile(std::string modPath, toml::table tomlFile)
@@ -125,6 +139,16 @@ namespace CapacityHandler
 		toml::array& tNames = *tomlTable.get_as<toml::array>("names");
 		toml::array& tIDs = *tomlTable.get_as<toml::array>("formids");
 
+		if (tNames.empty()) {
+			logger::error("No item names found in group: Ensure all item groups in TOML config file have at least one item name provided. Skipping group...");
+			return;
+		}
+
+		if (tIDs.empty()) {
+			logger::error("No FormIDs found in group containing the item '{}': Ensure that the amount of FormIDs provided per item group is at least equal to the number of names provided. Skipping group...", (std::string)*tNames.get(0)->as_string());
+			return;
+		}
+
 		if (tNames.size() == tIDs.size()) {
 			for (int i = 0; i < tNames.size(); i++) {
 				auto strName = (std::string)*tNames.get(i)->as_string();
@@ -139,25 +163,24 @@ namespace CapacityHandler
 					nameIDMap.insert({strName, ID});
 				}
 			} else {
-				logger::error("List of item names is a different length to the list of FormIDs: Ensure each list contains an equal number of elements, or that 'names' only contains one variable.");
-				logger::error("Skipping this group in the config file for '{}'", pluginName);
+				logger::error("List of item names is a different length to the list of FormIDs: Ensure each list contains an equal number of elements, or that 'names' only contains one variable. Skipping group...");
 				return;
 			}
 		}
 
-		const toml::table& tBonuses = *tomlTable.get("capacity")->as_table();
-
-		tBonuses.for_each([&bonusMap](const toml::key& key, const toml::node& node)
-		{
-			if (auto val = node.value<int64_t>(); val.has_value()) {
-				bonusMap.insert({EnumKeyFromTOML(key), static_cast<uint32_t>(*val)});
-			}
-		});
+		if (const auto bonusNode = tomlTable.get("capacity")) {
+			const auto& tBonuses = *bonusNode->as_table();
+			tBonuses.for_each([&bonusMap](const toml::key& key, const toml::node& node)
+			{
+				if (auto val = node.value<int64_t>(); val.has_value()) {
+					bonusMap.insert({EnumKeyFromTOML(key), static_cast<uint32_t>(*val)});
+				}
+			});
+		}
 
 		for (const auto& [name, formid] : nameIDMap) {
 			RegisterStorageItem(pluginName, name, formid, bonusMap);
 		}
-
 	}
 
 	ItemCategories Bonus::EnumKeyFromTOML(toml::key a_key)

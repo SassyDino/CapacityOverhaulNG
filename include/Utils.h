@@ -4,6 +4,7 @@ namespace Utils
 {   
     void ConvertToLowerCase(std::string& s);
     void SetupLog();
+	void UpdateLogLevel();
 
     void LogIniError(const char* iniKey);
     void LogIniError(const char* iniKey, const char* extraInfo);

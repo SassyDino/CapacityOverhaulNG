@@ -106,6 +106,8 @@ void Settings::Load(std::filesystem::path path)
     relevantMenuLogOnly = bLogMenuEvents && bLogOnlyRelevantMenuEvents;
     globalEquipLog = bLogEquipEvents && !bLogOnlyPlayerEquipEvents;
     playerEquipLogOnly = bLogEquipEvents && bLogOnlyPlayerEquipEvents;
+
+	//TODO Utils::UpdateLogLevel();
 }
 
 void Settings::WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> a_settingEntry)

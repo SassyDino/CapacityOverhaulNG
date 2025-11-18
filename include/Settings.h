@@ -42,21 +42,26 @@ class Settings final : public REX::Singleton<Settings>
 	static inline float		fSmallItemWeight{1};
 
 	// Buff & debuff settings
-	static inline bool    bWeightAffectsSpeed{true};
-	static inline bool    bWeightAffectsCombat{true};
-	static inline bool    bWeightAffectsStealth{true};
-	static inline bool    bWeightAffectsStamDrain{true};
-	static inline bool    bWeightAffectsStamRegen{true};
+	static inline bool		bWeightDebuffFloorIsPercentage{false};
+	static inline uint32_t	uWeightDebuffFloor{50};
+
+	static inline bool		bWeightAffectsSpeed{true};
+	static inline uint32_t	uSpeedDebuffMax{75};
+	static inline bool		bWeightAffectsCombat{true};
+	static inline bool		bWeightAffectsStealth{true};
+	static inline bool		bWeightAffectsStamDrain{true};
+	static inline bool		bWeightAffectsStamRegen{true};
 
 	// Debug settings
-	static inline bool    bModEnabled{true};
-	static inline bool    bLogContainerEvents{true};
-	static inline bool    bLogOnlyPlayerContainerEvents{true};
-	static inline bool    bLogLoadEvents{true};
-	static inline bool    bLogMenuEvents{true};
-	static inline bool    bLogOnlyRelevantMenuEvents{true};
-	static inline bool    bLogEquipEvents{true};
-	static inline bool    bLogOnlyPlayerEquipEvents{true};
+	static inline bool		bModEnabled{true};
+	static inline uint32_t	uLogLevel{0};
+	static inline bool		bLogContainerEvents{true};
+	static inline bool		bLogOnlyPlayerContainerEvents{true};
+	static inline bool		bLogLoadEvents{true};
+	static inline bool		bLogMenuEvents{true};
+	static inline bool		bLogOnlyRelevantMenuEvents{true};
+	static inline bool		bLogEquipEvents{true};
+	static inline bool		bLogOnlyPlayerEquipEvents{true};
 
 	// ADVANCED SETTINGS
 	// Per-race weight limit modifiers
@@ -99,6 +104,10 @@ class Settings final : public REX::Singleton<Settings>
 
 	static inline uint32_t uTestSetting{69};
 
+	// Settings to add: bBagsAffectSpeed, bDebuffWhileOverCapacity
+	// uWeightDebuffFloorInt, fWeightDebuffFloorFloat, bWeightDebuffFromPercentage
+	// uSpeedDebuffMax
+
 	static inline std::unordered_map <std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> settingMap = {
 		{"bNoHandsOverCap", {&bNoHandsOverCap, "ToggleFeatures"}},
 		{"bPreventPickupOverCap", {&bPreventPickupOverCap, "ToggleFeatures"}},
@@ -133,12 +142,16 @@ class Settings final : public REX::Singleton<Settings>
 		{"fLargeItemWeight", {&fLargeItemWeight, "CapacitySettings"}},
 		{"fMediumItemWeight", {&fMediumItemWeight, "CapacitySettings"}},
 		{"fSmallItemWeight", {&fSmallItemWeight, "CapacitySettings"}},
+		{"bWeightDebuffFloorIsPercentage", {&bWeightDebuffFloorIsPercentage, "BuffsDebuffs"}},
+		{"uWeightDebuffFloor", {&uWeightDebuffFloor, "BuffsDebuffs"}},
 		{"bWeightAffectsSpeed", {&bWeightAffectsSpeed, "BuffsDebuffs"}},
+		{"uSpeedDebuffMax", {&uSpeedDebuffMax, "BuffsDebuffs"}},
 		{"bWeightAffectsCombat", {&bWeightAffectsCombat, "BuffsDebuffs"}},
 		{"bWeightAffectsStealth", {&bWeightAffectsStealth, "BuffsDebuffs"}},
 		{"bWeightAffectsStamDrain", {&bWeightAffectsStamDrain, "BuffsDebuffs"}},
 		{"bWeightAffectsStamRegen", {&bWeightAffectsStamRegen, "BuffsDebuffs"}},
 		{"bModEnabled", {&bModEnabled, "Debug"}},
+		{"uLogLevel", {&uLogLevel, "Debug"}},
 		{"bLogContainerEvents", {&bLogContainerEvents, "Debug"}},
 		{"bLogOnlyPlayerContainerEvents", {&bLogOnlyPlayerContainerEvents, "Debug"}},
 		{"bLogLoadEvents", {&bLogLoadEvents, "Debug"}},
@@ -189,9 +202,25 @@ class Settings final : public REX::Singleton<Settings>
 		{
 			T setting;
 			if constexpr (std::is_same_v<T, bool*> || std::is_same_v<T, float*> || std::is_same_v<T, uint32_t*>) {
-				setting = get<T>(settingMap[a_settingName].first);
+				try
+				{
+					setting = get<T>(settingMap[a_settingName].first);
+				}
+				catch(const std::bad_variant_access& e)
+				{
+					SKSE::log::error("ERROR ---> bad_variant_access");
+					setting = 0;
+				}
 			} else if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, float> || std::is_same_v<T, uint32_t>) {
-				setting = *get<T*>(settingMap[a_settingName].first);
+				try
+				{
+					setting = *get<T*>(settingMap[a_settingName].first);
+				}
+				catch(const std::exception& e)
+				{
+					SKSE::log::error("ERROR ---> bad_variant_access");
+					setting = 0;
+				}
 			} else {
 				SKSE::log::error("Provided [Settings::<type>Get()] type did not match either valid condition set. Ensure all setting values are valid.");
 			}

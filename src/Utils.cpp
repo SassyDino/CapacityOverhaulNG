@@ -4,6 +4,7 @@
 #include "CapacityHandler.h"
 #include "Player.h"
 #include "ExtraStorage.h"
+#include "FormHandler.h"
 
 namespace Utils
 {   
@@ -54,6 +55,16 @@ namespace Utils
 
 		logger::info("Logger initialised successfully!");
     }
+
+	void UpdateLogLevel()
+	{
+		auto currentLogLevel = spdlog::get_level();
+
+		if (Settings::Get<uint32_t>("uLogLevel") != currentLogLevel) {
+			spdlog::set_level(spdlog::level::level_enum(Settings::Get<uint32_t>("uLogLevel")));
+			logger::info("Setting logger to level: {}", spdlog::level::to_string_view(spdlog::get_level()));
+		}
+	}
 
     void LogIniError(const char* iniKey) 
     {
@@ -125,6 +136,8 @@ namespace Utils
 				PlayerStatus::AsAV = PlayerStatus::Char->AsActorValueOwner();
 				PlayerStatus::Race = PlayerStatus::Char->GetRace();
 
+				Forms::LoadFromGame();
+				
 				CapacityHandler::Bonus::ParseAllTOMLFiles();
 				
 				break;

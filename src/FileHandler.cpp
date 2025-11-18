@@ -28,14 +28,14 @@ namespace FileHandler
 			}
 			catch(const toml::parse_error& err)
 			{
-				logger::error("Failed to parse TOML file: {}", err.description());
+				logger::error("Failed to load TOML file: {}", err.description());
 			}
 		}
 	}
 
 	bool TOML::LoadTOMLData()
 	{
-		logger::info("Looking for TOML config files...\n{}", std::string(100, '='));
+		logger::info("Looking for TOML config files...");
 		auto tomlPaths = FindTOMLFiles();
 
 		if (tomlPaths.size() == 0) {
