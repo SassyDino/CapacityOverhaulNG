@@ -4,6 +4,7 @@ float PlayerStatus::StamBaseAV;
 float PlayerStatus::StamPermAV;
 float PlayerStatus::StamAV;
 int PlayerStatus::Level;
+float PlayerStatus::CurrentWeight;
 bool PlayerStatus::isOverCapacity = false;
 
 RE::PlayerCharacter* PlayerStatus::Char;
@@ -11,13 +12,25 @@ RE::ActorValueOwner* PlayerStatus::AsAV;
 
 int PlayerStatus::ID = 0x14;
 RE::TESRace* PlayerStatus::Race;
-float PlayerStatus::BaseStam = 100;
+float PlayerStatus::raceWeightMod;
+float PlayerStatus::BaseStam = 100; // NOTE: Could do with finding a way of obtaining the actual DEFAULT stamina value, in case any mods make the player's default stamina something other than 100
+
 float PlayerStatus::StamAtMaxGrad;
 float PlayerStatus::LevelAtMaxGrad;
 
 void PlayerStatus::UpdateCapacityStatus(bool overCapacityStatus) { isOverCapacity = overCapacityStatus; }
 
 bool PlayerStatus::GetOverCapacityStatus() { return isOverCapacity; }
+
+void PlayerStatus::UpdateBurden() { CurrentWeight = AsAV->GetActorValue(RE::ActorValue::kInventoryWeight); }
+
+int PlayerStatus::GetBurden() { return CurrentWeight; }
+
+int PlayerStatus::UpdateAndGetBurden()
+{
+	CurrentWeight = AsAV->GetActorValue(RE::ActorValue::kInventoryWeight);
+	return CurrentWeight;
+}
 
 void PlayerStatus::UpdateLevel() { Level = Char->GetLevel(); }
 
@@ -26,12 +39,12 @@ int PlayerStatus::GetLevel() { return { Level }; }
 int PlayerStatus::UpdateAndGetLevel()
 {
 	Level = Char->GetLevel();
-	return { Level };
+	return Level;
 }
 
 void PlayerStatus::UpdateStamina()
 {
-	StamPermAV = AsAV->GetPermanentActorValue(RE::ActorValue::kStamina);
+	StamPermAV = AsAV->GetPermanentActorValue(RE::ActorValue::kStamina); // NOTE: PermanentActorValue doesn't include all buffs (such as some ingredients and blessings), but ActorValue and ClampedActorValue (which do) also consider current stamina (i.e. max stamina - consumed stamina)
 	StamBaseAV = AsAV->GetBaseActorValue(RE::ActorValue::kStamina);
 
 	if (*Settings::Get<bool*>("bTempStaminaAddsWeight")) {

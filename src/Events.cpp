@@ -4,6 +4,7 @@
 #include "BuffsDebuffs.h"
 #include "Player.h"
 #include "ExtraStorage.h"
+#include "FormHandler.h"
 
 namespace Events
 {
@@ -34,10 +35,14 @@ namespace Events
 				event->itemCount, item, from, event->oldContainer, to, event->newContainer, event->uniqueID);
 
 			CapacityHandler::Player::AdjustSingleCategory(event);
-			Debuffs::CapacityEffects();
+
+			//TODO: Create WeightEventHandler function for ContainerChangedEvent, and move CheckWeight() into it
+			SKSE::GetTaskInterface()->AddTask([]() {
+				Debuffs::CapacityEffects();
+				Debuffs::CheckWeight(); 
+			});
 		}
         
-
         return Result::kContinue;
     }
 
@@ -65,11 +70,13 @@ namespace Events
 			}
 		}
 
-		CapacityHandler::Player::CalculateActualCapacities();
-		CapacityHandler::Player::UpdateTotalCount();
-		CapacityHandler::Player::LogAllCategories();
-		Debuffs::CapacityEffects();
-
+		SKSE::GetTaskInterface()->AddTask([]() {
+			CapacityHandler::Player::CalculateActualCapacities();
+			CapacityHandler::Player::UpdateTotalCount();
+			CapacityHandler::Player::LogAllCategories();
+			Debuffs::CapacityEffects();
+		});
+		
 		return Result::kContinue;
     }
 
@@ -88,6 +95,8 @@ namespace Events
 		if (!playerEvent) { return Result::kContinue; }
 
 		auto MGEFID = event->magicEffect;
+		if (Forms::IsCONGForm(MGEFID)) { return Result::kContinue; }
+		
 		auto MGEF = RE::TESForm::LookupByID<RE::EffectSetting>(MGEFID);
 		auto MGEFAV = MGEF->data.primaryAV;
 		bool isValid = (MGEFAV == RE::ActorValue::kAlchemy) || (MGEFAV == RE::ActorValue::kArchery) || (MGEFAV == RE::ActorValue::kSpeech) || (MGEFAV == RE::ActorValue::kLockpicking) || (MGEFAV == RE::ActorValue::kPickpocket);
@@ -96,9 +105,11 @@ namespace Events
 			logger::trace("<CapacityEventHandler::MagicEffect> -> Caster: '{}', Target: '{}', MGEF: '{} 0x[{:X}]'", 
 				event->caster->GetName(), event->target->GetName(), RE::TESForm::LookupByID(event->magicEffect)->GetName(), event->magicEffect);
 
-			CapacityHandler::Player::CalculateActualCapacities();
-			CapacityHandler::Player::LogAllCategories();
-			Debuffs::CapacityEffects();
+			SKSE::GetTaskInterface()->AddTask([]() {
+				CapacityHandler::Player::CalculateActualCapacities();
+				CapacityHandler::Player::LogAllCategories();
+				Debuffs::CapacityEffects();
+			});
 		}
 
 		return Result::kContinue;
@@ -133,7 +144,10 @@ namespace Events
             logger::trace("<WeightEventHandler::Equip> -> Actor: '{}', BaseObj: '{} [0x{:X}]', Equipped: '{}', oRef: '0x{:X}', uID: '{}'", 
                 actorName, itemName, event->baseObject, event->equipped, event->originalRefr, event->uniqueID);
 			
-			WeightHandler::UpdateWeightLimit();
+			SKSE::GetTaskInterface()->AddTask([]() {
+				WeightHandler::UpdateWeightLimit();
+			});
+			
 			Utils::LogStaminaAVs();
         }
 
@@ -153,6 +167,8 @@ namespace Events
 		if (!playerEvent) { return Result::kContinue; }
 
 		auto MGEFID = event->magicEffect;
+		if (Forms::IsCONGForm(MGEFID)) { return Result::kContinue; }
+
 		auto MGEF = RE::TESForm::LookupByID<RE::EffectSetting>(MGEFID);
 		bool isConc = MGEF->data.castingType == RE::MagicSystem::CastingType::kConcentration;
 		bool isGenericDamage = MGEFID == 0xEA075;
@@ -161,7 +177,9 @@ namespace Events
 			logger::trace("<WeightEventHandler::MagicEffect> -> Caster: '{}', Target: '{}', MGEF: '{} 0x[{:X}]'", 
 				event->caster->GetName(), event->target->GetName(), RE::TESForm::LookupByID(event->magicEffect)->GetName(), event->magicEffect);
 
-			WeightHandler::UpdateWeightLimit();
+			SKSE::GetTaskInterface()->AddTask([]() {
+				WeightHandler::UpdateWeightLimit();
+			});
 		}
 
 		return Result::kContinue;
@@ -171,6 +189,7 @@ namespace Events
         logger::debug("<UIEventHandler::LoadGame>");
         
         Settings::Init();
+		Debuffs::AddDebuffSpellToPlayer();
 
         return Result::kContinue;
     }

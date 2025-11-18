@@ -5,7 +5,11 @@ class PlayerStatus
 	static float StamBaseAV;
 	static float StamPermAV;
 	static float StamAV;
+
 	static int Level;
+
+	static float CurrentWeight;
+
 	static bool isOverCapacity;
 
 	public:
@@ -14,6 +18,7 @@ class PlayerStatus
 
 		static int ID;
 		static RE::TESRace* Race;
+		static float raceWeightMod;
 		static float BaseStam;
 
 		static float StamAtMaxGrad;
@@ -21,6 +26,10 @@ class PlayerStatus
 
 		static void UpdateCapacityStatus(bool overCapacityStatus);
 		static bool GetOverCapacityStatus();
+
+		static void UpdateBurden();
+		static int GetBurden();
+		static int UpdateAndGetBurden();
 
 		static void UpdateLevel();
 		static int GetLevel();
