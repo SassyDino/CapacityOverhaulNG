@@ -9,6 +9,8 @@ bool PlayerStatus::isOverCapacity = false;
 
 RE::PlayerCharacter* PlayerStatus::Char;
 RE::ActorValueOwner* PlayerStatus::AsAV;
+RE::PlayerControls* PlayerStatus::Controls;
+RE::ActorState* PlayerStatus::State;
 
 int PlayerStatus::ID = 0x14;
 RE::TESRace* PlayerStatus::Race;

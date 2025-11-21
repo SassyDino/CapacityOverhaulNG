@@ -15,6 +15,8 @@ class PlayerStatus
 	public:
 		static RE::PlayerCharacter* Char;
 		static RE::ActorValueOwner* AsAV;
+		static RE::PlayerControls* Controls;
+		static RE::ActorState* State;
 
 		static int ID;
 		static RE::TESRace* Race;

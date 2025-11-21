@@ -47,10 +47,16 @@ class Settings final : public REX::Singleton<Settings>
 
 	static inline bool		bWeightAffectsSpeed{true};
 	static inline uint32_t	uSpeedDebuffMax{75};
-	static inline bool		bWeightAffectsCombat{true};
 	static inline bool		bWeightAffectsStealth{true};
+	static inline uint32_t	uStealthDebuffMax{100};
 	static inline bool		bWeightAffectsStamDrain{true};
+	static inline uint32_t	uStamDrainDebuffMax{100};
 	static inline bool		bWeightAffectsStamRegen{true};
+	static inline uint32_t	uStamRegenDebuffMax{50};
+	static inline bool		bWeightAffectsWeapSpeed{true};
+	static inline uint32_t	uWeapSpeedDebuffMax{50};
+	static inline bool		bWeightAffectsAttackDmg{true};
+	static inline uint32_t	uAttackDmgDebuffMax{50};
 
 	// Debug settings
 	static inline bool		bModEnabled{true};
@@ -146,10 +152,16 @@ class Settings final : public REX::Singleton<Settings>
 		{"uWeightDebuffFloor", {&uWeightDebuffFloor, "BuffsDebuffs"}},
 		{"bWeightAffectsSpeed", {&bWeightAffectsSpeed, "BuffsDebuffs"}},
 		{"uSpeedDebuffMax", {&uSpeedDebuffMax, "BuffsDebuffs"}},
-		{"bWeightAffectsCombat", {&bWeightAffectsCombat, "BuffsDebuffs"}},
 		{"bWeightAffectsStealth", {&bWeightAffectsStealth, "BuffsDebuffs"}},
+		{"uStealthDebuffMax", {&uStealthDebuffMax, "BuffsDebuffs"}},
 		{"bWeightAffectsStamDrain", {&bWeightAffectsStamDrain, "BuffsDebuffs"}},
+		{"uStamDrainDebuffMax", {&uStamDrainDebuffMax, "BuffsDebuffs"}},
 		{"bWeightAffectsStamRegen", {&bWeightAffectsStamRegen, "BuffsDebuffs"}},
+		{"uStamRegenDebuffMax", {&uStamRegenDebuffMax, "BuffsDebuffs"}},
+		{"bWeightAffectsWeapSpeed", {&bWeightAffectsWeapSpeed, "BuffsDebuffs"}},
+		{"uWeapSpeedDebuffMax", {&uWeapSpeedDebuffMax, "BuffsDebuffs"}},
+		{"bWeightAffectsAttackDmg", {&bWeightAffectsAttackDmg, "BuffsDebuffs"}},
+		{"uAttackDmgDebuffMax", {&uAttackDmgDebuffMax, "BuffsDebuffs"}},
 		{"bModEnabled", {&bModEnabled, "Debug"}},
 		{"uLogLevel", {&uLogLevel, "Debug"}},
 		{"bLogContainerEvents", {&bLogContainerEvents, "Debug"}},
