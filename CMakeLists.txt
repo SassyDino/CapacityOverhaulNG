@@ -61,6 +61,31 @@ target_link_libraries(
 		CommonLibSSE::CommonLibSSE
 )
 
+function(copy_all_changed source_dir dest_dir)
+	file (GLOB_RECURSE files RELATIVE "${source_dir}" "${source_dir}/*")
+	set(copy_commands "")
+
+	foreach(file ${files})
+		set(src "${source_dir}/${file}")
+        set(dst "${dest_dir}/${file}")
+
+		 # Create needed subdirectory
+        get_filename_component(dst_dirpath "${dst}" DIRECTORY)
+        
+		list(APPEND copy_commands
+			COMMAND "${CMAKE_COMMAND}" -E make_directory "${dst_dirpath}"
+			COMMAND "${CMAKE_COMMAND}" -E copy_if_different "${src}" "${dst}"
+		)
+	endforeach()
+
+	add_custom_command(
+		TARGET "${PROJECT_NAME}"
+		POST_BUILD
+		${copy_commands}
+		VERBATIM
+	)
+endfunction()
+
 # When your SKSE .dll is compiled, this will automatically copy the .dll into your mods folder.
 # Only works if you configure DEPLOY_ROOT above (or set the SKYRIM_MODS_FOLDER environment variable)
 if(DEFINED OUTPUT_FOLDER)
@@ -70,15 +95,20 @@ if(DEFINED OUTPUT_FOLDER)
     # Output directory
     set(DLL_FOLDER "${OUTPUT_FOLDER}/SKSE/Plugins")
 
+	set(RESOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/SkyrimSE/Data")
+
     message(STATUS "SKSE plugin output folder: ${DLL_FOLDER}")
 
     add_custom_command(
         TARGET "${PROJECT_NAME}"
         POST_BUILD
-        COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
+		COMMAND "${CMAKE_COMMAND}" -E make_directory "${DLL_FOLDER}"
         COMMAND "${CMAKE_COMMAND}" -E copy_if_different "$<TARGET_FILE:${PROJECT_NAME}>" "${DLL_FOLDER}/$<TARGET_FILE_NAME:${PROJECT_NAME}>"
+
         VERBATIM
     )
+	
+	copy_all_changed("${RESOURCE_DIR}" "${OUTPUT_FOLDER}")
 
     # If you perform a "Debug" build, also copy .pdb file (for debug symbols)
     if(CMAKE_BUILD_TYPE STREQUAL "Debug")
