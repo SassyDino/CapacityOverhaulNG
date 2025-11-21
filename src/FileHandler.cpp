@@ -4,7 +4,7 @@
 
 namespace FileHandler
 {
-	const std::filesystem::path TOML::tomlDir = R"(Data\SKSE\Plugins\Capacity Overhaul NG\)";
+	const std::filesystem::path TOML::tomlDir = R"(Data\SKSE\Plugins\CapacityOverhaulNG\)";
 	std::unordered_map<std::filesystem::path, toml::table> TOML::tomlDataMap;
 
 	std::vector<std::filesystem::path> TOML::FindTOMLFiles()

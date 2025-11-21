@@ -1,3 +1,5 @@
+#include <ClibUtil/timer.hpp>
+
 const char *Settings::defaultPath = "Data/SKSE/Plugins/CapacityOverhaulNG/default_settings.ini";
 const char *Settings::userPath = "Data/SKSE/Plugins/CapacityOverhaulNG.ini";
 
@@ -8,8 +10,10 @@ void Settings::Init()
     //constexpr auto defaultPath = L"Data/MCM/Config/CapacityOverhaulNG/settings.ini";
     //constexpr auto mcmPath = L"Data/MCM/Settings/CapacityOverhaulNG.ini";
     bool validSettings;
+	clib_util::Timer timer;
 
     logger::info("Initialising settings");
+	timer.start();
 
     logger::info("Loading default settings...");
     Load(defaultPath);
@@ -22,12 +26,14 @@ void Settings::Init()
     logger::info("Validating settings...");
     validSettings = Validate();
 
+	timer.stop();
+
     if (validSettings == true) {
         logger::info("...settings validated.");
-        logger::info("Initialisation success!");
+        logger::info("Initialisation success! Time taken: {}μs / {}ms\n{}", timer.duration_μs(), timer.duration_ms(), std::string(100, '='));
     } else {
         logger::info("...failed to validate settings.");
-        logger::info("Initialisation complete. Mod may not function as intended.");
+        logger::info("Initialisation complete. Mod may not function as intended. Time taken: {}μs / {}ms\n{}", timer.duration_μs(), timer.duration_ms(), std::string(100, '='));
         auto logErrorBox = std::format("Capacity Overhaul NG: An error occured while validating this mod's settings. This error suggests that an incorrect or invalid value has been provided in the mod's INI file or MCM. Continuing without rectifying this issue may result in unexpected mod behaviour. Refer to the log file for more information (My Games/Skyrim Special Edition/SKSE/CapacityOverhaulNG.log).");
         RE::DebugMessageBox(logErrorBox.c_str());
     }
@@ -70,6 +76,7 @@ void Settings::ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, con
 	bFound = a_ini.GetValue(a_sectionName, a_settingName);
 	if (!bFound) { return; }
 	std::string settingNameStr = a_settingName;
+	//logger::trace("Reading setting: {}", settingNameStr);
 
 	if (a_settingName[0] == "b"[0]) {
 		bool *settingPtr = get<bool*>(settingMap[settingNameStr].first);

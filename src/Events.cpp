@@ -95,7 +95,10 @@ namespace Events
 		if (!playerEvent) { return Result::kContinue; }
 
 		auto MGEFID = event->magicEffect;
-		if (Forms::IsCONGForm(MGEFID)) { return Result::kContinue; }
+		if (Forms::IsCONGForm(MGEFID)) {
+			//logger::trace("<CapacityEventHandler::MagicEffect> CONG Effect Applied");
+			return Result::kContinue;
+		}
 		
 		auto MGEF = RE::TESForm::LookupByID<RE::EffectSetting>(MGEFID);
 		auto MGEFAV = MGEF->data.primaryAV;
@@ -120,6 +123,9 @@ namespace Events
 		//? If not though, I could consider: InventoryMenu, MagicMenu, ContainerMenu, StatsMenu
         bool relevantMenuEvent = ((event->menuName == "InventoryMenu") || (event->menuName == "StatsMenu"));
         if (!relevantMenuEvent) {return Result::kContinue;}
+
+		//TODO: This is effectively disabling this event, for testing. If I decide to keep this event, remove this check.
+        if (relevantMenuEvent) {return Result::kContinue;}
 		
 		auto menuType = event->menuName.c_str();
         std::string str(menuType);
@@ -167,7 +173,10 @@ namespace Events
 		if (!playerEvent) { return Result::kContinue; }
 
 		auto MGEFID = event->magicEffect;
-		if (Forms::IsCONGForm(MGEFID)) { return Result::kContinue; }
+		if (Forms::IsCONGForm(MGEFID)) {
+			//logger::trace("<WeightEventHandler::MagicEffect> CONG Effect Applied");
+			return Result::kContinue;
+		}
 
 		auto MGEF = RE::TESForm::LookupByID<RE::EffectSetting>(MGEFID);
 		bool isConc = MGEF->data.castingType == RE::MagicSystem::CastingType::kConcentration;

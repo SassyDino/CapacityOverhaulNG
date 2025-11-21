@@ -1,6 +1,8 @@
 #include "CapacityHandler.h"
 #include "ExtraStorage.h"
 #include "Player.h"
+#include <ClibUtil/timer.hpp>
+#include "FormHandler.h"
 #undef GetObject
 
 namespace CapacityHandler
@@ -120,7 +122,6 @@ namespace CapacityHandler
  */
 	void Base::UpdateBaseCapacities()
 	{
-		//logger::info("Recalculating base capacity limits...");
 		hugeBaseCapacity = Settings::Get<uint32_t>("uHugeCapacity");
 		if (!Settings::Get<bool>("bHugeCapacityShared")) {
 			largeBaseCapacity = Settings::Get<uint32_t>("uLargeCapacity");
@@ -138,12 +139,13 @@ namespace CapacityHandler
 		weaponSmallBaseCapacity = Settings::Get<uint32_t>("uSmallWeaponCapacity");
 		weaponRangedBaseCapacity = Settings::Get<uint32_t>("uRangedWeaponCapacity");
 		shieldBaseCapacity = Settings::Get<uint32_t>("uShieldCapacity");
-		//logger::info("...done");
 	}
 
 	void Player::CalculateActualCapacities()
 	{
+		clib_util::Timer timer;
 		logger::info("Recalculating adjusted capacity limits...");
+		timer.start();
 
 		hugeCapacity = Base::hugeBaseCapacity;
 		largeCapacity = Base::largeBaseCapacity;
@@ -187,7 +189,8 @@ namespace CapacityHandler
 			}
 		}
 
-		logger::info("...done");
+		timer.stop();
+		logger::info("...done in {}μs / {}ms.",  timer.duration_μs(), timer.duration_ms());
 	}
 
 	int Player::GetCategoryCapacity(int a_cat)
@@ -341,11 +344,15 @@ namespace CapacityHandler
 		weaponRangedCount = 0;
 		shieldCount = 0;
 		weightlessCount = 0;
-		logger::debug("All categories reset to 0");
+		logger::debug("All categories reset to 0.");
 	}
 
 	void Player::UpdateAllCategories()
 	{
+		clib_util::Timer timer;
+		logger::debug("Updating all capacity categories...");
+		timer.start();
+
 		ZeroAllCategories();
 		
 		auto player = RE::PlayerCharacter::GetSingleton();
@@ -371,6 +378,9 @@ namespace CapacityHandler
 		}
 
 		UpdateTotalCount();
+
+		timer.stop();
+		logger::debug("...done in {}μs / {}ms.",  timer.duration_μs(), timer.duration_ms());
 	}
 
 	void Player::UpdateTotalCount()
@@ -415,7 +425,7 @@ namespace CapacityHandler
 		//TODO: Figure out how to identify quest items, if at all possible
 		auto isQuestItem = false;
 
-		if (a_event->baseObj != 0x300300E) {
+		if (a_event->baseObj != Forms::MISC::BYOHMaterialLog) {
 			RE::FormID itemCategory = Player::GetItemCategory(item, isQuestItem, itemCount);
 
 			if (oldContainer == 0x14) { // If moving item out of inventory
@@ -437,20 +447,17 @@ namespace CapacityHandler
 		auto itemWeight = a_item->GetWeight();
 		logger::trace("{}x {} [{}:0x{:X}] - Weight: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, is_questItem);
 
-		//auto coinKWID = RE::TESDataHandler::GetSingleton()->LookupFormID(0x801, "CapacityOverhaulNG.esp");
-		auto coinKWID = RE::TESDataHandler::GetSingleton()->LookupFormID(0x801, "CapacityOverhaulNG.esp");
-
 		if (kwItem) {
-			if (kwItem->HasKeywordID(0x8CDEC) || kwItem->HasKeywordID(0x8CDED)) {
+			if (kwItem->HasKeywordID(Forms::KYWD::VendorItemPotion) || kwItem->HasKeywordID(Forms::KYWD::VendorItemPoison)) {
 				logger::trace("Item Category: kAlchemy");
 				return kAlchemy;
 			} else if (a_item->IsAmmo()) {
 				logger::trace("Item Category: kAmmo");
 				return kAmmo;
-			} else if ((a_item->IsGold()) || kwItem->HasKeywordID(coinKWID)) {
+			} else if ((a_item->IsGold()) || kwItem->HasKeywordID(Forms::KYWD::CONG_CoinItem)) {
 				logger::trace("Item Category: kCoin");
 				return kCoin;
-			} else if ( (Settings::Get<bool>("bGemsInCoinCategory")) && (kwItem->HasKeywordID(0x914ED)) && (a_item->GetWeight() == 0.1f) ) {
+			} else if ( (Settings::Get<bool>("bGemsInCoinCategory")) && (kwItem->HasKeywordID(Forms::KYWD::VendorItemGem)) && (a_item->GetWeight() == 0.1f) ) {
 				logger::trace("Item Category: kGemstone");
 				return kGemstone;
 			} else if (Settings::Get<bool>("bSeparateWeaponCategories") && (a_item->Is(RE::FormType::Armor) || a_item->Is(RE::FormType::Weapon))) {
@@ -480,7 +487,7 @@ namespace CapacityHandler
 		auto kwItem = a_item->As<RE::BGSKeywordForm>();
 
 		if (kwItem) {
-			if (kwItem->HasKeywordID(0x8CDEC) || kwItem->HasKeywordID(0x8CDED)) {
+			if (kwItem->HasKeywordID(Forms::KYWD::VendorItemPotion) || kwItem->HasKeywordID(Forms::KYWD::VendorItemPoison)) {
 				logger::trace("Item Category: kAlchemy");
 				return kAlchemy;
 			}
@@ -522,7 +529,7 @@ namespace CapacityHandler
 	{
 		auto kwItem = a_item->As<RE::BGSKeywordForm>();
 
-		if (kwItem->HasKeywordID(0x965B2)) {
+		if (kwItem->HasKeywordID(Forms::KYWD::ArmorShield)) {
 			logger::trace("Item Category: kShield");
 			return kShield;
 		}
@@ -557,11 +564,13 @@ namespace CapacityHandler
 
 	void Player::LogAllCategories()
 	{
-		logger::debug("Capacity Category Counts:\nMAIN || Huge = {}/{}, Large = {}/{}, Medium = {}/{}, Small = {}/{}, Tiny = {}/{}\nMISC || Alchemy = {}/{}, Ammo = {}/{}, Coins = {}/{}\nWEAP || Large = {}/{}, Medium = {}/{}, Small = {}/{}, Ranged = {}/{}, Shields = {}/{}\nTotal = {}/{}, Weightless = {}", 
+		logger::debug("{}\nCapacity Category Counts:\nMAIN || Huge = {}/{}, Large = {}/{}, Medium = {}/{}, Small = {}/{}, Tiny = {}/{}\nMISC || Alchemy = {}/{}, Ammo = {}/{}, Coins = {}/{}\nWEAP || Large = {}/{}, Medium = {}/{}, Small = {}/{}, Ranged = {}/{}, Shields = {}/{}\nTotal = {}/{}, Weightless = {}\n{}", 
+			std::string(100, '='),
 			hugeCount, hugeCapacity, largeCount, largeCapacity, mediumCount, mediumCapacity, smallCount, smallCapacity, tinyCount, tinyCapacity,
 			alchemyCount, alchemyCapacity, ammoCount, ammoCapacity, coinCount, coinCapacity,
 			weaponLargeCount, weaponLargeCapacity, weaponMediumCount, weaponMediumCapacity, weaponSmallCount, weaponSmallCapacity, weaponRangedCount, weaponRangedCapacity, shieldCount, shieldCapacity,
-			totalCount, tinyCapacity, weightlessCount
+			totalCount, tinyCapacity, weightlessCount,
+			std::string(100, '=')
 		);
 	}
 }

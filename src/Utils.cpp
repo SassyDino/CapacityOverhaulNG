@@ -130,16 +130,46 @@ namespace Utils
 	void MessageListener(SKSE::MessagingInterface::Message* message) {
 		switch (message->type) {
 			case SKSE::MessagingInterface::kDataLoaded:
-				logger::info("MessagingInterface::kDataLoaded");
+				logger::debug("MessagingInterface::kDataLoaded");
 
 				PlayerStatus::Char = RE::PlayerCharacter::GetSingleton();
 				PlayerStatus::AsAV = PlayerStatus::Char->AsActorValueOwner();
 				PlayerStatus::Race = PlayerStatus::Char->GetRace();
+				
+				PlayerStatus::Controls = RE::PlayerControls::GetSingleton();
+				PlayerStatus::State = PlayerStatus::Char->AsActorState();
 
 				Forms::LoadFromGame();
 				
 				CapacityHandler::Bonus::ParseAllTOMLFiles();
 				
+				break;
+			case SKSE::MessagingInterface::kPostLoad:
+				logger::trace("MessagingInterface::kPostLoad");
+				break;
+			case SKSE::MessagingInterface::kPostPostLoad:
+				logger::trace("MessagingInterface::kPostPostLoad");
+				break;
+			case SKSE::MessagingInterface::kPreLoadGame:
+				logger::trace("MessagingInterface::kPreLoadGame");
+				break;
+			case SKSE::MessagingInterface::kPostLoadGame:
+				logger::trace("MessagingInterface::kPostLoadGame");
+				break;
+			case SKSE::MessagingInterface::kSaveGame:
+				logger::trace("MessagingInterface::kSaveGame");
+				break;
+			case SKSE::MessagingInterface::kDeleteGame:
+				logger::trace("MessagingInterface::kDeleteGame");
+				break;
+			case SKSE::MessagingInterface::kInputLoaded:
+				logger::trace("MessagingInterface::kInputLoaded");
+				break;
+			case SKSE::MessagingInterface::kNewGame:
+				logger::trace("MessagingInterface::kNewGame");
+				break;
+			case SKSE::MessagingInterface::kTotal:
+				logger::trace("MessagingInterface::kTotal");
 				break;
 			default:
 				break;

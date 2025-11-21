@@ -3,6 +3,7 @@
 #include "Calc.h"
 #include <math.h>
 #include "BuffsDebuffs.h"
+#include <ClibUtil/timer.hpp>
 
 namespace WeightHandler
 {
@@ -43,6 +44,8 @@ namespace WeightHandler
 
     float CalculateWeightLimit()
     {
+		clib_util::Timer timer;
+		timer.start();
         float weightLimit = static_cast<float>(*Settings::Get<uint32_t*>("uBaseCarryWeight"));
 
         if (*Settings::Get<bool*>("bStaminaAffectsWeight")) {
@@ -56,7 +59,9 @@ namespace WeightHandler
 		}
 
         float weightLimitRound = ceil(weightLimit);
-        logger::debug("Player's carry weight limit calculated as {}, rounded up to {}", weightLimit, weightLimitRound);
+		timer.stop();
+
+        logger::debug("Player's carry weight limit calculated as {}, rounded up to {}. Time taken: {}μs / {}ms", weightLimit, weightLimitRound, timer.duration_μs(), timer.duration_ms());
         return { weightLimitRound };
     }
 
