@@ -3,3 +3,6 @@ First version:
 
 Second version:
 \[\d{4}-\d{2}-\d{2} (?'time'\d{2}:\d{2}:\d{2}.\d{3})\] \[\w{3}\] \[(?'level'\w{4,8})\] \[(?'source'\w+)\.cpp:(?'line'\d+)\](\ \<)?(?(5)\w+\:\:(?<event>\w*)|)?>? ?-?>? (?'content'.*$)
+
+Third version:
+\[\d{4}-\d{2}-\d{2} (?'time'\d{2}:\d{2}:\d{2}.\d{3})\] \[\w{3}\] \[(?'level'\w{4,8})\] \[(?'source'\w+)\.cpp:(?'line'\d+)\] {1}(?(?=<)<{1}[a-zA-Z]+:{2}(?'event'[a-zA-Z]+)>{1} {1}-{1}>{1} {1}|)(?'content'.*)
