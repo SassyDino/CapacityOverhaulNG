@@ -7,6 +7,7 @@
 #include <imgui_internal.h>
 #include <implot.h>
 using namespace SKSEMenuFramework;
+namespace MCP_API = ImGuiMCP::ImGui;
 namespace MCPDraw = MCP_API::ImDrawListManager;
 
 bool GUI::MCP::showSeparateWindow = false;

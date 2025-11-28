@@ -2,28 +2,56 @@
 #include "MCP.h"
 #include "CapacityHandler.h"
 using namespace SKSEMenuFramework;
+using namespace CapacityHandler;
+namespace MCP_API = ImGuiMCP::ImGui;
 namespace MCPDraw = MCP_API::ImDrawListManager;
+
+namespace GUI
+{
+	std::string_view Assets::path = "Data/Textures/SassyDino/CapacityOverhaulNG/";
+
+	void Assets::LoadTextures()
+	{
+		
+	}
+}
 
 namespace GUI::MCP
 {	
 	const float borderThick = 1.0f;
 	const float borderThin = 1.0f;
 
-	const std::unordered_map<CapacityHandler::ItemCategories, const char *> categoryTooltips = {
-			{CapacityHandler::ItemCategories::kHuge, "Huge Items"},
-			{CapacityHandler::ItemCategories::kLarge, "Large Items"},
-			{CapacityHandler::ItemCategories::kMedium, "Medium Items"},
-			{CapacityHandler::ItemCategories::kSmall, "Small Items"},
-			{CapacityHandler::ItemCategories::kTiny, "Tiny Items"},
-			{CapacityHandler::ItemCategories::kAlchemy, "Alchemy Items (Overflow)"},
-			{CapacityHandler::ItemCategories::kAmmo, "Ammunition (Overflow)"},
-			{CapacityHandler::ItemCategories::kCoin, "Coins (Overflow)"},
-			{CapacityHandler::ItemCategories::kWeaponLarge, "Large Weapons (Overflow)"},
-			{CapacityHandler::ItemCategories::kWeaponMedium, "Medium Weapons (Overflow)"},
-			{CapacityHandler::ItemCategories::kWeaponSmall, "Small Weapons (Overflow)"},
-			{CapacityHandler::ItemCategories::kWeaponRanged, "Ranged Weapons (Overflow)"},
-			{CapacityHandler::ItemCategories::kShield, "Shields (Overflow)"}
-		};
+	const std::unordered_map<ItemCategories, const char *> categoryTooltips = {
+		{ItemCategories::kHuge, "Huge Items"},
+		{ItemCategories::kLarge, "Large Items"},
+		{ItemCategories::kMedium, "Medium Items"},
+		{ItemCategories::kSmall, "Small Items"},
+		{ItemCategories::kTiny, "Tiny Items"},
+		{ItemCategories::kAlchemy, "Alchemy Items (Overflow)"},
+		{ItemCategories::kAmmo, "Ammunition (Overflow)"},
+		{ItemCategories::kCoin, "Coins (Overflow)"},
+		{ItemCategories::kWeaponLarge, "Large Weapons (Overflow)"},
+		{ItemCategories::kWeaponMedium, "Medium Weapons (Overflow)"},
+		{ItemCategories::kWeaponSmall, "Small Weapons (Overflow)"},
+		{ItemCategories::kWeaponRanged, "Ranged Weapons (Overflow)"},
+		{ItemCategories::kShield, "Shields (Overflow)"}
+	};
+
+	const std::unordered_map<ItemCategories, ImGuiMCP::ImU32> categoryColours = {
+		{ItemCategories::kHuge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.0f, 0.357f, 1.0f))},
+		{ItemCategories::kLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.729f , 0.259f, 0.184f, 1.0f))},
+		{ItemCategories::kMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.478f, 0.0f, 1.0f))},
+		{ItemCategories::kSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.48f, 0.65f, 0.18f, 1.0f))},
+		{ItemCategories::kTiny, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.8f, 0.52f, 1.0f))},
+		{ItemCategories::kAlchemy, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.75f, 0.31f, 0.69f, 1.0f))},
+		{ItemCategories::kAmmo, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.65f, 0.31f, 0.84f, 1.0f))},
+		{ItemCategories::kCoin, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.39f, 0.36f, 1.0f, 1.0f))},
+		{ItemCategories::kWeaponLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.16f, 0.18f, 0.34f, 1.0f))},
+		{ItemCategories::kWeaponMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.42f, 0.27f, 0.45f, 1.0f))},
+		{ItemCategories::kWeaponSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.68f, 0.35f, 0.49f, 1.0f))},
+		{ItemCategories::kWeaponRanged, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.88f, 0.49f, 0.47f, 1.0f))},
+		{ItemCategories::kShield, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.98f, 0.7f, 0.44f, 1.0f))}
+	};
 
 	void CustomSeparator(const char *text)
 	{
@@ -83,7 +111,7 @@ namespace GUI::MCP
 		return MCP_API::ColorConvertFloat4ToU32(ImVec4(colR , colG, colB, 1.0f));
 	}
 
-	void CapacityCategoryTooltip(ImVec2 a_p0, ImVec2 a_p1, const char* a_title, CapacityHandler::ItemCategories a_category)
+	void CapacityCategoryTooltip(ImVec2 a_p0, ImVec2 a_p1, const char* a_title, ItemCategories a_category)
 	{
 		std::string tooltipQuanStr;
 		if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
@@ -205,20 +233,20 @@ namespace GUI::MCP
 		int rowCount = (Settings::Get<bool>("bHugeCapacityShared")) ? 5 : 4;
 		float mainRowGap = 40.0f;
 		ImVec2 mainSize = ImVec2(MCP_API::GetWindowWidth() * 0.65f, mainRowGap*rowCount);
-		float hugeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kHuge);
-		float largeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kLarge);
-		float mediumDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kMedium);
-		float smallDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kSmall);
-		float tinyDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kTiny);
+		float hugeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge);
+		float largeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kLarge);
+		float mediumDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kMedium);
+		float smallDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kSmall);
+		float tinyDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
 		ImU32 fillColour;
 
 		std::vector<float> dividerVec = {hugeDivGap, largeDivGap, mediumDivGap, smallDivGap, tinyDivGap};
-		std::vector<CapacityHandler::ItemCategories> categoryVec = {
-			CapacityHandler::ItemCategories::kHuge,
-			CapacityHandler::ItemCategories::kLarge,
-			CapacityHandler::ItemCategories::kMedium,
-			CapacityHandler::ItemCategories::kSmall,
-			CapacityHandler::ItemCategories::kTiny
+		std::vector<ItemCategories> categoryVec = {
+			ItemCategories::kHuge,
+			ItemCategories::kLarge,
+			ItemCategories::kMedium,
+			ItemCategories::kSmall,
+			ItemCategories::kTiny
 		};
 
 		// Just some misc iterator values
@@ -230,15 +258,15 @@ namespace GUI::MCP
 		// Draw independent "huge" category bar, if settings are set as so
 		if (!Settings::Get<bool>("bHugeCapacityShared")) {
 			fillColour = PercentageColour(
-				CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kHuge),
-				CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kHuge)
+				CapacityHandler::GetCountForGUI(ItemCategories::kHuge),
+				CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge)
 			);
 
 			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-				if (CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kHuge) < CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kHuge)) {
+				if (CapacityHandler::GetCountForGUI(ItemCategories::kHuge) < CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge)) {
 					MCPDraw::AddRectFilled(drawList, 
 						ImVec2(p0.x, p0.y), 
-						ImVec2(p0.x+(hugeDivGap*CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kHuge)), p0.y+mainRowGap), 
+						ImVec2(p0.x+(hugeDivGap*CapacityHandler::GetCountForGUI(ItemCategories::kHuge)), p0.y+mainRowGap), 
 						fillColour, 0.0f, 0
 					);
 				} else {
@@ -250,11 +278,11 @@ namespace GUI::MCP
 				}
 			}
 			
-			CapacityCategoryTooltip(p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), categoryTooltips.at(CapacityHandler::ItemCategories::kHuge), CapacityHandler::ItemCategories::kHuge);
+			CapacityCategoryTooltip(p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), categoryTooltips.at(ItemCategories::kHuge), ItemCategories::kHuge);
 
 			MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), borderCol, 0.0f, 0, borderThick);
 
-			while (i < CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kHuge)) {
+			while (i < CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge)) {
 				MCPDraw::AddLine(drawList, ImVec2(p0.x+(hugeDivGap*i), p0.y), ImVec2(p0.x+(hugeDivGap*i), p0.y+mainRowGap), borderCol, borderThin);
 				i++;
 			}
@@ -269,7 +297,7 @@ namespace GUI::MCP
 		// Draw the filled & coloured progress/fill bars for each main category
 		for (auto category: categoryVec) {
 			// Skip drawing kHuge progress bar if the setting is disabled
-			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == CapacityHandler::ItemCategories::kHuge)) {
+			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == ItemCategories::kHuge)) {
 				itDiv++;
 				continue;
 			}
@@ -319,7 +347,7 @@ namespace GUI::MCP
 		// Draw vertical dividers for each main storage category
 		for (auto category: categoryVec) {
 			// Skip drawing kHuge row/dividers if the setting is disabled
-			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == CapacityHandler::ItemCategories::kHuge)) {
+			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == ItemCategories::kHuge)) {
 				itDiv++;
 				continue;
 			}
@@ -346,93 +374,94 @@ namespace GUI::MCP
 
 		ImVec2 boxSize = ImVec2(MCP_API::GetWindowWidth()-35.0f, 40.0f);
 
-		std::unordered_map<CapacityHandler::ItemCategories, ImU32> categoryColours = {
-			{CapacityHandler::ItemCategories::kHuge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.0f, 0.357f, 1.0f))},
-			{CapacityHandler::ItemCategories::kLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.729f , 0.259f, 0.184f, 1.0f))},
-			{CapacityHandler::ItemCategories::kMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.478f, 0.0f, 1.0f))},
-			{CapacityHandler::ItemCategories::kSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.48f, 0.65f, 0.18f, 1.0f))},
-			{CapacityHandler::ItemCategories::kTiny, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.8f, 0.52f, 1.0f))},
-			{CapacityHandler::ItemCategories::kAlchemy, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.75f, 0.31f, 0.69f, 1.0f))},
-			{CapacityHandler::ItemCategories::kAmmo, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.65f, 0.31f, 0.84f, 1.0f))},
-			{CapacityHandler::ItemCategories::kCoin, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.39f, 0.36f, 1.0f, 1.0f))},
-			{CapacityHandler::ItemCategories::kWeaponLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.16f, 0.18f, 0.34f, 1.0f))},
-			{CapacityHandler::ItemCategories::kWeaponMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.42f, 0.27f, 0.45f, 1.0f))},
-			{CapacityHandler::ItemCategories::kWeaponSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.68f, 0.35f, 0.49f, 1.0f))},
-			{CapacityHandler::ItemCategories::kWeaponRanged, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.88f, 0.49f, 0.47f, 1.0f))},
-			{CapacityHandler::ItemCategories::kShield, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.98f, 0.7f, 0.44f, 1.0f))}
+		std::unordered_map<ItemCategories, ImU32> categoryColours = {
+			{ItemCategories::kHuge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.0f, 0.357f, 1.0f))},
+			{ItemCategories::kLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.729f , 0.259f, 0.184f, 1.0f))},
+			{ItemCategories::kMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.478f, 0.0f, 1.0f))},
+			{ItemCategories::kSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.48f, 0.65f, 0.18f, 1.0f))},
+			{ItemCategories::kTiny, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.8f, 0.52f, 1.0f))},
+			{ItemCategories::kAlchemy, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.75f, 0.31f, 0.69f, 1.0f))},
+			{ItemCategories::kAmmo, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.65f, 0.31f, 0.84f, 1.0f))},
+			{ItemCategories::kCoin, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.39f, 0.36f, 1.0f, 1.0f))},
+			{ItemCategories::kWeaponLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.16f, 0.18f, 0.34f, 1.0f))},
+			{ItemCategories::kWeaponMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.42f, 0.27f, 0.45f, 1.0f))},
+			{ItemCategories::kWeaponSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.68f, 0.35f, 0.49f, 1.0f))},
+			{ItemCategories::kWeaponRanged, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.88f, 0.49f, 0.47f, 1.0f))},
+			{ItemCategories::kShield, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.98f, 0.7f, 0.44f, 1.0f))}
 		};
 
 		//TODO: I absolutely hate all of this, I really need to find some better way of doing it bruh
-		//NOTE: Also, even aside from the stupidly dense blocks of code that look terrible, there's no way that this is gonna run anywhere near to optimal when going multiple times a second
-		float hugePercent = CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kHuge) / CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kHuge);
-		float largePercent = CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kLarge) / CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kLarge);
-		float mediumPercent = CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kMedium) / CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kMedium);
-		float smallPercent = CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kSmall) / CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kSmall);
-		float tinyPercent = CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kTiny) / CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kTiny);
+		//NOTE: Also, even aside from the stupidly dense blocks of code that look terrible, there's no way that this is gonna run anywhere near to optimal when going multiple times a second.
+		//? Could possibly make the xxxxPercent variables static, and then check for changes to any of the capacities/counts, and only recalculate each percentage as and when needed.
+		float hugePercent = CapacityHandler::GetCountForGUI(ItemCategories::kHuge) / CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge);
+		float largePercent = CapacityHandler::GetCountForGUI(ItemCategories::kLarge) / CapacityHandler::GetCapacityForGUI(ItemCategories::kLarge);
+		float mediumPercent = CapacityHandler::GetCountForGUI(ItemCategories::kMedium) / CapacityHandler::GetCapacityForGUI(ItemCategories::kMedium);
+		float smallPercent = CapacityHandler::GetCountForGUI(ItemCategories::kSmall) / CapacityHandler::GetCapacityForGUI(ItemCategories::kSmall);
+		float tinyPercent = CapacityHandler::GetCountForGUI(ItemCategories::kTiny) / CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
 
 		float alchemyPercent = (
-			CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kAlchemy) - CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kAlchemy))
-			/ CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kTiny);
+			CapacityHandler::GetCountForGUI(ItemCategories::kAlchemy) - CapacityHandler::GetCapacityForGUI(ItemCategories::kAlchemy))
+			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
 		float ammoPercent = (
-			CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kAmmo) - CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kAmmo))
-			/ CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kTiny);
+			CapacityHandler::GetCountForGUI(ItemCategories::kAmmo) - CapacityHandler::GetCapacityForGUI(ItemCategories::kAmmo))
+			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
 		float coinPercent = (
-			(CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kCoin) - CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kCoin))
-			/ Settings::Get<uint32_t>("uCoinsPerTiny")) / CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kTiny);
+			(CapacityHandler::GetCountForGUI(ItemCategories::kCoin) - CapacityHandler::GetCapacityForGUI(ItemCategories::kCoin))
+			/ Settings::Get<uint32_t>("uCoinsPerTiny")) / CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
 		
 		float lWeapPercent = (
-			CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kWeaponLarge) 
-			- CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponLarge))
-			/ CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponLarge);
+			CapacityHandler::GetCountForGUI(ItemCategories::kWeaponLarge) 
+			- CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponLarge))
+			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponLarge);
 		float mWeapPercent = (
-			CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kWeaponMedium) 
-			- CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponMedium))
-			/ CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponMedium);
+			CapacityHandler::GetCountForGUI(ItemCategories::kWeaponMedium) 
+			- CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponMedium))
+			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponMedium);
 		float sWeapPercent = (
-			CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kWeaponSmall) 
-			- CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponSmall))
-			/ CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponSmall);
+			CapacityHandler::GetCountForGUI(ItemCategories::kWeaponSmall) 
+			- CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponSmall))
+			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponSmall);
 		float rWeapPercent = (
-			CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kWeaponRanged) 
-			- CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponRanged))
-			/ CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponRanged);
+			CapacityHandler::GetCountForGUI(ItemCategories::kWeaponRanged) 
+			- CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponRanged))
+			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponRanged);
 		float shieldPercent = (
-			CapacityHandler::GetCountForGUI(CapacityHandler::ItemCategories::kShield) 
-			- CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kShield))
-			/ CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kShield);
+			CapacityHandler::GetCountForGUI(ItemCategories::kShield) 
+			- CapacityHandler::GetCapacityForGUI(ItemCategories::kShield))
+			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kShield);
 		
-		std::unordered_map<CapacityHandler::ItemCategories, float> categoryPercent = {
-			{CapacityHandler::ItemCategories::kHuge, hugePercent},
-			{CapacityHandler::ItemCategories::kLarge, largePercent},
-			{CapacityHandler::ItemCategories::kMedium, mediumPercent},
-			{CapacityHandler::ItemCategories::kSmall, smallPercent},
-			{CapacityHandler::ItemCategories::kTiny, tinyPercent},
-			{CapacityHandler::ItemCategories::kAlchemy, alchemyPercent},
-			{CapacityHandler::ItemCategories::kAmmo, ammoPercent},
-			{CapacityHandler::ItemCategories::kCoin, coinPercent},
-			{CapacityHandler::ItemCategories::kWeaponLarge, lWeapPercent},
-			{CapacityHandler::ItemCategories::kWeaponMedium, mWeapPercent},
-			{CapacityHandler::ItemCategories::kWeaponSmall, sWeapPercent},
-			{CapacityHandler::ItemCategories::kWeaponRanged, rWeapPercent},
-			{CapacityHandler::ItemCategories::kShield, shieldPercent}
+		std::unordered_map<ItemCategories, float> categoryPercent = {
+			{ItemCategories::kHuge, hugePercent},
+			{ItemCategories::kLarge, largePercent},
+			{ItemCategories::kMedium, mediumPercent},
+			{ItemCategories::kSmall, smallPercent},
+			{ItemCategories::kTiny, tinyPercent},
+			{ItemCategories::kAlchemy, alchemyPercent},
+			{ItemCategories::kAmmo, ammoPercent},
+			{ItemCategories::kCoin, coinPercent},
+			{ItemCategories::kWeaponLarge, lWeapPercent},
+			{ItemCategories::kWeaponMedium, mWeapPercent},
+			{ItemCategories::kWeaponSmall, sWeapPercent},
+			{ItemCategories::kWeaponRanged, rWeapPercent},
+			{ItemCategories::kShield, shieldPercent}
 		};
 		
-		std::vector<CapacityHandler::ItemCategories> drawCategories;
+		std::vector<ItemCategories> drawCategories;
 
-		if (Settings::Get<bool>("bHugeCapacityShared")) { drawCategories.push_back(CapacityHandler::ItemCategories::kHuge); }
-		drawCategories.push_back(CapacityHandler::ItemCategories::kLarge);
-		drawCategories.push_back(CapacityHandler::ItemCategories::kMedium);
-		drawCategories.push_back(CapacityHandler::ItemCategories::kSmall);
-		drawCategories.push_back(CapacityHandler::ItemCategories::kTiny);
-		drawCategories.push_back(CapacityHandler::ItemCategories::kAlchemy);
-		drawCategories.push_back(CapacityHandler::ItemCategories::kAmmo);
-		drawCategories.push_back(CapacityHandler::ItemCategories::kCoin);
+		if (Settings::Get<bool>("bHugeCapacityShared")) { drawCategories.push_back(ItemCategories::kHuge); }
+		drawCategories.push_back(ItemCategories::kLarge);
+		drawCategories.push_back(ItemCategories::kMedium);
+		drawCategories.push_back(ItemCategories::kSmall);
+		drawCategories.push_back(ItemCategories::kTiny);
+		drawCategories.push_back(ItemCategories::kAlchemy);
+		drawCategories.push_back(ItemCategories::kAmmo);
+		drawCategories.push_back(ItemCategories::kCoin);
 		if (Settings::Get<bool>("bSeparateWeaponCategories")) {
-			drawCategories.push_back(CapacityHandler::ItemCategories::kWeaponLarge);
-			drawCategories.push_back(CapacityHandler::ItemCategories::kWeaponMedium);
-			drawCategories.push_back(CapacityHandler::ItemCategories::kWeaponSmall);
-			drawCategories.push_back(CapacityHandler::ItemCategories::kWeaponRanged);
-			drawCategories.push_back(CapacityHandler::ItemCategories::kShield);
+			drawCategories.push_back(ItemCategories::kWeaponLarge);
+			drawCategories.push_back(ItemCategories::kWeaponMedium);
+			drawCategories.push_back(ItemCategories::kWeaponSmall);
+			drawCategories.push_back(ItemCategories::kWeaponRanged);
+			drawCategories.push_back(ItemCategories::kShield);
 		}
 
 		float percentTotal = 0;
@@ -491,17 +520,17 @@ namespace GUI::MCP
 
 		ImVec2 boxSize = ImVec2(40.0f, (y_max-p0.y));
 
-		float alchemyDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kAlchemy);
-		float ammoDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kAmmo);
-		float coinDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kCoin);
+		float alchemyDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(ItemCategories::kAlchemy);
+		float ammoDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(ItemCategories::kAmmo);
+		float coinDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(ItemCategories::kCoin);
 		ImU32 fillColour;
 		ImVec2 p1 = ImVec2(p0.x+boxSize.x, p0.y+boxSize.y);
 
 		std::vector<float> dividerVec = {alchemyDivGap, ammoDivGap, coinDivGap};
-		std::vector<CapacityHandler::ItemCategories> categoryVec = {
-			CapacityHandler::ItemCategories::kAlchemy,
-			CapacityHandler::ItemCategories::kAmmo,
-			CapacityHandler::ItemCategories::kCoin
+		std::vector<ItemCategories> categoryVec = {
+			ItemCategories::kAlchemy,
+			ItemCategories::kAmmo,
+			ItemCategories::kCoin
 		};
 
 		int itDiv = 0;
@@ -519,11 +548,11 @@ namespace GUI::MCP
 			}
 
 			const char *tooltipText;
-			if (category == CapacityHandler::ItemCategories::kAlchemy) {
+			if (category == ItemCategories::kAlchemy) {
 				tooltipText = "Alchemy";
-			} else if (category == CapacityHandler::ItemCategories::kAmmo) {
+			} else if (category == ItemCategories::kAmmo) {
 				tooltipText = "Ammunition";
-			} else if (category == CapacityHandler::ItemCategories::kCoin) {
+			} else if (category == ItemCategories::kCoin) {
 				tooltipText = "Coins";
 			} else {
 				tooltipText = "CATEGORY ERROR";
@@ -560,20 +589,20 @@ namespace GUI::MCP
 		int rowCount = 5;
 		float mainRowGap = 40.0f;
 		ImVec2 mainSize = ImVec2(MCP_API::GetWindowWidth() * 0.65f, mainRowGap*rowCount);
-		float largeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponLarge);
-		float mediumDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponMedium);
-		float smallDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponSmall);
-		float rangedDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kWeaponRanged);
-		float shieldDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(CapacityHandler::ItemCategories::kShield);
+		float largeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponLarge);
+		float mediumDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponMedium);
+		float smallDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponSmall);
+		float rangedDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponRanged);
+		float shieldDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kShield);
 		ImU32 fillColour;
 
 		std::vector<float> dividerVec = {largeDivGap, mediumDivGap, smallDivGap, rangedDivGap, shieldDivGap};
-		std::vector<CapacityHandler::ItemCategories> categoryVec = {
-			CapacityHandler::ItemCategories::kWeaponLarge,
-			CapacityHandler::ItemCategories::kWeaponMedium,
-			CapacityHandler::ItemCategories::kWeaponSmall,
-			CapacityHandler::ItemCategories::kWeaponRanged,
-			CapacityHandler::ItemCategories::kShield
+		std::vector<ItemCategories> categoryVec = {
+			ItemCategories::kWeaponLarge,
+			ItemCategories::kWeaponMedium,
+			ItemCategories::kWeaponSmall,
+			ItemCategories::kWeaponRanged,
+			ItemCategories::kShield
 		};
 
 		// Just some misc iterator values
@@ -605,15 +634,15 @@ namespace GUI::MCP
 			}
 
 			const char *tooltipText;
-			if (category == CapacityHandler::ItemCategories::kWeaponLarge) {
+			if (category == ItemCategories::kWeaponLarge) {
 				tooltipText = "Large Weapons";
-			} else if (category == CapacityHandler::ItemCategories::kWeaponMedium) {
+			} else if (category == ItemCategories::kWeaponMedium) {
 				tooltipText = "Medium Weapons";
-			} else if (category == CapacityHandler::ItemCategories::kWeaponSmall) {
+			} else if (category == ItemCategories::kWeaponSmall) {
 				tooltipText = "Small Weapons";
-			} else if (category == CapacityHandler::ItemCategories::kWeaponRanged) {
+			} else if (category == ItemCategories::kWeaponRanged) {
 				tooltipText = "Ranged Weapons";
-			} else if (category == CapacityHandler::ItemCategories::kShield) {
+			} else if (category == ItemCategories::kShield) {
 				tooltipText = "Shields";
 			} else {
 				tooltipText = "CATEGORY ERROR";
