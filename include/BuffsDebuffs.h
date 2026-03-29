@@ -9,13 +9,19 @@ struct Debuffs
 {
 	struct Current
 	{
+		static bool weightDebuffsActive;
 		static bool overDebuffFloor;
 		static float speedMod;
 
+		static bool capacityDebuffsActive;
 		static bool enableHands;
 		static bool handsEnabled;
 		static bool enablePickup;
 		static bool pickupEnabled;
+		static bool enableContainers;
+		static bool containersEnabled;
+		static bool enableInteract;
+		static bool interactEnabled;
 	};
 
 	static void CheckWeight();
@@ -37,9 +43,21 @@ struct Debuffs
 	static void ModifyAttackDmgMGEF(float a_debuffAmount);
 
 	static void CapacityEffects();
+	static void QueueEnableCapacityDebuffs();
+	static void QueueDisableCapacityDebuffs();
+	static void ConfirmCapacityDebuffStatus();
+
 	static void EnableHands();
 	static void DisableHands();
 	static void EnablePickup();
 	static void DisablePickup();
-	static void CheckCapacityDebuffStatus();
+	static void EnableContainers();
+	static void DisableContainers();
+	static void EnableInteractions();
+	static void DisableInteractions();
+
+	static bool CanDrawWeapon();
+	static bool CanPickup();
+	static bool CanOpenContainers();
+	static bool CanInterect();
 };

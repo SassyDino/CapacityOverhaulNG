@@ -3,13 +3,19 @@
 #include "Player.h"
 #include "FormHandler.h"
 
-bool Debuffs::Current::overDebuffFloor= false;
+bool Debuffs::Current::weightDebuffsActive = false;
+bool Debuffs::Current::overDebuffFloor = false;
 float Debuffs::Current::speedMod = 0;
 
+bool Debuffs::Current::capacityDebuffsActive = false;
 bool Debuffs::Current::enableHands = true;
 bool Debuffs::Current::handsEnabled = true;
 bool Debuffs::Current::enablePickup = true;
 bool Debuffs::Current::pickupEnabled = true;
+bool Debuffs::Current::enableContainers = true;
+bool Debuffs::Current::containersEnabled = true;
+bool Debuffs::Current::enableInteract = true;
+bool Debuffs::Current::interactEnabled= true;
 /* 
 std::string_view Debuffs::pluginName = "CapacityOverhaulNG.esp";
 RE::TESDataHandler* Debuffs::dataHandler = RE::TESDataHandler::GetSingleton();
@@ -24,6 +30,11 @@ RE::Effect* Debuffs::speedEffect = weightSpell->GetEffectIsMatch(dataHandler->Lo
 //NOTE: Best first guess, inv weight isn't changing until after the containerchanged event has ran, so its calculating the debuff amount based on old weight?
 void Debuffs::CheckWeight()
 {
+	if (!Settings::Get<bool>("bWeightBasedDebuffs")) {
+		if (Current::weightDebuffsActive) { DisableWeightEffects(); }
+		return;
+	}
+
 	auto weightLimit = PlayerStatus::AsAV->GetActorValue(RE::ActorValue::kCarryWeight);
 	auto currentWeight = PlayerStatus::UpdateAndGetBurden();
 	float weightFloor = (float)Settings::Get<uint32_t>("uWeightDebuffFloor");
@@ -58,7 +69,7 @@ void Debuffs::CheckWeight()
 void Debuffs::AddDebuffSpellToPlayer()
 {
 	PlayerStatus::Char->AddSpell(Forms::Spell::weightDebuff);
-	logger::debug("Added weight debuff spell to player.");
+	logger::info("Added weight debuff spell to player.");
 }
 
 void Debuffs::RefreshDebuffSpell()
@@ -79,6 +90,7 @@ void Debuffs::EnableWeightEffects()
 	//if (Settings::Get<bool>("bWeightAffectsWeapSpeed")) { EnableSpellMGEF(Forms::Global::debuffWeapSpeed); }
 	if (Settings::Get<bool>("bWeightAffectsAttackDmg")) { EnableSpellMGEF(Forms::Global::debuffAttackDmg); }
 
+	Current::weightDebuffsActive = true;
 	RefreshDebuffSpell();
 }
 
@@ -94,6 +106,7 @@ void Debuffs::DisableWeightEffects()
 	//if (Settings::Get<bool>("bWeightAffectsWeapSpeed")) { DisableSpellMGEF(Forms::Global::debuffWeapSpeed); }
 	if (Settings::Get<bool>("bWeightAffectsAttackDmg")) { DisableSpellMGEF(Forms::Global::debuffAttackDmg); }
 
+	Current::weightDebuffsActive = false;
 	RefreshDebuffSpell();
 }
 
@@ -227,22 +240,47 @@ void Debuffs::CapacityEffects()
 {
 	CapacityHandler::Player::CheckIfOverCapacity();
 
+	if (!Settings::Get<bool>("bCapacityBasedDebuffs")) {
+		if (Current::capacityDebuffsActive) {
+			QueueDisableCapacityDebuffs();
+			ConfirmCapacityDebuffStatus();
+		}
+		return;
+	}
+	
+	//Todo: Can probably add logic here to skip enabling/disabling if debuffs already correctly applied or not
 	if (PlayerStatus::GetOverCapacityStatus()) {
-		logger::debug("Exceeding total capacity.");
-
-		Current::enableHands = (Settings::Get<bool>("bNoHandsOverCap")) ? false : true;
-		Current::enablePickup = (Settings::Get<bool>("bPreventPickupOverCap")) ? false : true;
+		logger::info("Exceeding total capacity.");
+		QueueEnableCapacityDebuffs();
 	} else {
-		logger::debug("Total not exceeding capacity.");
-
-		Current::enableHands = true;
-		Current::enablePickup = true;
+		logger::info("Total not exceeding capacity.");
+		QueueDisableCapacityDebuffs();
 	}
 
-	CheckCapacityDebuffStatus();
+	ConfirmCapacityDebuffStatus();
 }
 
-void Debuffs::CheckCapacityDebuffStatus()
+void Debuffs::QueueEnableCapacityDebuffs()
+{
+	Current::enableHands = (Settings::Get<bool>("bNoHandsOverCap")) ? false : true;
+	Current::enablePickup = (Settings::Get<bool>("bPreventPickupOverCap")) ? false : true;
+	Current::enableContainers = (Settings::Get<bool>("bNoContainerAccessOverCap")) ? false : true;
+	Current::enableInteract = (Settings::Get<bool>("bPreventInteractionsOverCap")) ? false : true;
+
+	Current::capacityDebuffsActive = true;
+}
+
+void Debuffs::QueueDisableCapacityDebuffs()
+{
+	Current::enableHands = true;
+	Current::enablePickup = true;
+	Current::enableContainers = true;
+	Current::enableInteract = true;
+
+	Current::capacityDebuffsActive = false;
+}
+
+void Debuffs::ConfirmCapacityDebuffStatus()
 {
 	if (Current::enableHands && !Current::handsEnabled) {
 		EnableHands();
@@ -255,18 +293,29 @@ void Debuffs::CheckCapacityDebuffStatus()
 	} else if (!Current::enablePickup && Current::pickupEnabled) {
 		DisablePickup();
 	}
+
+	if (Current::enableContainers && !Current::containersEnabled) {
+		EnableContainers();
+	} else if (!Current::enableContainers && Current::containersEnabled) {
+		DisableContainers();
+	}
+
+	if (Current::enableInteract && !Current::interactEnabled) {
+		EnableInteractions();
+	} else if (!Current::enableInteract && Current::interactEnabled) {
+		DisableInteractions();
+	}
 }
 
 void Debuffs::EnableHands()
 {
-	logger::trace("Enabling player's hands.");
-	PlayerStatus::Controls->readyWeaponHandler->SetInputEventHandlingEnabled(true);
+	logger::info("Enabling player's hands.");
 	Current::handsEnabled = true;
 }
 
 void Debuffs::DisableHands()
 {
-	logger::trace("Disabling player's hands.");
+	logger::info("Disabling player's hands.");
 
 	switch (PlayerStatus::State->GetWeaponState())
 	{
@@ -280,16 +329,61 @@ void Debuffs::DisableHands()
 			break;
 	}
 
-	PlayerStatus::Controls->readyWeaponHandler->SetInputEventHandlingEnabled(false);
 	Current::handsEnabled = false;
 }
 
 void Debuffs::EnablePickup()
 {
 	logger::trace("Enabling pickup.");
+	Current::pickupEnabled = true;
 }
 
 void Debuffs::DisablePickup()
 {
 	logger::trace("Disabling pickup.");
+	Current::pickupEnabled = false;
+}
+
+void Debuffs::EnableContainers()
+{
+	logger::trace("Enabling container access.");
+	Current::containersEnabled = true;
+}
+
+void Debuffs::DisableContainers()
+{
+	logger::trace("Disabling container access.");
+	Current::containersEnabled = false;
+}
+
+void Debuffs::EnableInteractions()
+{
+	logger::trace("Enabling interactions.");
+	Current::interactEnabled= true;
+}
+
+void Debuffs::DisableInteractions()
+{
+	logger::trace("Disabling interactions.");
+	Current::interactEnabled= false;
+}
+
+bool Debuffs::CanDrawWeapon()
+{
+	return Current::handsEnabled;
+}
+
+bool Debuffs::CanPickup()
+{
+	return Current::pickupEnabled;
+}
+
+bool Debuffs::CanOpenContainers()
+{
+	return Current::containersEnabled;
+}
+
+bool Debuffs::CanInterect()
+{
+	return Current::interactEnabled;
 }
