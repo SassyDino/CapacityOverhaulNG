@@ -43,7 +43,7 @@ namespace CapacityHandler
 
 		for (auto& [category, bonus] : capacityBonuses) {
 			if (bonus != 0) {
-				str.append(std::format("{} = {} | ", categoryNames.at(category), bonus));
+				str.append(std::format("{} = {} | ", categoryStrings.at(category), bonus));
 			}
 		}
 
@@ -109,7 +109,7 @@ namespace CapacityHandler
 		}
 
 		if (RE::TESDataHandler::GetSingleton()->LookupModByName(pluginName.value()) == nullptr) {
-			logger::info("'{}' is not currently installed (or is misspelt). Skipping TOML config file...", pluginName.value());
+			logger::warn("'{}' is not currently installed (or is misspelt in TOML config). Skipping TOML config file...", pluginName.value());
 			return;
 		}
 

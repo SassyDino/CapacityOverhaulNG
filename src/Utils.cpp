@@ -5,6 +5,9 @@
 #include "Player.h"
 #include "ExtraStorage.h"
 #include "FormHandler.h"
+#include "Hooks.h"
+#include "BuffsDebuffs.h"
+#include "GUICustom.h"
 
 namespace Utils
 {   
@@ -63,6 +66,8 @@ namespace Utils
 		if (Settings::Get<uint32_t>("uLogLevel") != currentLogLevel) {
 			spdlog::set_level(spdlog::level::level_enum(Settings::Get<uint32_t>("uLogLevel")));
 			logger::info("Setting logger to level: {}", spdlog::level::to_string_view(spdlog::get_level()));
+		} else {
+			logger::info("Logger already set to level '{}'. No change made.", spdlog::level::to_string_view(currentLogLevel));
 		}
 	}
 
@@ -104,9 +109,12 @@ namespace Utils
 		WeightHandler::UpdateWeightLimit();
 
 		CapacityHandler::Base::UpdateBaseCapacities();
-		CapacityHandler::Player::UpdateAllCategories();
+		CapacityHandler::Player::UpdateAllCategories(false);
 		CapacityHandler::Player::CalculateActualCapacities();
 		CapacityHandler::Player::LogAllCategories();
+
+		Debuffs::CheckWeight();
+		Debuffs::CapacityEffects();
 	}
 
 	void KeywordsToLog(RE::TESForm *a_item)
@@ -132,6 +140,8 @@ namespace Utils
 			case SKSE::MessagingInterface::kDataLoaded:
 				logger::debug("MessagingInterface::kDataLoaded");
 
+				Hooks::Install();
+
 				PlayerStatus::Char = RE::PlayerCharacter::GetSingleton();
 				PlayerStatus::AsAV = PlayerStatus::Char->AsActorValueOwner();
 				PlayerStatus::Race = PlayerStatus::Char->GetRace();
@@ -140,6 +150,8 @@ namespace Utils
 				PlayerStatus::State = PlayerStatus::Char->AsActorState();
 
 				Forms::LoadFromGame();
+
+				GUI::Assets::LoadTextures();
 				
 				CapacityHandler::Bonus::ParseAllTOMLFiles();
 				

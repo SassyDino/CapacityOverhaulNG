@@ -20,6 +20,7 @@ namespace CapacityHandler
 		kWeightless
     };
 
+	const extern std::unordered_map<int, std::string> categoryStrings;
 	const extern std::unordered_map<int, std::string> categoryNames;
 
 	const extern std::array<ItemCategories, 5> mainCategories;
@@ -118,12 +119,12 @@ namespace CapacityHandler
 			//TODO: Need to see how else I can do this, as all the switch statements is probably not the best way. Maps seem promising, but don't seem to want to behave
 			static void IncreaseCategory(int a_cat, int a_count);
 			static void DecreaseCategory(int a_cat, int a_count);
-			static void ZeroAllCategories();
+			static void ZeroAllCategories(bool suppressLog);
 
 			/** 
 			 * Updates all item category counts to reflect the player's current inventory.
 			 */
-            static void UpdateAllCategories();
+            static void UpdateAllCategories(bool suppressLog);
 
 			/** 
 			 * Updates the item count for the `totalCount` category, based on the currently stored values for each individual item category.
@@ -148,7 +149,7 @@ namespace CapacityHandler
 			 * 
 			 * @returns An enum category identifier from `itemCategories`.
 			 */
-			static int GetItemCategory(RE::TESForm *a_item, bool a_quest, int a_count);
+			static int GetItemCategory(RE::TESForm *a_item, bool a_quest, int a_count, bool suppressLog);
 
 			/**
 			 * @brief Determines the appropriate category for a given `a_item`. Stripped down compared to `GetItemCategory()`, only accounting for items that may be "equipped" during a game event.

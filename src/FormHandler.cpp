@@ -41,7 +41,7 @@ void Forms::LoadFromGame()
 	rawModIndex = dataHandler->GetLoadedLightModIndex(pluginName);
 	uint32_t tempIndex = (rawModIndex.value() + 0xFE000) * 0x1000;
 	modIndex = {tempIndex, tempIndex + 0xFFF};
-	logger::debug("modIndex Range = 0x{:X} - 0x{:X}", modIndex.first, modIndex.second);
+	logger::debug("Capacity Overhaul NG modIndex Range = 0x{:X} - 0x{:X}", modIndex.first, modIndex.second);
 	logger::debug("TESDataHandler found ---> Locating forms...");
 
 	Spell::weightDebuff = dataHandler->LookupForm(RE::FormID(0x802), pluginName)->As<RE::SpellItem>();

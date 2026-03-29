@@ -9,11 +9,18 @@ namespace CapacityHandler
 {
 	//NOTE: With how many maps I now have just associating the category enums to different values (this, capacityMap, countMap, maybe more), I wonder if it might be worth possibly creating
 	//? a custom storage class just for capacity/counts. Look into this at some point, I guess.
-	const std::unordered_map<int, std::string> categoryNames = {
+	const std::unordered_map<int, std::string> categoryStrings = {
 		{kHuge, "kHuge"}, {kLarge, "kLarge"}, {kMedium, "kMedium"}, {kSmall, "kSmall"}, {kTiny, "kTiny"},
 		{kAlchemy, "kAlchemy"}, {kAmmo, "kAmmo"}, {kCoin, "kCoin"}, {kGemstone, "kGemstone"},
 		{kWeaponLarge, "kWeaponLarge"}, {kWeaponMedium, "kWeaponMedium"}, {kWeaponSmall, "kWeaponSmall"}, {kWeaponRanged, "kWeaponRanged"}, {kShield, "kShield"},
 		{kWeightless, "kWeightless"}
+	};
+
+	const std::unordered_map<int, std::string> categoryNames = {
+		{kHuge, "Huge"}, {kLarge, "Large"}, {kMedium, "Medium"}, {kSmall, "Small"}, {kTiny, "Tiny"},
+		{kAlchemy, "Alchemy"}, {kAmmo, "Ammo"}, {kCoin, "Coin"}, {kGemstone, "Coin<Gemstone>"},
+		{kWeaponLarge, "Weapon<Large>"}, {kWeaponMedium, "Weapon<Medium>"}, {kWeaponSmall, "Weapon<Small>"}, {kWeaponRanged, "Weapon<Ranged>"}, {kShield, "Shield"},
+		{kWeightless, "Weightless"}
 	};
 
 	const std::array<ItemCategories, 5> mainCategories = {kHuge, kLarge, kMedium, kSmall, kTiny};
@@ -170,7 +177,7 @@ namespace CapacityHandler
 			auto lockpickLvl = playerAVs->GetActorValue(RE::ActorValue::kLockpicking);
 			auto pickpocketLvl = playerAVs->GetActorValue(RE::ActorValue::kPickpocket);
 
-			logger::trace("Skills: Alchemy = {} | Archery = {} | Speech = {} | Lockpick = {} | Pickpocket = {}", alchemyLvl, archeryLvl, speechLvl, lockpickLvl, pickpocketLvl);
+			//TODO: logger::trace("Skills: Alchemy = {} | Archery = {} | Speech = {} | Lockpick = {} | Pickpocket = {}", alchemyLvl, archeryLvl, speechLvl, lockpickLvl, pickpocketLvl);
 
 			//TODO: Consider making these configurable rather than hardcoded
 			auto alchemySkillMod = 1 + (alchemyLvl/100);
@@ -326,7 +333,7 @@ namespace CapacityHandler
 		}
 	}
 
-	void Player::ZeroAllCategories()
+	void Player::ZeroAllCategories(bool suppressLog)
 	{
 		Bonus::equippedStorageItems.clear();
 		hugeCount = 0;
@@ -344,16 +351,16 @@ namespace CapacityHandler
 		weaponRangedCount = 0;
 		shieldCount = 0;
 		weightlessCount = 0;
-		logger::debug("All categories reset to 0.");
+		if (!suppressLog) { logger::debug("All categories reset to 0.");}
 	}
 
-	void Player::UpdateAllCategories()
+	void Player::UpdateAllCategories(bool suppressLog)
 	{
 		clib_util::Timer timer;
-		logger::debug("Updating all capacity categories...");
+		if (!suppressLog) { logger::debug("Updating all capacity categories...");}
 		timer.start();
 
-		ZeroAllCategories();
+		ZeroAllCategories(suppressLog);
 		
 		auto player = RE::PlayerCharacter::GetSingleton();
 		int itemCategory;
@@ -366,12 +373,12 @@ namespace CapacityHandler
 			// For some reason a load of random items with a count of 0 appear in the player's inventory when using GetInventory(), so need to ignore those.
 			// Also, ignore the 20 sawn logs (ID: HF00300E) that appear in the player's inventory when they own a Hearthfire house.
 			if ((data.first > 0) && (itemID != 0x300300E)) {
-				itemCategory = Player::GetItemCategory(item, isQuestItem, data.first);
+				itemCategory = Player::GetItemCategory(item, isQuestItem, data.first, suppressLog);
 				bool isStorage = Bonus::ItemIsStorage(item);
 				if (!data.second->IsWorn() || (Settings::Get<bool>("bSeparateWeaponCategories") && std::ranges::contains(CapacityHandler::weaponCategories, itemCategory))) {
 					IncreaseCategory(itemCategory, data.first);
 				} else {
-					logger::trace("{} is Worn", item->GetName());
+					if (!suppressLog) { logger::trace("{} is Worn", item->GetName()); }
 					if (isStorage) { Bonus::AddEquippedStorage(itemID); }
 				}
 			}
@@ -380,22 +387,22 @@ namespace CapacityHandler
 		UpdateTotalCount();
 
 		timer.stop();
-		logger::debug("...done in {}μs / {}ms.",  timer.duration_μs(), timer.duration_ms());
+		if (!suppressLog) { logger::debug("...done in {}μs / {}ms.",  timer.duration_μs(), timer.duration_ms());}
 	}
 
 	void Player::UpdateTotalCount()
 	{
 		//The "total" count only actually includes the large, medium, small, and tiny categories (plus huge, if bHugeCapacityShared), plus any OVERFLOW from the misc categories
-		int hugeToTiny = Settings::Get<float>("fLargePerHuge") * 
+		int hugeToTiny = (int)(Settings::Get<float>("fLargePerHuge") * 
 				Settings::Get<float>("fMediumPerLarge") * 
 				Settings::Get<float>("fSmallPerMedium") * 
-				Settings::Get<float>("fTinyPerSmall");
-		int largeToTiny = *Settings::Get<float*>("fMediumPerLarge") * 
+				Settings::Get<float>("fTinyPerSmall"));
+		int largeToTiny = (int)(Settings::Get<float>("fMediumPerLarge") * 
 				Settings::Get<float>("fSmallPerMedium") * 
-				Settings::Get<float>("fTinyPerSmall");
-		int mediumToTiny = *Settings::Get<float*>("fSmallPerMedium") * 
-				Settings::Get<float>("fTinyPerSmall");
-		int smallToTiny = Settings::Get<float>("fTinyPerSmall");
+				Settings::Get<float>("fTinyPerSmall"));
+		int mediumToTiny = (int)(Settings::Get<float>("fSmallPerMedium") * 
+				Settings::Get<float>("fTinyPerSmall"));
+		int smallToTiny = (int)(Settings::Get<float>("fTinyPerSmall"));
 
 		if (!Settings::Get<bool>("bHugeCapacityShared")) {
 			totalCount = (largeCount * largeToTiny) + (mediumCount * mediumToTiny) + (smallCount * smallToTiny) + tinyCount;
@@ -426,7 +433,7 @@ namespace CapacityHandler
 		auto isQuestItem = false;
 
 		if (a_event->baseObj != Forms::MISC::BYOHMaterialLog) {
-			RE::FormID itemCategory = Player::GetItemCategory(item, isQuestItem, itemCount);
+			RE::FormID itemCategory = Player::GetItemCategory(item, isQuestItem, itemCount, false);
 
 			if (oldContainer == 0x14) { // If moving item out of inventory
 				DecreaseCategory(itemCategory, itemCount);
@@ -439,35 +446,35 @@ namespace CapacityHandler
 		LogAllCategories();
 	}
 
-	int Player::GetItemCategory(RE::TESForm *a_item, bool is_questItem, int a_count)
+	int Player::GetItemCategory(RE::TESForm *a_item, bool is_questItem, int a_count, bool suppressLog)
 	{
 		auto kwItem = a_item->As<RE::BGSKeywordForm>();
 
 		auto itemType = a_item->GetFormType();
 		auto itemWeight = a_item->GetWeight();
-		logger::trace("{}x {} [{}:0x{:X}] - Weight: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, is_questItem);
 
 		if (kwItem) {
 			if (kwItem->HasKeywordID(Forms::KYWD::VendorItemPotion) || kwItem->HasKeywordID(Forms::KYWD::VendorItemPoison)) {
-				logger::trace("Item Category: kAlchemy");
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kAlchemy), is_questItem);}
 				return kAlchemy;
 			} else if (a_item->IsAmmo()) {
-				logger::trace("Item Category: kAmmo");
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kAmmo), is_questItem);}
 				return kAmmo;
 			} else if ((a_item->IsGold()) || kwItem->HasKeywordID(Forms::KYWD::CONG_CoinItem)) {
-				logger::trace("Item Category: kCoin");
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kCoin), is_questItem);}
 				return kCoin;
-			} else if ( (Settings::Get<bool>("bGemsInCoinCategory")) && (kwItem->HasKeywordID(Forms::KYWD::VendorItemGem)) && (a_item->GetWeight() == 0.1f) ) {
-				logger::trace("Item Category: kGemstone");
+			} else if ((kwItem->HasKeywordID(Forms::KYWD::VendorItemGem)) && (Settings::Get<bool>("bGemsInCoinCategory")) && (a_item->GetWeight() == 0.1f)) {
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kGemstone), is_questItem);}
 				return kGemstone;
 			} else if (Settings::Get<bool>("bSeparateWeaponCategories") && (a_item->Is(RE::FormType::Armor) || a_item->Is(RE::FormType::Weapon))) {
 				if (int weapCat = GetWeaponCategory(a_item); weapCat != kWeightless) {
+					if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(weapCat), is_questItem);}
 					return weapCat;
 				}
 			}
 		} else {
 			if (a_item->Is(RE::FormType::Ammo)) {
-				logger::trace("Item Category: kAmmo");
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kAmmo), is_questItem);}
 				return kAmmo;
 			}
 		}
@@ -475,29 +482,39 @@ namespace CapacityHandler
 		//NOTE: Lockpicks have an internal weight of 0.1 (due to Survival Mode), but are weightless (W = -1) when SM is disabled, so they behave a bit weirdly
 		//? So until I find a better solution for whatever's happening there, this is what I'm going with
 		if (a_item->IsLockpick()) {
-			logger::trace("Item Category: kWeightless");
+			if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kWeightless), is_questItem);}
 			return kWeightless;
 		}
 
-		return GetBasicCategory(a_item);
+		int category = GetBasicCategory(a_item);
+		if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(category), is_questItem);}
+		return category;
 	}
 
 	int Player::GetCategoryForEquip(RE::TESForm *a_item)
 	{
+		int category;
 		auto kwItem = a_item->As<RE::BGSKeywordForm>();
 
 		if (kwItem) {
 			if (kwItem->HasKeywordID(Forms::KYWD::VendorItemPotion) || kwItem->HasKeywordID(Forms::KYWD::VendorItemPoison)) {
-				logger::trace("Item Category: kAlchemy");
+				logger::trace("Equipped Item Category: {}", categoryNames.at(kAlchemy));
 				return kAlchemy;
 			}
 			
 			if (Settings::Get<bool>("bSeparateWeaponCategories") && (a_item->Is(RE::FormType::Armor) || a_item->Is(RE::FormType::Weapon))) {
-				if (int weaponCategory = GetWeaponCategory(a_item) != kWeightless) { return weaponCategory; }
+				category = GetWeaponCategory(a_item);
+
+				if (category != kWeightless) {
+					logger::trace("Equipped Item Category: {}", categoryNames.at(category));
+					return category;
+				}
 			}
 		}
+		category = GetBasicCategory(a_item);
+		logger::trace("Equipped Item Category: {}", categoryNames.at(category));
 
-		return GetBasicCategory(a_item);
+		return category;
 	}
 
 	int Player::GetBasicCategory(RE::TESForm *a_item)
@@ -521,7 +538,6 @@ namespace CapacityHandler
 			itemCategory = kTiny;
 		}
 
-		logger::trace("Item Category: {}", categoryNames.at(itemCategory));
 		return itemCategory;
 	}
 
@@ -530,7 +546,6 @@ namespace CapacityHandler
 		auto kwItem = a_item->As<RE::BGSKeywordForm>();
 
 		if (kwItem->HasKeywordID(Forms::KYWD::ArmorShield)) {
-			logger::trace("Item Category: kShield");
 			return kShield;
 		}
 
@@ -538,7 +553,6 @@ namespace CapacityHandler
 			std::string_view kwEditorID{keyword->GetFormEditorID()};
 			if (auto it = weaponKeywords.find(kwEditorID); it != weaponKeywords.end()) {
 				int weaponCategory = it->second;
-				logger::trace("Item Category: {}", categoryNames.at(weaponCategory));
 				return weaponCategory;
 			}
 		}
