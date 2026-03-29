@@ -3,9 +3,10 @@
 
 class Settings final : public REX::Singleton<Settings>
 {
-	// Toggle features
-	static inline bool		bNoHandsOverCap{true};
-	static inline bool		bPreventPickupOverCap{true};
+	// Manage mod behaviour
+	static inline bool		bCapacityBasedDebuffs{true};
+	static inline bool		bWeightBasedDebuffs{true};
+
 	static inline bool		bSkillsAffectCapacity{true};
 	static inline bool		bQuestItemsAffectCapacity{false};
 	static inline bool		bSeparateWeaponCategories{true};
@@ -14,6 +15,8 @@ class Settings final : public REX::Singleton<Settings>
 	static inline bool		bStaminaAffectsWeight{true};
 	static inline bool		bLevelAffectsWeight{true};
 	static inline bool		bRaceAffectsWeight{true};
+
+	static inline bool		bCustomMenuStyling{true};
 	
 	// Capacity settings
 	static inline bool		bCapacityVisualiserBaseValues{true};
@@ -42,6 +45,11 @@ class Settings final : public REX::Singleton<Settings>
 	static inline float		fSmallItemWeight{1};
 
 	// Buff & debuff settings
+	static inline bool		bNoHandsOverCap{true};
+	static inline bool		bPreventPickupOverCap{true};
+	static inline bool		bNoContainerAccessOverCap{true};
+	static inline bool		bPreventInteractionsOverCap{true};
+
 	static inline bool		bWeightDebuffFloorIsPercentage{false};
 	static inline uint32_t	uWeightDebuffFloor{50};
 
@@ -115,8 +123,8 @@ class Settings final : public REX::Singleton<Settings>
 	// uSpeedDebuffMax
 
 	static inline std::unordered_map <std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> settingMap = {
-		{"bNoHandsOverCap", {&bNoHandsOverCap, "ToggleFeatures"}},
-		{"bPreventPickupOverCap", {&bPreventPickupOverCap, "ToggleFeatures"}},
+		{"bCapacityBasedDebuffs", {&bCapacityBasedDebuffs, "ToggleFeatures"}},
+		{"bWeightBasedDebuffs", {&bWeightBasedDebuffs, "ToggleFeatures"}},
 		{"bSkillsAffectCapacity", {&bSkillsAffectCapacity, "ToggleFeatures"}},
 		{"bQuestItemsAffectCapacity", {&bQuestItemsAffectCapacity, "ToggleFeatures"}},
 		{"bSeparateWeaponCategories", {&bSeparateWeaponCategories, "ToggleFeatures"}},
@@ -124,6 +132,7 @@ class Settings final : public REX::Singleton<Settings>
 		{"bStaminaAffectsWeight", {&bStaminaAffectsWeight, "ToggleFeatures"}},
 		{"bLevelAffectsWeight", {&bLevelAffectsWeight, "ToggleFeatures"}},
 		{"bRaceAffectsWeight", {&bRaceAffectsWeight, "ToggleFeatures"}},
+		{"bCustomMenuStyling", {&bCustomMenuStyling, "ToggleFeatures"}},
 		{"bCapacityVisualiserBaseValues", {&bCapacityVisualiserBaseValues, "CapacitySettings"}},
 		{"bCapacityVisualiserShowFilled", {&bCapacityVisualiserShowFilled, "CapacitySettings"}},
 		{"bHugeCapacityShared", {&bHugeCapacityShared, "CapacitySettings"}},
@@ -148,6 +157,10 @@ class Settings final : public REX::Singleton<Settings>
 		{"fLargeItemWeight", {&fLargeItemWeight, "CapacitySettings"}},
 		{"fMediumItemWeight", {&fMediumItemWeight, "CapacitySettings"}},
 		{"fSmallItemWeight", {&fSmallItemWeight, "CapacitySettings"}},
+		{"bNoHandsOverCap", {&bNoHandsOverCap, "BuffsDebuffs"}},
+		{"bPreventPickupOverCap", {&bPreventPickupOverCap, "BuffsDebuffs"}},
+		{"bNoContainerAccessOverCap", {&bNoContainerAccessOverCap, "BuffsDebuffs"}},
+		{"bPreventInteractionsOverCap", {&bPreventInteractionsOverCap, "BuffsDebuffs"}},
 		{"bWeightDebuffFloorIsPercentage", {&bWeightDebuffFloorIsPercentage, "BuffsDebuffs"}},
 		{"uWeightDebuffFloor", {&uWeightDebuffFloor, "BuffsDebuffs"}},
 		{"bWeightAffectsSpeed", {&bWeightAffectsSpeed, "BuffsDebuffs"}},
