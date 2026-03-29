@@ -1,3 +1,4 @@
+## !! THIS MOD IS WORK IN PROGRESS, AND IS NOT YET SUITABLE FOR GAMEPLAY USAGE !!
 # Capacity Overhaul NG
 
 An SKSE mod designed with the intent of completely overhauling Skyrim's item carry weight system, introducing additional limits based on the quantity of items and a range of modifiers that impact the player's carry weight limit, as well as a number of Buffs and Debuffs that apply dynamically depending on the player's current burden.
