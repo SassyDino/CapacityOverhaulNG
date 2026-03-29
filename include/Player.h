@@ -46,4 +46,6 @@ class PlayerStatus
 
 		static float CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry);
 		static void UpdateLevelAtMaxGrad();
+
+		static bool AllowActivation();
 };

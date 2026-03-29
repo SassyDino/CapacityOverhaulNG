@@ -1,4 +1,5 @@
 #include "Player.h"
+#include "Hooks.h"
 
 float PlayerStatus::StamBaseAV;
 float PlayerStatus::StamPermAV;
@@ -26,12 +27,12 @@ bool PlayerStatus::GetOverCapacityStatus() { return isOverCapacity; }
 
 void PlayerStatus::UpdateBurden() { CurrentWeight = AsAV->GetActorValue(RE::ActorValue::kInventoryWeight); }
 
-int PlayerStatus::GetBurden() { return CurrentWeight; }
+int PlayerStatus::GetBurden() { return (int)ceil(CurrentWeight); }
 
 int PlayerStatus::UpdateAndGetBurden()
 {
 	CurrentWeight = AsAV->GetActorValue(RE::ActorValue::kInventoryWeight);
-	return CurrentWeight;
+	return (int)ceil(CurrentWeight);
 }
 
 void PlayerStatus::UpdateLevel() { Level = Char->GetLevel(); }
@@ -102,3 +103,91 @@ void PlayerStatus::UpdateLevelAtMaxGrad()
 
 	LevelAtMaxGrad = CalcLevelAtMaxGrad(rate, pivot, baseCarry);
 }
+
+bool PlayerStatus::AllowActivation()
+{
+	logger::debug("Calling <AllowActivation>");
+
+	if (!Hooks::crosshair_ref) { return true; }
+
+	if (const auto a_targetRef = Hooks::crosshair_ref->GetBaseObject()) {
+		logger::trace("Crosshair object found. Checking whether activation should be allowed.");
+		bool allow = true;
+
+		switch (a_targetRef->GetFormType())
+		{
+			case RE::FormType::NPC: {
+				logger::trace("NPC Activation");
+				auto npc = Hooks::crosshair_ref->As<RE::Actor>();
+				if (npc->IsDead() && Settings::Get<bool>("bNoContainerAccessOverCap")) {
+					RE::DebugNotification("You cannot loot corpses while your inventory is overflowing.");
+					allow = false;
+				}
+				break;
+			}
+			case RE::FormType::Container:
+				logger::trace("Container Activation");
+				if (Settings::Get<bool>("bNoContainerAccessOverCap")) {
+					RE::DebugNotification("You cannot access containers while your inventory is overflowing.");
+					allow = false;
+				}
+				break;
+			default:
+				//Todo: "Everything else" might include stuff like flora etc, need to make sure this only works when intended, and works everywhere I want it to
+				logger::trace("Item Activation");
+				RE::DebugNotification("Your storage is too full to hold any more items.");
+				allow = false;
+		}
+		return allow;
+	}
+	return true;
+}
+/* 
+RE::FormType PlayerStatus::CrosshairFormType()
+{
+	auto crosshairObj = GetCrosshairObj();
+
+	if (const auto objRef = crosshairObj->GetBaseObject()) {
+		return objRef->GetFormType();
+	} else {
+		return RE::FormType::None;
+	}
+}
+
+bool PlayerStatus::LookingAtContainer()
+{
+	bool container = false;
+	auto objType =  CrosshairFormType();
+
+	if (objType == RE::FormType::None) { return container; }
+
+	switch (objType)
+	{
+		//TODO: Might need to add another case for certain activators, I think some can add items/open an inventory upon activation?
+		case RE::FormType::Container:
+			container = true;
+			break;
+			//TODO: Check whether bookshelves count as a container
+		case RE::FormType::NPC:
+			if (GetCrosshairObj()->As<RE::Actor>()->IsDead()) {
+				container = true;
+			}
+			break;
+			//TODO: Check how followers, pickpocketing, and crafting stations work
+		default:
+			break;
+	}
+
+	return container;
+}
+
+bool PlayerStatus::LookingAtItem()
+{
+	bool item = false;
+	auto objType = CrosshairFormType();
+
+	//auto obj = CrosshairRef->As
+
+	return false;
+}
+ */

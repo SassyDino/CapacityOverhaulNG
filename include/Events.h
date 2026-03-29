@@ -45,5 +45,14 @@ namespace Events
             static void Register();
     };
 
+	class EventHandler : public REX::Singleton<EventHandler>, public RE::BSTEventSink<SKSE::CrosshairRefEvent> {
+
+		public:
+			//virtual Result ProcessEvent(const RE::UserEventEnabled*event, RE::BSTEventSource<RE::UserEventEnabled>*source) override;
+			virtual Result ProcessEvent(const SKSE::CrosshairRefEvent*event, RE::BSTEventSource<SKSE::CrosshairRefEvent>*source) override;
+
+			static void Register();
+	};
+
     void SinkEventHandlers();
 }

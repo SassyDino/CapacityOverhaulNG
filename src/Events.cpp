@@ -5,6 +5,7 @@
 #include "Player.h"
 #include "ExtraStorage.h"
 #include "FormHandler.h"
+#include "Hooks.h"
 
 namespace Events
 {
@@ -58,6 +59,7 @@ namespace Events
 
 		// Prevent equipped apparel from taking up storage space/capacity slots
 		auto itemCategory = CapacityHandler::Player::GetCategoryForEquip(item);
+		logger::trace("Equipped Item Category: {}", CapacityHandler::categoryNames.at(itemCategory));
 
 		if (!std::ranges::contains(CapacityHandler::weaponCategories, itemCategory)) {
 			bool isBag = CapacityHandler::Bonus::ItemIsStorage(item);
@@ -202,6 +204,18 @@ namespace Events
 
         return Result::kContinue;
     }
+/* 
+	auto EventHandler::ProcessEvent(const RE::UserEventEnabled*event, RE::BSTEventSource<RE::UserEventEnabled>*) -> Result {
+		//logger::debug("<EventHandler::UserEventEnabled> -> Old Event Flag: '{:X}, {:X}' | New Event Flag: '{:X}, {:X}'", (uint32_t)event->oldUserEventFlag.get(), event->oldUserEventFlag.underlying(), (uint32_t)event->newUserEventFlag.get(), event->newUserEventFlag.underlying());
+
+		return Result::kContinue;
+	}
+ */
+	auto EventHandler::ProcessEvent(const SKSE::CrosshairRefEvent*event, RE::BSTEventSource<SKSE::CrosshairRefEvent>*) -> Result {
+		Hooks::crosshair_ref = event->crosshairRef;
+
+		return Result::kContinue;
+	}
 	
     void CapacityEventHandler::Register() {
         RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESContainerChangedEvent>(GetSingleton());
@@ -221,11 +235,16 @@ namespace Events
 		RE::ScriptEventSourceHolder::GetSingleton()->AddEventSink<RE::TESLoadGameEvent>(GetSingleton());
 	}
 
+	void EventHandler::Register() {
+		//RE::ControlMap::GetSingleton()->AddEventSink<RE::UserEventEnabled>(GetSingleton());
+		SKSE::GetCrosshairRefEventSource()->AddEventSink<SKSE::CrosshairRefEvent>(GetSingleton());
+	}
+
     void SinkEventHandlers() {
         CapacityEventHandler::Register();
         WeightEventHandler::Register();
         UIEventHandler::Register();
+		EventHandler::Register();
         logger::info("Registered all event handlers.");
     }
-
 }
