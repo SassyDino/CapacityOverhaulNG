@@ -1,18 +1,76 @@
 #include "GUICustom.h"
 #include "MCP.h"
 #include "CapacityHandler.h"
-using namespace SKSEMenuFramework;
+//using namespace SKSEMenuFramework;
+using namespace ImGuiMCP;
 using namespace CapacityHandler;
+namespace SKSEMF = SKSEMenuFramework;
 namespace MCP_API = ImGuiMCP::ImGui;
 namespace MCPDraw = MCP_API::ImDrawListManager;
 
 namespace GUI
 {
-	std::string_view Assets::path = "Data/Textures/SassyDino/CapacityOverhaulNG/";
+	const std::string Assets::dir = ".\\Data\\Interface\\CapacityOverhaulNG\\Icons\\";
+	const std::string Assets::type = "png";
+
+	ImGuiMCP::ImTextureID Assets::CheckboxEmpty;
+	ImGuiMCP::ImTextureID Assets::CheckboxFilled;
+
+	ImGuiMCP::ImTextureID Assets::SeparatorLeft;
+	ImGuiMCP::ImTextureID Assets::SeparatorRight;
+
+	ImGuiMCP::ImTextureID Assets::HeaderBackLeft;
+	ImGuiMCP::ImTextureID Assets::HeaderBackRight;
+	ImGuiMCP::ImTextureID Assets::HeaderFrontLeft;
+	ImGuiMCP::ImTextureID Assets::HeaderFrontRight;
+	ImGuiMCP::ImTextureID Assets::HeaderArrowDown;
+	ImGuiMCP::ImTextureID Assets::HeaderArrowUpLeft;
+	ImGuiMCP::ImTextureID Assets::HeaderArrowUpRight;
+
+	ImGuiMCP::ImTextureID Assets::ScrollbarLeft;
+	ImGuiMCP::ImTextureID Assets::ScrollbarRight;
+	ImGuiMCP::ImTextureID Assets::ScrollbarSelector;
+
+	float Assets::defaultFontSize;
+
+	std::string Assets::GetTexPath(std::string a_filename)
+	{
+		std::string path = std::string(dir + a_filename + "." + type);
+		logger::debug("{}", path);
+		return path;
+	}
 
 	void Assets::LoadTextures()
 	{
-		
+		if (!SKSEMenuFramework::IsInstalled()) {
+			logger::warn("SKSE Menu Framework is not installed: loading textures skipped.");
+			return;
+		}
+
+		//NOTE: Loading textures here rather than in the actual widget function (and making use of the caching) because otherwise the game freezes for a brief moment when opening the CONG MCP while it loads the textures for the first time.
+		logger::info("Loading textures...");
+
+		CheckboxEmpty = SKSEMF::LoadTexture(GetTexPath("Checkbox_Empty"));
+		CheckboxFilled = SKSEMF::LoadTexture(GetTexPath("Checkbox_Filled"));
+
+		SeparatorLeft = SKSEMF::LoadTexture(GetTexPath("Separator_Knot_L"));
+		SeparatorRight = SKSEMF::LoadTexture(GetTexPath("Separator_Knot_R"));
+
+		HeaderBackLeft = SKSEMF::LoadTexture(GetTexPath("Header_Back_L"));
+		HeaderBackRight = SKSEMF::LoadTexture(GetTexPath("Header_Back_R"));
+		HeaderFrontLeft = SKSEMF::LoadTexture(GetTexPath("Header_Detail_L"));
+		HeaderFrontRight = SKSEMF::LoadTexture(GetTexPath("Header_Detail_R"));
+		HeaderArrowDown = SKSEMF::LoadTexture(GetTexPath("Header_Arrow_Down"));
+		HeaderArrowUpLeft = SKSEMF::LoadTexture(GetTexPath("Header_Arrow_Up_L"));
+		HeaderArrowUpRight = SKSEMF::LoadTexture(GetTexPath("Header_Arrow_Up_R"));
+
+		ScrollbarLeft = SKSEMF::LoadTexture(GetTexPath("Scrollbar_Arrow_Left"));
+		ScrollbarRight = SKSEMF::LoadTexture(GetTexPath("Scrollbar_Arrow_Right"));
+		ScrollbarSelector = SKSEMF::LoadTexture(GetTexPath("Scrollbar_Selector"));
+
+		logger::trace("Checkbox_Empty = {:X} | Checkbox_Filled = {:X}", reinterpret_cast<uint64_t>(CheckboxEmpty), reinterpret_cast<uint64_t>(CheckboxFilled));
+
+		logger::info("Textures loaded!\n{}", std::string(100, '='));
 	}
 }
 
@@ -37,26 +95,392 @@ namespace GUI::MCP
 		{ItemCategories::kShield, "Shields (Overflow)"}
 	};
 
-	const std::unordered_map<ItemCategories, ImGuiMCP::ImU32> categoryColours = {
-		{ItemCategories::kHuge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.0f, 0.357f, 1.0f))},
-		{ItemCategories::kLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.729f , 0.259f, 0.184f, 1.0f))},
-		{ItemCategories::kMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.478f, 0.0f, 1.0f))},
-		{ItemCategories::kSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.48f, 0.65f, 0.18f, 1.0f))},
-		{ItemCategories::kTiny, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.8f, 0.52f, 1.0f))},
-		{ItemCategories::kAlchemy, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.75f, 0.31f, 0.69f, 1.0f))},
-		{ItemCategories::kAmmo, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.65f, 0.31f, 0.84f, 1.0f))},
-		{ItemCategories::kCoin, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.39f, 0.36f, 1.0f, 1.0f))},
-		{ItemCategories::kWeaponLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.16f, 0.18f, 0.34f, 1.0f))},
-		{ItemCategories::kWeaponMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.42f, 0.27f, 0.45f, 1.0f))},
-		{ItemCategories::kWeaponSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.68f, 0.35f, 0.49f, 1.0f))},
-		{ItemCategories::kWeaponRanged, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.88f, 0.49f, 0.47f, 1.0f))},
-		{ItemCategories::kShield, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.98f, 0.7f, 0.44f, 1.0f))}
-	};
+	void PushCustomText(float a_scaleMult, unsigned int a_colour)
+	{
+		// NOTE: This is the best way (that worked) that I found to change the font size for text, but I imagine there has got to be a better way.
+		Assets::defaultFontSize = MCP_API::GetFont()->Scale;
+
+		MCP_API::GetFont()->Scale *= a_scaleMult;
+		MCP_API::PushFont(MCP_API::GetFont());
+		MCP_API::PushStyleColor(ImGuiCol_Text, a_colour);
+	}
+
+	void PopCustomText()
+	{
+		MCP_API::PopStyleColor(1);
+		MCP_API::GetFont()->Scale = Assets::defaultFontSize;
+		MCP_API::PopFont();
+	}
+
+	ImVec4 AlignedText(const char *text, ImVec2 a_p0, ImVec2 a_p1, hAlign kh, vAlign kv)
+	{
+		ImVec2 textSize;
+		MCP_API::CalcTextSize(&textSize, text, NULL, false, 0.0f);
+
+		float availWidth = a_p1.x - a_p0.x;
+		float availHeight = a_p1.y - a_p0.y;
+
+		ImVec2 p2;
+		MCP_API::GetCursorScreenPos(&p2);
+
+		switch(kh) {
+			case CentreHAlign:
+				MCP_API::SetCursorScreenPos(ImVec2(p2.x + ((availWidth - textSize.x) * 0.5f), p2.y));
+				break;
+			case RightAlign:
+				MCP_API::SetCursorScreenPos(ImVec2(p2.x + (availWidth - textSize.x), p2.y));
+				break;
+			default:
+				break;
+		}
+
+		MCP_API::GetCursorScreenPos(&p2);
+		switch(kv) {
+			case CentreVAlign:
+				MCP_API::SetCursorScreenPos(ImVec2(p2.x, p2.y + ((availHeight - textSize.y) * 0.5f)));
+				break;
+			case BottomAlign:
+				MCP_API::SetCursorScreenPos(ImVec2(p2.x, p2.y + (availHeight - textSize.y)));
+				break;
+			default:
+				break;
+		}
+
+		MCP_API::Text(text);
+
+		return ImVec4(p2.x, p2.y, p2.x+textSize.x, p2.y+textSize.y);
+	}
+
+	bool CustomHeader(const char *text)
+	{
+		if (!Settings::Get<bool>("bCustomMenuStyling")) { return MCP_API::CollapsingHeader(text, SKSEMenuFramework::ImGuiTreeNodeFlags_DefaultOpen); }
+
+		bool* pOpen = MCP_API::ImGuiStorageManger::GetBoolRef(MCP_API::GetStateStorage(), MCP_API::GetID(text), true);
+
+		ImVec2 p0;
+		ImDrawList *drawList = MCP_API::GetWindowDrawList();
+		MCP_API::GetCursorScreenPos(&p0);
+
+		PushCustomText(1.35f, Colour::separatorText);
+
+		float textHeight = MCP_API::GetTextLineHeightWithSpacing();
+		float textVertPadding = textHeight * 0.05f;
+
+		auto headerBox = DrawHeaderBar(drawList, p0, textHeight, textVertPadding);
+		auto bp0 = ImVec2(headerBox.x, headerBox.y);
+		auto bp1 = ImVec2(headerBox.z, headerBox.w);
+
+		MCP_API::SetCursorScreenPos(bp0);
+		auto textBox = AlignedText(text, bp0, bp1, CentreHAlign, CentreVAlign);
+		auto tp0 = ImVec2(textBox.x, textBox.y);
+		auto tp1 = ImVec2(textBox.z, textBox.w);
+
+		DrawHeaderArrows(drawList, *pOpen, bp0, bp1, tp0, tp1, textVertPadding);
+
+		PopCustomText();
+
+		MCP_API::SetCursorScreenPos(bp0);
+		MCP_API::Dummy(ImVec2(bp1.x-bp0.x, (bp1.y-bp0.y)+(textVertPadding*5)));
+		if (MCP_API::IsItemClicked()) {
+			*pOpen ^= 1;
+		}
+
+		return *pOpen;
+	}
+
+	ImVec4 DrawHeaderBar(ImDrawList* drawList, ImVec2 p0, float textSize, float textVertPadding)
+	{
+		const auto texSize = ImVec2(170,132);
+		const float texAspRatio = 1.2879f;
+
+		float textSpaceNeeded = (textSize + (textVertPadding * 2)); // textSpaceNeeded should represent the vertical space available between the lines/bars of the header
+		auto scaledSize = ImVec2(textSpaceNeeded*1.5f*texAspRatio, textSpaceNeeded*1.5f); // The text area of the texture takes up 2/3 of the entire vertical space, so multiplying by 1.5 should give us the total texture height
+
+		ImVec2 windowPos;
+		MCP_API::GetWindowPos(&windowPos);
+		float windowLeft = p0.x;
+		float windowGap = windowLeft - windowPos.x;
+
+		float headerWidth = MCP_API::GetWindowWidth() - (windowGap * 4);
+		if (MCP_API::GetScrollMaxY() > 0.0f) { headerWidth -= MCP_API::GetStyle()->ScrollbarSize; }
+
+		p0 = ImVec2(p0.x+windowGap, p0.y);
+		auto p1 = ImVec2(p0.x+headerWidth, p0.y+scaledSize.y);
+
+		float lineThickness = scaledSize.y * 0.0606f; //0.0682f
+		float lineStartY = scaledSize.y * 0.1061f; //0.0985f
+		float backStartY = scaledSize.y * 0.0076f;
+
+		auto textBox = ImVec4(p0.x+scaledSize.x, p0.y+lineStartY+lineThickness, p1.x-scaledSize.x, p1.y-(lineStartY+lineThickness));
+
+		MCPDraw::AddImage(drawList, Assets::HeaderBackLeft, p0, ImVec2(textBox.x, p0.y+scaledSize.y), ImVec2(), ImVec2(1,1), GUI::Colour::headerBG);
+		MCPDraw::AddImage(drawList, Assets::HeaderBackRight, ImVec2(textBox.z, p0.y), p1, ImVec2(), ImVec2(1,1), GUI::Colour::headerBG);
+		MCPDraw::AddRectFilled(drawList, ImVec2(textBox.x, p0.y+backStartY), ImVec2(textBox.z, p1.y-backStartY), GUI::Colour::headerBG, 0.0f, 0);
+
+		MCPDraw::AddImage(drawList, Assets::HeaderFrontLeft, p0, ImVec2(textBox.x, p0.y+scaledSize.y), ImVec2(), ImVec2(1,1), GUI::Colour::separatorLine);
+		MCPDraw::AddImage(drawList, Assets::HeaderFrontRight, ImVec2(textBox.z, p0.y), p1, ImVec2(), ImVec2(1,1), GUI::Colour::separatorLine);
+		MCPDraw::AddRectFilled(drawList, ImVec2(textBox.x-5, p0.y+lineStartY), ImVec2(textBox.z+5, textBox.y), GUI::Colour::separatorLine, 0.0f, 0); // +5 to length on either end to add a slight overlap
+		MCPDraw::AddRectFilled(drawList, ImVec2(textBox.x-5, p1.y-lineStartY), ImVec2(textBox.z+5, textBox.w), GUI::Colour::separatorLine, 0.0f, 0); // should help to prevent small gaps as a result of scaling and rounding
+
+		return textBox;
+	}
+
+	void DrawHeaderArrows(ImDrawList* drawList, bool is_Open, ImVec2 hp0, ImVec2 hp1, ImVec2 tp0, ImVec2 tp1, float textVertPadding)
+	{
+		auto arrowTexSize = ImVec2(56,56);
+
+		auto headerSize = ImVec2(hp1.x-hp0.x,hp1.y-hp0.y);
+		float arrowSide = headerSize.y - (textVertPadding * 8);
+		auto arrowScaled = ImVec2(arrowSide, arrowSide);
+
+		float boxMidline = hp0.y + (headerSize.y * 0.5f);
+
+/* Arrows near to text
+		auto arrowL_p0 = ImVec2(tp0.x-(arrowSide+(textVertPadding*10.0f)), boxMidline-(arrowSide*0.5f));
+		auto arrowL_p1 = ImVec2(arrowL_p0.x+arrowSide, arrowL_p0.y+arrowSide);
+		auto arrowR_p0 = ImVec2(tp1.x+(textVertPadding*10.0f), boxMidline-(arrowSide*0.5f));
+		auto arrowR_p1 = ImVec2(arrowR_p0.x+arrowSide, arrowL_p0.y+arrowSide);
+*/
+/* Arrows near to header ends
+		auto arrowL_p0 = ImVec2(hp0.x+(textVertPadding*10.0f), boxMidline-(arrowSide*0.5f));
+		auto arrowL_p1 = ImVec2(arrowL_p0.x+arrowSide, arrowL_p0.y+arrowSide);
+		auto arrowR_p0 = ImVec2(hp1.x-(arrowSide+(textVertPadding*10.0f)), boxMidline-(arrowSide*0.5f));
+		auto arrowR_p1 = ImVec2(arrowR_p0.x+arrowSide, arrowL_p0.y+arrowSide);
+*/
+
+		float endToText = (headerSize.x - (tp1.x-tp0.x)) * 0.5f;
+		float endToArrow = endToText * 0.5f;
+
+		auto arrowL_p0 = ImVec2(hp0.x+(endToArrow-(arrowSide*0.5f)), boxMidline-(arrowSide*0.5f));
+		auto arrowL_p1 = ImVec2(arrowL_p0.x+arrowSide, arrowL_p0.y+arrowSide);
+		auto arrowR_p0 = ImVec2(hp1.x-(endToArrow+(arrowSide*0.5f)), boxMidline-(arrowSide*0.5f));
+		auto arrowR_p1 = ImVec2(arrowR_p0.x+arrowSide, arrowL_p0.y+arrowSide);
+
+		MCPDraw::AddImage(drawList, (is_Open ? Assets::HeaderArrowDown : Assets::HeaderArrowUpLeft), arrowL_p0, arrowL_p1, ImVec2(), ImVec2(1,1), GUI::Colour::separatorLine);
+		MCPDraw::AddImage(drawList, (is_Open ? Assets::HeaderArrowDown : Assets::HeaderArrowUpRight), arrowR_p0, arrowR_p1, ImVec2(), ImVec2(1,1), GUI::Colour::separatorLine);
+	}
 
 	void CustomSeparator(const char *text)
 	{
-		MCP_API::SeparatorText(text);
+		if (!Settings::Get<bool>("bCustomMenuStyling")) {
+			MCP_API::SeparatorText(text);
+			return;
+		}
+
+		//TODO: I suspect that this whole widget could maybe be simplified if each individual element (left line, text, right line) was its own separate widget and then combined in this function. Will have to see though
+		ImVec2 p0;
+		ImDrawList *drawList = MCP_API::GetWindowDrawList();
+		ImVec2 windowPos;
+
+		MCP_API::GetWindowPos(&windowPos);
+		MCP_API::GetCursorScreenPos(&p0);
+		float windowLeft = p0.x;
+		float windowGap = windowLeft - windowPos.x;
+
+		float scale = 0.5f;
+		auto knotTexSize = ImVec2(80,56);
+		float knotAspRatio = 1.4286f;
+		
+		float textDividerRatio = 0.6f;
+		float dividerVerticalSpacing = (1-textDividerRatio)/2;
+
+		float indentSize = 80 * scale;
+		float textKnotGap = 32 * scale;
+
+		PushCustomText(1.2f, Colour::separatorText);
+		float textHeight = MCP_API::GetTextLineHeightWithSpacing();
+
+		MCP_API::Dummy(ImVec2(indentSize+(textKnotGap*2), textHeight));
 		MCP_API::SameLine();
+		MCP_API::GetCursorScreenPos(&p0);
+
+		MCP_API::Text(text);
+		MCP_API::SameLine();
+
+		PopCustomText();
+
+		auto scaledKnotSize = ImVec2(textHeight*knotAspRatio, textHeight);
+		auto knotSize = ImVec2(textHeight*textDividerRatio*knotAspRatio, textHeight*textDividerRatio);
+		float lineThickness = knotSize.y * 0.0893f; // These numbers represent the thickness/heights of the lines and the gap between them, found by dividing their pixel count in the base texture by the height (y-axis) of the texture.
+		float lineStartY = knotSize.y * 0.3393f;
+
+		p0.y += scaledKnotSize.y*dividerVerticalSpacing;
+		p0.x -= textKnotGap; 
+
+		MCPDraw::AddImage(drawList, Assets::SeparatorLeft, ImVec2(p0.x-knotSize.x, p0.y+knotSize.y), p0, ImVec2(), ImVec2(1,1), GUI::Colour::separatorLine);
+		MCPDraw::AddRectFilled(drawList, ImVec2(p0.x-knotSize.x, p0.y+lineStartY), ImVec2(windowLeft, p0.y+lineStartY+lineThickness), GUI::Colour::separatorLine, 0.0f, 0);
+		MCPDraw::AddRectFilled(drawList, ImVec2(p0.x-knotSize.x, p0.y+knotSize.y-lineStartY), ImVec2(windowLeft, p0.y+knotSize.y-(lineStartY+lineThickness)), GUI::Colour::separatorLine, 0.0f, 0);
+		MCPDraw::AddRectFilled(drawList, ImVec2(windowLeft, p0.y+lineStartY), ImVec2(windowLeft+lineThickness, p0.y+knotSize.y-lineStartY), GUI::Colour::separatorLine, 0.0f, 0);
+		
+		MCP_API::GetCursorScreenPos(&p0);
+		p0.x += textKnotGap;
+		auto p1 = ImVec2(p0.x+knotSize.x, p0.y+knotSize.y);
+
+		MCP_API::GetWindowPos(&windowPos);
+		float sepEndX = windowPos.x + MCP_API::GetWindowWidth() - windowGap;
+
+		if (MCP_API::GetScrollMaxY() > 0.0f) {
+			sepEndX -= MCP_API::GetStyle()->ScrollbarSize;
+		}
+
+		p0.y += scaledKnotSize.y*dividerVerticalSpacing;
+		p1.y += scaledKnotSize.y*dividerVerticalSpacing;
+
+		MCPDraw::AddImage(drawList, Assets::SeparatorRight, p0, p1, ImVec2(), ImVec2(1,1), GUI::Colour::separatorLine);
+		MCPDraw::AddRectFilled(drawList, ImVec2(p1.x, p0.y+lineStartY), ImVec2(sepEndX, p0.y+lineStartY+lineThickness), GUI::Colour::separatorLine, 0.0f, 0);
+		MCPDraw::AddRectFilled(drawList, ImVec2(p1.x, p1.y-lineStartY), ImVec2(sepEndX, p1.y-lineStartY-lineThickness), GUI::Colour::separatorLine, 0.0f, 0);
+		MCPDraw::AddRectFilled(drawList, ImVec2(sepEndX-lineThickness, p0.y+lineStartY), ImVec2(sepEndX, p1.y-lineStartY), GUI::Colour::separatorLine, 0.0f, 0);
+
+		//NOTE: This is/was an attempt to draw an angled end to the separator using ImDraw stuff. Couldn't get it to render nicely.
+		/* 
+		float middleGap = (p1.y - p0.y) - ((lineThickness + lineStartY) * 2);
+		float topOvershoot = middleGap + lineThickness;
+		float bottomOvershoot = lineThickness * 0.4;
+
+		auto ep1 = ImVec2(p1.x+length+topOvershoot+lineThickness, p0.y+lineStartY);
+		auto ep2 = ImVec2(p1.x+length+topOvershoot, p0.y+lineStartY);
+		auto ep3 = ImVec2(p1.x+length, p1.y-lineStartY-lineThickness);
+		auto ep4 = ImVec2(p1.x+length+bottomOvershoot, p1.y-lineStartY);
+
+		MCPDraw::PathLineTo(drawList, ep1);
+		MCPDraw::PathBezierCubicCurveTo(drawList, ep2, ep3, ep4, 3);
+		MCPDraw::PathFillConvex(drawList, lineColour);
+		*/
+
+ 		//NOTE: This is/was an attempt to use an actual texture for the separator end. Works better than the ImDraw method, but antialiasing fucks it up, so maybe come back to this at some point.
+		/* 
+		auto endTexture = SKSEMenuFramework::LoadTexture(".\\Data\\Interface\\CapacityOverhaulNG\\Icons\\Separator_End.png");
+		float endAspRatio = 1.2143f;
+		MCPDraw::AddImage(drawList, endTexture, ImVec2(p1.x+length, p0.y+lineStartY), ImVec2(p1.x+length+(((p1.y-lineStartY)-(p0.y+lineStartY))*endAspRatio), p1.y-lineStartY), ImVec2(), ImVec2(1,1), lineColour);
+ 		*/
+
+		MCP_API::NewLine();
+	}
+
+	void CustomCheckbox(const char *text, bool *a_toggle)
+	{
+		if (!Settings::Get<bool>("bCustomMenuStyling")) {
+			MCP_API::Checkbox(text, a_toggle);
+			return;
+		}
+
+		MCP_API::BeginGroup();
+		{
+			MCP_API::PushStyleColor(ImGuiCol_Button, ImVec4());
+			MCP_API::PushStyleColor(ImGuiCol_ButtonActive, ImVec4());
+			MCP_API::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4());
+			MCP_API::PushStyleColor(ImGuiCol_Border, ImVec4());
+			MCP_API::PushStyleColor(ImGuiCol_BorderShadow, ImVec4());
+
+			MCP_API::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2());
+
+			//Note: Might be worth changing the size (ImVec2) to something adjustable, in case I implement some sort of dynamic scaling etc.
+			if (MCP_API::ImageButton(text, (*a_toggle ? Assets::CheckboxFilled : Assets::CheckboxEmpty), ImVec2(40,40), ImVec2(), ImVec2(1,1), ImVec4(), ImVec4(1,1,1,1))) {
+				*a_toggle = !*a_toggle;
+			}
+
+			MCP_API::SameLine();
+			MCP_API::Text(text);
+
+			MCP_API::PopStyleColor(5);
+			MCP_API::PopStyleVar(1);
+		}
+		MCP_API::EndGroup();
+	}
+
+	void CustomSlider(const char *text, float* a_setting, float a_minValue, float a_maxValue) {
+		ImVec2 p0;
+		MCP_API::GetCursorScreenPos(&p0);
+		ImDrawList *drawList = MCP_API::GetWindowDrawList();
+
+		auto scale = 0.75f;
+
+		auto selectorData = DrawSliderTrack(drawList, scale, p0);
+
+		selectorData.z = ValueToSliderXPos(*a_setting, selectorData.w, selectorData.x, a_minValue, a_maxValue);
+
+		auto sliderData = DrawSliderSelector(drawList, scale, selectorData);
+
+		if (sliderData.first == true) {
+			Testing::testFloat = SliderXPosToValue(sliderData.second, selectorData.w, selectorData.x, a_minValue, a_maxValue);
+		}
+
+		MCP_API::Dummy(ImVec2(450, 60));
+		MCP_API::SameLine();
+		MCP_API::Text(text);
+	}
+
+	void CustomIntSlider(const char *text) {}
+
+	void CustomFloatSlider(const char *text) {}
+
+	ImVec4 DrawSliderTrack(ImGuiMCP::ImDrawList* drawList, float scale, SKSEMenuFramework::ImVec2 p0)
+	{
+		auto sliderLeft = SKSEMenuFramework::LoadTexture(".\\Data\\Interface\\CapacityOverhaulNG\\Icons\\Scrollbar_Arrow_Left.png");
+		auto sliderRight = SKSEMenuFramework::LoadTexture(".\\Data\\Interface\\CapacityOverhaulNG\\Icons\\Scrollbar_Arrow_Right.png");
+
+		auto arrowTexSize = ImVec2(80.0f, 56.0f);
+		auto arrowSize = ImVec2(arrowTexSize.x*scale, arrowTexSize.y*scale);
+		auto sliderLen = 400.0f * scale;
+		auto trackGap = arrowSize.y * 0.0357f;
+		auto trackWidth = arrowSize.y * 0.0714f;
+		auto p1 = ImVec2(p0.x + arrowSize.x, p0.y + arrowSize.y);
+
+		MCPDraw::AddRectFilled(drawList, ImVec2(p1.x, p0.y+trackGap), ImVec2(p1.x+sliderLen, p0.y+trackGap+trackWidth), MCP_API::GetColorU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f)), 0.0f, 0);
+		MCPDraw::AddRectFilled(drawList, ImVec2(p1.x, p1.y-(trackGap+trackWidth)), ImVec2(p1.x+sliderLen, p1.y-trackGap), MCP_API::GetColorU32(ImVec4(0.0f, 0.0f, 0.0f, 1.0f)), 0.0f, 0);
+
+		MCPDraw::AddRectFilled(drawList, ImVec2(p1.x, p0.y+trackGap+trackWidth), ImVec2(p1.x+sliderLen, p0.y+trackGap+(trackWidth*2.0f)), MCP_API::GetColorU32(ImVec4(0.8f, 0.8f, 0.8f, 1.0f)), 0.0f, 0);
+		MCPDraw::AddRectFilled(drawList, ImVec2(p1.x, p1.y-(trackGap+(trackWidth*2.0f))), ImVec2(p1.x+sliderLen, p1.y-(trackGap+trackWidth)), MCP_API::GetColorU32(ImVec4(0.8f, 0.8f, 0.8f, 1.0f)), 0.0f, 0);
+
+		MCPDraw::AddImage(drawList, sliderLeft, p0, p1, ImVec2(), ImVec2(1.0f, 1.0f), MCP_API::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)));
+		MCPDraw::AddImage(drawList, sliderRight, ImVec2(p1.x+sliderLen, p0.y), ImVec2(p1.x+sliderLen+arrowSize.x, p1.y), ImVec2(), ImVec2(1.0f, 1.0f), MCP_API::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)));
+
+		//ImVec4(w = x0, x = x1, y = y1, z = sliderPos)
+		return ImVec4(p1.x, p1.x+sliderLen, p1.y-(trackGap+trackWidth));
+	}
+
+	std::pair<bool, float> DrawSliderSelector(ImGuiMCP::ImDrawList* drawList, float scale, ImVec4 bounds)
+	{
+		auto selector = SKSEMenuFramework::LoadTexture(".\\Data\\Interface\\CapacityOverhaulNG\\Icons\\Scrollbar_Selector.png");
+		std::pair<bool, float> valState = {false, bounds.z};
+
+		auto selectorTexSize = ImVec2(46.0f, 60.0f);
+		auto selectorSize = ImVec2(selectorTexSize.x*scale, selectorTexSize.y*scale);
+		auto texOffset = (selectorSize.x/2);
+
+		auto p0 = ImVec2(bounds.z-texOffset, bounds.y-selectorSize.y);
+		auto p1 = ImVec2(bounds.z+texOffset, bounds.y);
+
+		if (MCP_API::IsMouseHoveringRect(p0, p1) && MCP_API::IsMouseClicked(0)) {
+			ImVec2 mousePos;
+			MCP_API::GetMousePos(&mousePos);
+
+			//TODO: Need to account for slider x-bounds
+			p0.x = mousePos.x-texOffset;
+			p1.x = mousePos.x+texOffset;
+
+			valState.first = true;
+		} 
+
+		MCPDraw::AddImage(drawList, selector, p0, p1, ImVec2(), ImVec2(1.0f, 1.0f), MCP_API::GetColorU32(ImVec4(1.0f, 1.0f, 1.0f, 1.0f)));
+
+		return valState;
+	}
+
+	float ValueToSliderXPos(float a_settingValue, float x0, float x1, float a_minValue, float a_maxValue)
+	{
+		float valuePercent = (a_settingValue - a_minValue) / (a_maxValue - a_minValue);
+
+		float xPos = ((x1 - x0) * valuePercent) + x0;
+		return xPos;
+	}
+
+	float SliderXPosToValue(float x_pos, float x0, float x1, float a_minValue, float a_maxValue)
+	{
+		float xPercent = (x_pos - x0) / (x1 - x0);
+
+		float val = ((a_maxValue - a_minValue) * xPercent) + a_minValue;
+		return val;
 	}
 
 	void SnapFloatSlider(float *a_target, float snap)
@@ -66,6 +490,7 @@ namespace GUI::MCP
 		}
 	}
 
+	//TODO: Custom styling, perhaps
 	void FileManagerButtons()
 	{
 		if (MCP_API::Button("Save")) {
@@ -81,10 +506,16 @@ namespace GUI::MCP
 		}
 		MCP_API::SameLine();
 
+		//TODO: Add a modal to prevent accidental clicks
 		if (MCP_API::Button("Reset to Default")) {
 			logger::info("Loading default mod settings.");
 			Settings::Load(Settings::defaultPath);
 		}
+	}
+
+	void RefreshLogLevelButton()
+	{
+		if (MCP_API::Button("Update From Settings")) { Utils::UpdateLogLevel(); }
 	}
 
 	SKSEMenuFramework::ImU32 PercentageColour(float a_count, float a_capacity)
@@ -173,7 +604,7 @@ namespace GUI::MCP
 			CapacityHandler::Player::CalculateActualCapacities();
 		}
 		if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-			CapacityHandler::Player::UpdateAllCategories();
+			CapacityHandler::Player::UpdateAllCategories(true);
 		}
 		
 		float windowWidth = MCP_API::GetWindowWidth();
@@ -373,23 +804,23 @@ namespace GUI::MCP
 		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
 		ImVec2 boxSize = ImVec2(MCP_API::GetWindowWidth()-35.0f, 40.0f);
-
+		
 		std::unordered_map<ItemCategories, ImU32> categoryColours = {
-			{ItemCategories::kHuge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.0f, 0.357f, 1.0f))},
-			{ItemCategories::kLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.729f , 0.259f, 0.184f, 1.0f))},
-			{ItemCategories::kMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.659f , 0.478f, 0.0f, 1.0f))},
-			{ItemCategories::kSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.48f, 0.65f, 0.18f, 1.0f))},
-			{ItemCategories::kTiny, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.0f, 0.8f, 0.52f, 1.0f))},
-			{ItemCategories::kAlchemy, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.75f, 0.31f, 0.69f, 1.0f))},
-			{ItemCategories::kAmmo, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.65f, 0.31f, 0.84f, 1.0f))},
-			{ItemCategories::kCoin, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.39f, 0.36f, 1.0f, 1.0f))},
-			{ItemCategories::kWeaponLarge, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.16f, 0.18f, 0.34f, 1.0f))},
-			{ItemCategories::kWeaponMedium, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.42f, 0.27f, 0.45f, 1.0f))},
-			{ItemCategories::kWeaponSmall, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.68f, 0.35f, 0.49f, 1.0f))},
-			{ItemCategories::kWeaponRanged, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.88f, 0.49f, 0.47f, 1.0f))},
-			{ItemCategories::kShield, MCP_API::ColorConvertFloat4ToU32(ImVec4(0.98f, 0.7f, 0.44f, 1.0f))}
+			{ItemCategories::kHuge, HEX_COL32(0xA8005BFF)},
+			{ItemCategories::kLarge, HEX_COL32(0xBA422FFF)},
+			{ItemCategories::kMedium, HEX_COL32(0xA87A00FF)},
+			{ItemCategories::kSmall, HEX_COL32(0x7AA62EFF)},
+			{ItemCategories::kTiny, HEX_COL32(0x00CC85FF)},
+			{ItemCategories::kAlchemy, HEX_COL32(0xBF4FB0FF)},
+			{ItemCategories::kAmmo, HEX_COL32(0xA64FD6FF)},
+			{ItemCategories::kCoin, HEX_COL32(0x635CFFFF)},
+			{ItemCategories::kWeaponLarge, HEX_COL32(0x292E57FF)},
+			{ItemCategories::kWeaponMedium, HEX_COL32(0x6B4573FF)},
+			{ItemCategories::kWeaponSmall, HEX_COL32(0xAD597DFF)},
+			{ItemCategories::kWeaponRanged, HEX_COL32(0xE07D78FF)},
+			{ItemCategories::kShield, HEX_COL32(0xFAB270FF)}
 		};
-
+		
 		//TODO: I absolutely hate all of this, I really need to find some better way of doing it bruh
 		//NOTE: Also, even aside from the stupidly dense blocks of code that look terrible, there's no way that this is gonna run anywhere near to optimal when going multiple times a second.
 		//? Could possibly make the xxxxPercent variables static, and then check for changes to any of the capacities/counts, and only recalculate each percentage as and when needed.
@@ -470,7 +901,6 @@ namespace GUI::MCP
 			percentTotal += categoryPercent.at(category);
 		}
 		float refitMult = 1 / percentTotal;
-		logger::debug("percentTotal = {} | refitMult = {}", percentTotal, refitMult);
 
 		float fillX;
 		float px = p0.x;
@@ -480,10 +910,6 @@ namespace GUI::MCP
 			} else {
 				fillX = (boxSize.x * categoryPercent.at(category)) * refitMult;
 			}
-
-			logger::debug("Category: {} | Percent = {} | Count = {}/{}", 
-				CapacityHandler::categoryNames.at(category), categoryPercent.at(category), CapacityHandler::GetCountForGUI(category), CapacityHandler::GetCapacityForGUI(category)
-			);
 
 			MCPDraw::AddRectFilled(drawList, 
 				ImVec2(px, p0.y), 
@@ -510,7 +936,6 @@ namespace GUI::MCP
 
 	void CapacityVisualiserMisc(float y_max)
 	{
-		logger::debug("Starting CapacityVisualiserMisc");
 		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
 		ImDrawList *drawList = MCP_API::GetWindowDrawList();
@@ -683,5 +1108,16 @@ namespace GUI::MCP
 		}
 
 		return { p0.y + mainSize.y };
+	}
+
+	void CursorDebugMarker(unsigned int a_colour, ImVec2 a_p0, float a_radius)
+	{
+		if ((a_p0.x == 0) && (a_p0.y == 0)) {
+			ImVec2 pDebug;
+			MCP_API::GetCursorScreenPos(&pDebug);
+			MCPDraw::AddCircleFilled(MCP_API::GetForegroundDrawList(), pDebug, a_radius, a_colour, 0);
+		} else {
+			MCPDraw::AddCircleFilled(MCP_API::GetForegroundDrawList(), a_p0, a_radius, a_colour, 0);
+		}
 	}
 }

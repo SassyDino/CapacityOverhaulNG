@@ -16,6 +16,14 @@ namespace GUI::MCP
 			bool staminaWeight = true;
 			bool levelWeight = true;
 			bool raceWeight = true;
+
+	};
+
+	struct Testing
+	{
+		static bool testBool;
+		static int testInt;
+		static float testFloat;
 	};
 
 	extern bool showSeparateWindow;
