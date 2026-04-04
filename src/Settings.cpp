@@ -87,6 +87,9 @@ void Settings::ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, con
 	} else if (a_settingName[0] == "u"[0]) {
 		uint32_t *settingPtr = get<uint32_t*>(settingMap[settingNameStr].first);
 		*settingPtr = static_cast<uint32_t>(a_ini.GetLongValue(a_sectionName, a_settingName));
+	} else if (a_settingName[0] == "s"[0]) {
+		std::string *settingPtr = get<std::string*>(settingMap[settingNameStr].first);
+		*settingPtr = std::string(a_ini.GetValue(a_sectionName, a_settingName));
 	}
 }
 
@@ -106,18 +109,9 @@ void Settings::Load(std::filesystem::path path)
 			ReadIniSetting(ini, sectionName.pItem, (*it).first.pItem);
 		}
 	}
-
-	globalContainerLog = bLogContainerEvents && !bLogOnlyPlayerContainerEvents;
-    playerContainerLogOnly = bLogContainerEvents && bLogOnlyPlayerContainerEvents;
-    globalMenuLog = bLogMenuEvents && !bLogOnlyRelevantMenuEvents;
-    relevantMenuLogOnly = bLogMenuEvents && bLogOnlyRelevantMenuEvents;
-    globalEquipLog = bLogEquipEvents && !bLogOnlyPlayerEquipEvents;
-    playerEquipLogOnly = bLogEquipEvents && bLogOnlyPlayerEquipEvents;
-
-	//TODO Utils::UpdateLogLevel();
 }
 
-void Settings::WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> a_settingEntry)
+void Settings::WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*, std::string*>, std::string>> a_settingEntry)
 {
 	auto settingKey = a_settingEntry.first.c_str();
 	auto settingType = settingKey[0];
@@ -131,8 +125,11 @@ void Settings::WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::p
 	} else if (settingType == "u"[0]) {
 		auto settingVal = *get<uint32_t*>(a_settingEntry.second.first);
 		a_ini.SetLongValue(section, settingKey, settingVal);
+	} else if (settingType == "s"[0]) {
+		auto settingVal = *get<std::string*>(a_settingEntry.second.first);
+		a_ini.SetValue(section, settingKey, settingVal.c_str());
 	} else {
-		logger::error("WriteIniSetting failed on setting [{}]: Invalid datatype identifier [{}] (setting name must begin with 'b', 'f', or 'u' )", settingKey, settingType);
+		logger::error("WriteIniSetting failed on setting [{}]: Invalid datatype identifier [{}] (setting name must begin with 'b', 'f', 'u', or 's' )", settingKey, settingType);
 	}
 }
 

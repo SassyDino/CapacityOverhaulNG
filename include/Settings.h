@@ -15,8 +15,6 @@ class Settings final : public REX::Singleton<Settings>
 	static inline bool		bStaminaAffectsWeight{true};
 	static inline bool		bLevelAffectsWeight{true};
 	static inline bool		bRaceAffectsWeight{true};
-
-	static inline bool		bCustomMenuStyling{true};
 	
 	// Capacity settings
 	static inline bool		bCapacityVisualiserBaseValues{true};
@@ -66,6 +64,11 @@ class Settings final : public REX::Singleton<Settings>
 	static inline bool		bWeightAffectsAttackDmg{true};
 	static inline uint32_t	uAttackDmgDebuffMax{50};
 
+	// UI Settings
+	static inline bool		bCustomMenuStyling{true};
+	static inline bool		bOverrideLanguage{true};
+	static inline std::string	sLanguage{"ENGLISH"};
+
 	// Debug settings
 	static inline bool		bModEnabled{true};
 	static inline uint32_t	uLogLevel{0};
@@ -108,21 +111,13 @@ class Settings final : public REX::Singleton<Settings>
 	static inline float fLevelWeightRate{0.5};
 	static inline uint32_t uLevelWeightPivot{100};
 
-	// SYSTEM-DEFINED VALUES
-	static inline bool globalContainerLog;
-	static inline bool playerContainerLogOnly;
-	static inline bool globalMenuLog;
-	static inline bool relevantMenuLogOnly;
-	static inline bool globalEquipLog;
-	static inline bool playerEquipLogOnly;
-
-	static inline uint32_t uTestSetting{69};
-
 	// Settings to add: bBagsAffectSpeed, bDebuffWhileOverCapacity
 	// uWeightDebuffFloorInt, fWeightDebuffFloorFloat, bWeightDebuffFromPercentage
 	// uSpeedDebuffMax
+	
+	//NOTE: Something I've realised - do I actually even need the individual setting variables any more? Or can I just put the default values directly into the map and read/write the map values themselves, rather than using references.
 
-	static inline std::unordered_map <std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> settingMap = {
+	static inline std::unordered_map <std::string, std::pair<std::variant<bool*, float*, uint32_t*, std::string*>, std::string>> settingMap = {
 		{"bCapacityBasedDebuffs", {&bCapacityBasedDebuffs, "ToggleFeatures"}},
 		{"bWeightBasedDebuffs", {&bWeightBasedDebuffs, "ToggleFeatures"}},
 		{"bSkillsAffectCapacity", {&bSkillsAffectCapacity, "ToggleFeatures"}},
@@ -132,7 +127,6 @@ class Settings final : public REX::Singleton<Settings>
 		{"bStaminaAffectsWeight", {&bStaminaAffectsWeight, "ToggleFeatures"}},
 		{"bLevelAffectsWeight", {&bLevelAffectsWeight, "ToggleFeatures"}},
 		{"bRaceAffectsWeight", {&bRaceAffectsWeight, "ToggleFeatures"}},
-		{"bCustomMenuStyling", {&bCustomMenuStyling, "ToggleFeatures"}},
 		{"bCapacityVisualiserBaseValues", {&bCapacityVisualiserBaseValues, "CapacitySettings"}},
 		{"bCapacityVisualiserShowFilled", {&bCapacityVisualiserShowFilled, "CapacitySettings"}},
 		{"bHugeCapacityShared", {&bHugeCapacityShared, "CapacitySettings"}},
@@ -175,6 +169,9 @@ class Settings final : public REX::Singleton<Settings>
 		{"uWeapSpeedDebuffMax", {&uWeapSpeedDebuffMax, "BuffsDebuffs"}},
 		{"bWeightAffectsAttackDmg", {&bWeightAffectsAttackDmg, "BuffsDebuffs"}},
 		{"uAttackDmgDebuffMax", {&uAttackDmgDebuffMax, "BuffsDebuffs"}},
+		{"bCustomMenuStyling", {&bCustomMenuStyling, "UI"}},
+		{"bOverrideLanguage", {&bOverrideLanguage, "UI"}},
+		{"sLanguage", {&sLanguage, "UI"}},
 		{"bModEnabled", {&bModEnabled, "Debug"}},
 		{"uLogLevel", {&uLogLevel, "Debug"}},
 		{"bLogContainerEvents", {&bLogContainerEvents, "Debug"}},
@@ -210,7 +207,7 @@ class Settings final : public REX::Singleton<Settings>
 	};
 
 	static void ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName);
-	static void WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*>, std::string>> a_settingEntry);
+	static void WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::pair<std::variant<bool*, float*, uint32_t*, std::string*>, std::string>> a_settingEntry);
 
 	public:
 		static const char *defaultPath;
@@ -226,7 +223,7 @@ class Settings final : public REX::Singleton<Settings>
 		static T Get(std::string a_settingName)
 		{
 			T setting;
-			if constexpr (std::is_same_v<T, bool*> || std::is_same_v<T, float*> || std::is_same_v<T, uint32_t*>) {
+			if constexpr (std::is_same_v<T, bool*> || std::is_same_v<T, float*> || std::is_same_v<T, uint32_t*> || std::is_same_v<T, std::string*>) {
 				try
 				{
 					setting = get<T>(settingMap[a_settingName].first);
@@ -245,6 +242,16 @@ class Settings final : public REX::Singleton<Settings>
 				{
 					SKSE::log::error("ERROR ---> bad_variant_access");
 					setting = 0;
+				}
+			} else if (std::is_same_v<T, std::string>) {
+				try
+				{
+					setting = *get<T*>(settingMap[a_settingName].first);
+				}
+				catch(const std::exception& e)
+				{
+					SKSE::log::error("ERROR ---> bad_variant_access");
+					setting = "0";
 				}
 			} else {
 				SKSE::log::error("Provided [Settings::<type>Get()] type did not match either valid condition set. Ensure all setting values are valid.");

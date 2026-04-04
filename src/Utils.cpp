@@ -149,6 +149,8 @@ namespace Utils
 				PlayerStatus::Controls = RE::PlayerControls::GetSingleton();
 				PlayerStatus::State = PlayerStatus::Char->AsActorState();
 
+				Lang::InitTranslations();
+
 				Forms::LoadFromGame();
 
 				GUI::Assets::LoadTextures();

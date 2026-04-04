@@ -42,6 +42,10 @@ namespace GUI::MCP
 		void __stdcall Render();
 	}
 
+	namespace UIConfigs {
+		void __stdcall Render();
+	}
+
 	namespace AdvWeightConfigs {
 		static RE::PlayerCharacter *player;
 		static RE::ActorValueOwner *playerAsAV;
@@ -57,8 +61,6 @@ namespace GUI::MCP
 		void __stdcall Render();
 	}
 
-
-	
 	namespace Example4 {
 		inline std::string TitleText = "This is an " + FontAwesome::UnicodeToUtf8(0xf2b4) + " Font Awesome usage example";
 		inline std::string Button1Text = FontAwesome::UnicodeToUtf8(0xf0e9) + " Umbrella";

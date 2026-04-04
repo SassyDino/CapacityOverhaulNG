@@ -7,6 +7,7 @@
 
 #include "Settings.h"
 #include "Utils.h"
+#include "Translations.h"
 
 namespace logger = SKSE::log;
 

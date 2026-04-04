@@ -95,6 +95,8 @@ namespace GUI
 
 		void FileManagerButtons();
 
+		void LanguageSelector();
+
 		void RefreshLogLevelButton();
 		
 		SKSEMenuFramework::ImU32 PercentageColour(float a_count, float a_capacity);

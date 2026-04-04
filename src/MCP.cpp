@@ -31,6 +31,7 @@ void GUI::MCP::Register()
 	SKSEMenuFramework::AddSectionItem("General Settings/Toggle Features", ToggleFeatures::Render);
 	SKSEMenuFramework::AddSectionItem("General Settings/Capacity System Configuration", CapacityConfigs::Render);
 	SKSEMenuFramework::AddSectionItem("General Settings/Carry Weight Settings", WeightConfigs::Render);
+	SKSEMenuFramework::AddSectionItem("General Settings/Interface Settings", UIConfigs::Render);
 	SKSEMenuFramework::AddSectionItem("Advanced Settings/Complex Carry Weight System", AdvWeightConfigs::Render);
 	SKSEMenuFramework::AddSectionItem("Advanced Settings/Debug Settings", AdvDebug::Render);
     SKSEMenuFramework::AddSectionItem("Menu Testing", Example4::Render);
@@ -58,8 +59,6 @@ void __stdcall GUI::MCP::ToggleFeatures::Render()
 		CustomCheckbox("Current Level Affects Carry Weight", Settings::Get<bool*>("bLevelAffectsWeight"));
 		CustomCheckbox("Player's Race Affects Carry Weight", Settings::Get<bool*>("bRaceAffectsWeight"));
 	}
-
-	CustomCheckbox("Enable Custom Menu Styling", Settings::Get<bool*>("bCustomMenuStyling"));
 }
 
 void __stdcall GUI::MCP::CapacityConfigs::Render()
@@ -76,7 +75,7 @@ void __stdcall GUI::MCP::CapacityConfigs::Render()
 		CustomSeparator("Derived Category Capacities");
 		MCP_API::SliderFloat("Large Items Per Huge Space", Settings::Get<float*>("fLargePerHuge"), 1, 25);
 		MCP_API::SliderFloat("Medium Items Per Large Space", Settings::Get<float*>("fMediumPerLarge"), 1, 25);
-		MCP_API::SliderFloat("Small Items Per Medium Space ", Settings::Get<float*>("fSmallPerMedium"), 1, 25);
+		MCP_API::SliderFloat("Small Items Per Medium Space", Settings::Get<float*>("fSmallPerMedium"), 1, 25);
 		MCP_API::SliderFloat("Tiny Items Per Small Space", Settings::Get<float*>("fTinyPerSmall"), 1, 25);
 
 		CustomSeparator("Miscellaneous Categories");
@@ -133,7 +132,7 @@ void __stdcall GUI::MCP::WeightConfigs::Render()
 
 		CustomSeparator("Level-based Carry Weight Modification");
 		MCP_API::SliderFloat("Level Weight Bonus Modifier", Settings::Get<float*>("fLevelWeightMod"), 0, 5);
-		CustomCheckbox("Use Simple Calculation For Level Weight Bonus ", Settings::Get<bool*>("bLevelWeightSimple"));
+		CustomCheckbox("Use Simple Calculation For Level Weight Bonus", Settings::Get<bool*>("bLevelWeightSimple"));
 		MCP_API::SliderFloat("Bonus Carry Weight Per Level", Settings::Get<float*>("fWeightPerStamina"), 0, 10);
 	}
 
@@ -155,6 +154,19 @@ void __stdcall GUI::MCP::WeightConfigs::Render()
 	}
 }
 
+void __stdcall GUI::MCP::UIConfigs::Render()
+{
+	CustomSeparator("Config Menu Appearance");
+	CustomCheckbox("Enable Custom Menu Styling", Settings::Get<bool*>("bCustomMenuStyling"));
+
+	CustomSeparator("Language");
+	CustomCheckbox("Manually Choose Language", Settings::Get<bool*>("bOverrideLanguage"));
+
+	if (!Settings::Get<bool>("bOverrideLanguage")) { MCP_API::BeginDisabled(); }
+	LanguageSelector();
+	if (!Settings::Get<bool>("bOverrideLanguage")) { MCP_API::EndDisabled(); }
+}
+
 void __stdcall GUI::MCP::AdvWeightConfigs::Render()
 {
 	static float *stamRateTemp = Settings::Get<float*>("fStaminaWeightRate");
@@ -173,25 +185,6 @@ void __stdcall GUI::MCP::AdvWeightConfigs::Render()
 	static int stamPlotY = 500;
 	static int lvlPlotX = 100;
 	static int lvlPlotY = 500;
-/*
-	static int plotData[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
-
-	ImPlot::SetImGuiContext(reinterpret_cast<IMGUI_API::ImGuiContext*>(MCP_API::GetCurrentContext()));
-	ImPlot::CreateContext();
- 
-	static auto imgui_ctx = SKSEMenuFramework::Internal::GetFunction<IMGUI_API::ImGuiContext*>("GetCurrentContext");
-	if (imgui_ctx) {
-		logger::debug("imgui_ctx found");
-		ImGui::SetCurrentContext(imgui_ctx);
-	} else {
-		logger::debug("imgui_ctx NOT found");
-	}
-
-	IMGUI_API::GImGui->CurrentWindow = reinterpret_cast<IMGUI_API::ImGuiWindow*>(MCP_API::GetCurrentWindow());
-*/
-
-
-	//logger::debug("{} {} {} {} {} {} {}", stamRateTemp, stamPivotTemp, lvlRateTemp, lvlPivotTemp, baseCarryTemp, maxGradStam, maxGradLvl);
 
 	struct Funcs
 	{
@@ -262,6 +255,12 @@ void __stdcall GUI::MCP::AdvDebug::Render()
 
 void __stdcall GUI::MCP::Example4::Render()
 {
+	MCP_API::Text("Testing Map String (Lang::Get()):");
+	MCP_API::Text(Lang::Get("$MCP.Gen.Weight.General.Level.Simple"));
+
+	MCP_API::Text("Testing Map String (_tr):");
+	MCP_API::Text("$MCP.Adv.Weight.Stamina"_tr);
+
 	CustomCheckbox("Test Checkbox", &Testing::testBool);
 	MCP_API::Text("Test: %d", Testing::testBool);
 
