@@ -87,6 +87,9 @@ void Settings::ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, con
 	} else if (a_settingName[0] == "u"[0]) {
 		uint32_t *settingPtr = get<uint32_t*>(settingMap[settingNameStr].first);
 		*settingPtr = static_cast<uint32_t>(a_ini.GetLongValue(a_sectionName, a_settingName));
+	} else if (a_settingName[0] == "k"[0]) {
+		uint32_t *settingPtr = get<uint32_t*>(settingMap[settingNameStr].first);
+		*settingPtr = static_cast<uint32_t>(a_ini.GetLongValue(a_sectionName, a_settingName));
 	} else if (a_settingName[0] == "s"[0]) {
 		std::string *settingPtr = get<std::string*>(settingMap[settingNameStr].first);
 		*settingPtr = std::string(a_ini.GetValue(a_sectionName, a_settingName));
@@ -125,6 +128,9 @@ void Settings::WriteIniSetting(CSimpleIniA& a_ini, std::pair<std::string, std::p
 	} else if (settingType == "u"[0]) {
 		auto settingVal = *get<uint32_t*>(a_settingEntry.second.first);
 		a_ini.SetLongValue(section, settingKey, settingVal);
+	} else if (settingType == "k"[0]) {
+		auto settingVal = *get<uint32_t*>(a_settingEntry.second.first);
+		a_ini.SetLongValue(section, settingKey, settingVal, NULL, true);
 	} else if (settingType == "s"[0]) {
 		auto settingVal = *get<std::string*>(a_settingEntry.second.first);
 		a_ini.SetValue(section, settingKey, settingVal.c_str());

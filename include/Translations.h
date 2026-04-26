@@ -114,6 +114,11 @@ namespace Lang
 		{"$MCP.Adv.Debug.Level", "$MCP.Adv.Debug.Level"},
 		{"$MCP.Adv.Debug.CurrentLevel", "$MCP.Adv.Debug.CurrentLevel"},
 		{"$MCP.Adv.Debug.ModEnabled", "$MCP.Adv.Debug.ModEnabled"},
+		{"$MCP.Widgets.Colour.Gradient.Classic", "$MCP.Widgets.Colour.Gradient.Classic"},
+		{"$MCP.Widgets.Colour.Gradient.Rainbow", "$MCP.Widgets.Colour.Gradient.Rainbow"},
+		{"$MCP.Widgets.Colour.Gradient.Viridis", "$MCP.Widgets.Colour.Gradient.Viridis"},
+		{"$MCP.Widgets.Colour.Gradient.Magma", "$MCP.Widgets.Colour.Gradient.Magma"},
+		{"$MCP.Widgets.Colour.Gradient.Greyscale", "$MCP.Widgets.Colour.Gradient.Greyscale"},
 		{"$MCP.Widgets.FileManagerButtons.Save", "$MCP.Widgets.FileManagerButtons.Save"},
 		{"$MCP.Widgets.FileManagerButtons.Load", "$MCP.Widgets.FileManagerButtons.Load"},
 		{"$MCP.Widgets.FileManagerButtons.Reset", "$MCP.Widgets.FileManagerButtons.Reset"},
@@ -124,7 +129,24 @@ namespace Lang
 		{"$MCP.Widgets.CapacityVisualiser.Main", "$MCP.Widgets.CapacityVisualiser.Main"},
 		{"$MCP.Widgets.CapacityVisualiser.Weapon", "$MCP.Widgets.CapacityVisualiser.Weapon"},
 		{"$MCP.Widgets.CapacityVisualiser.Misc", "$MCP.Widgets.CapacityVisualiser.Misc"},
-		{"$MCP.Widgets.CapacityVisualiserWindow.Title", "$MCP.Widgets.CapacityVisualiserWindow.Title"}
+		{"$MCP.Widgets.CapacityVisualiserWindow.Title", "$MCP.Widgets.CapacityVisualiserWindow.Title"},
+		{"$MCP.Widgets.Heatmap.Update", "$MCP.Widgets.Heatmap.Update"},
+		{"$MCP.Widgets.Heatmap.Gradient", "$MCP.Widgets.Heatmap.Gradient"},
+		{"$Category.Huge.TooltipName", "$Category.Huge.TooltipName"},
+		{"$Category.Large.TooltipName", "$Category.Large.TooltipName"},
+		{"$Category.Medium.TooltipName", "$Category.Medium.TooltipName"},
+		{"$Category.Small.TooltipName", "$Category.Small.TooltipName"},
+		{"$Category.Tiny.TooltipName", "$Category.Tiny.TooltipName"},
+		{"$Category.Alchemy.TooltipName", "$Category.Alchemy.TooltipName"},
+		{"$Category.Ammo.TooltipName", "$Category.Ammo.TooltipName"},
+		{"$Category.Coin.TooltipName", "$Category.Coin.TooltipName"},
+		{"$Category.Gemstone.TooltipName", "$Category.Gemstone.TooltipName"},
+		{"$Category.WeaponLarge.TooltipName", "$Category.WeaponLarge.TooltipName"},
+		{"$Category.WeaponMedium.TooltipName", "$Category.WeaponMedium.TooltipName"},
+		{"$Category.WeaponSmall.TooltipName", "$Category.WeaponSmall.TooltipName"},
+		{"$Category.WeaponRanged.TooltipName", "$Category.WeaponRanged.TooltipName"},
+		{"$Category.Shield.TooltipName", "$Category.Shield.TooltipName"},
+		{"$Category.Weightless.TooltipName", "$Category.Weightless.TooltipName"}
 	};
 
 	void InitTranslations();
@@ -139,4 +161,5 @@ namespace Lang
 	void LoadPlaceholderStrings();
 
 	const char* Get(const char* a_key);
+	std::string Get(std::string a_key);
 }

@@ -176,4 +176,9 @@ namespace Lang
 	{
 		return translationMap.at(a_key).c_str();
 	}
+
+	std::string Get(std::string a_key)
+	{
+		return translationMap.at(a_key);
+	}
 }

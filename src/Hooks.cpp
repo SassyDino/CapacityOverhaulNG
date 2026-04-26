@@ -59,7 +59,7 @@ namespace Hooks
 				}
 			} else if (u == s->activate) {
 				if (b->IsDown()) {
-					if (!Debuffs::CanPickup() && !PlayerStatus::AllowActivation()) {
+					if (!Debuffs::CanPickup() && !PlayerState::AllowActivation()) {
 						logger::trace("HOOKS::INPUT -> Activate");
 						block = true;
 					}

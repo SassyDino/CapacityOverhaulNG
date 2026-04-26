@@ -1,51 +1,51 @@
 #include "Player.h"
 #include "Hooks.h"
 
-float PlayerStatus::StamBaseAV;
-float PlayerStatus::StamPermAV;
-float PlayerStatus::StamAV;
-int PlayerStatus::Level;
-float PlayerStatus::CurrentWeight;
-bool PlayerStatus::isOverCapacity = false;
+float PlayerState::StamBaseAV;
+float PlayerState::StamPermAV;
+float PlayerState::StamAV;
+int PlayerState::Level;
+float PlayerState::CurrentWeight;
+bool PlayerState::isOverCapacity = false;
 
-RE::PlayerCharacter* PlayerStatus::Char;
-RE::ActorValueOwner* PlayerStatus::AsAV;
-RE::PlayerControls* PlayerStatus::Controls;
-RE::ActorState* PlayerStatus::State;
+RE::PlayerCharacter* PlayerState::Char;
+RE::ActorValueOwner* PlayerState::AsAV;
+RE::PlayerControls* PlayerState::Controls;
+RE::ActorState* PlayerState::State;
 
-int PlayerStatus::ID = 0x14;
-RE::TESRace* PlayerStatus::Race;
-float PlayerStatus::raceWeightMod;
-float PlayerStatus::BaseStam = 100; // NOTE: Could do with finding a way of obtaining the actual DEFAULT stamina value, in case any mods make the player's default stamina something other than 100
+int PlayerState::ID = 0x14;
+RE::TESRace* PlayerState::Race;
+float PlayerState::raceWeightMod = 1.0f;
+float PlayerState::BaseStam = 100; // NOTE: Could do with finding a way of obtaining the actual DEFAULT stamina value, in case any mods make the player's default stamina something other than 100
 
-float PlayerStatus::StamAtMaxGrad;
-float PlayerStatus::LevelAtMaxGrad;
+float PlayerState::StamAtMaxGrad;
+float PlayerState::LevelAtMaxGrad;
 
-void PlayerStatus::UpdateCapacityStatus(bool overCapacityStatus) { isOverCapacity = overCapacityStatus; }
+void PlayerState::UpdateCapacityStatus(bool overCapacityStatus) { isOverCapacity = overCapacityStatus; }
 
-bool PlayerStatus::GetOverCapacityStatus() { return isOverCapacity; }
+bool PlayerState::GetOverCapacityStatus() { return isOverCapacity; }
 
-void PlayerStatus::UpdateBurden() { CurrentWeight = AsAV->GetActorValue(RE::ActorValue::kInventoryWeight); }
+void PlayerState::UpdateBurden() { CurrentWeight = AsAV->GetActorValue(RE::ActorValue::kInventoryWeight); }
 
-int PlayerStatus::GetBurden() { return (int)ceil(CurrentWeight); }
+int PlayerState::GetBurden() { return (int)ceil(CurrentWeight); }
 
-int PlayerStatus::UpdateAndGetBurden()
+int PlayerState::UpdateAndGetBurden()
 {
 	CurrentWeight = AsAV->GetActorValue(RE::ActorValue::kInventoryWeight);
 	return (int)ceil(CurrentWeight);
 }
 
-void PlayerStatus::UpdateLevel() { Level = Char->GetLevel(); }
+void PlayerState::UpdateLevel() { Level = Char->GetLevel(); }
 
-int PlayerStatus::GetLevel() { return { Level }; }
+int PlayerState::GetLevel() { return { Level }; }
 
-int PlayerStatus::UpdateAndGetLevel()
+int PlayerState::UpdateAndGetLevel()
 {
 	Level = Char->GetLevel();
 	return Level;
 }
 
-void PlayerStatus::UpdateStamina()
+void PlayerState::UpdateStamina()
 {
 	StamPermAV = AsAV->GetPermanentActorValue(RE::ActorValue::kStamina); // NOTE: PermanentActorValue doesn't include all buffs (such as some ingredients and blessings), but ActorValue and ClampedActorValue (which do) also consider current stamina (i.e. max stamina - consumed stamina)
 	StamBaseAV = AsAV->GetBaseActorValue(RE::ActorValue::kStamina);
@@ -57,15 +57,15 @@ void PlayerStatus::UpdateStamina()
 	}
 }
 
-float PlayerStatus::GetStamAV() { return { StamAV }; }
+float PlayerState::GetStamAV() { return { StamAV }; }
 
-float PlayerStatus::UpdateAndGetStamAV()
+float PlayerState::UpdateAndGetStamAV()
 {
-	PlayerStatus::UpdateStamina();
+	PlayerState::UpdateStamina();
 	return { StamAV };
 }
 
-float PlayerStatus::CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
+float PlayerState::CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
 {
 	static float sqrt2 = float(sqrt(2));
 
@@ -73,20 +73,20 @@ float PlayerStatus::CalcStamAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t b
 	float peakStam2 = (20 * sqrt2 * a_rate) + (20 * sqrt2 * a_pivot);
 	float peakStam3 = 20 * sqrt2 * a_rate;
 
-	float peakStam = floor(((sqrt(baseCarry * peakStam1) - peakStam2) / peakStam3) + PlayerStatus::BaseStam);
+	float peakStam = floor(((sqrt(baseCarry * peakStam1) - peakStam2) / peakStam3) + PlayerState::BaseStam);
 	return { peakStam };
 }
 
-void PlayerStatus::UpdateStamAtMaxGrad()
+void PlayerState::UpdateStamAtMaxGrad()
 {
-	float rate = *Settings::Get<float*>("fStaminaWeightRate");
-	uint32_t pivot = *Settings::Get<uint32_t*>("uStaminaWeightPivot");
-	uint32_t baseCarry = *Settings::Get<uint32_t*>("uBaseCarryWeight");
+	float rate = Settings::Get<float>("fStaminaWeightRate");
+	uint32_t pivot = Settings::Get<uint32_t>("uStaminaWeightPivot");
+	uint32_t baseCarry = Settings::Get<uint32_t>("uBaseCarryWeight");
 
 	StamAtMaxGrad = CalcStamAtMaxGrad(rate, pivot, baseCarry);
 }
 
-float PlayerStatus::CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
+float PlayerState::CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t baseCarry)
 {
 	float peakLvl1 = baseCarry * (1 - a_rate) * (a_rate + a_pivot);
 	float peakLvl2 = (20 * a_rate) + (20 * a_pivot);
@@ -95,16 +95,16 @@ float PlayerStatus::CalcLevelAtMaxGrad(float a_rate, uint32_t a_pivot, uint32_t 
 	return { peakLvl };
 }
 
-void PlayerStatus::UpdateLevelAtMaxGrad()
+void PlayerState::UpdateLevelAtMaxGrad()
 {
-	float rate = *Settings::Get<float*>("fLevelWeightRate");
-	uint32_t pivot = *Settings::Get<uint32_t*>("uLevelWeightPivot");
-	uint32_t baseCarry = *Settings::Get<uint32_t*>("uBaseCarryWeight");
+	float rate = Settings::Get<float>("fLevelWeightRate");
+	uint32_t pivot = Settings::Get<uint32_t>("uLevelWeightPivot");
+	uint32_t baseCarry = Settings::Get<uint32_t>("uBaseCarryWeight");
 
 	LevelAtMaxGrad = CalcLevelAtMaxGrad(rate, pivot, baseCarry);
 }
 
-bool PlayerStatus::AllowActivation()
+bool PlayerState::AllowActivation()
 {
 	logger::debug("Calling <AllowActivation>");
 
@@ -143,7 +143,7 @@ bool PlayerStatus::AllowActivation()
 	return true;
 }
 /* 
-RE::FormType PlayerStatus::CrosshairFormType()
+RE::FormType PlayerState::CrosshairFormType()
 {
 	auto crosshairObj = GetCrosshairObj();
 
@@ -154,7 +154,7 @@ RE::FormType PlayerStatus::CrosshairFormType()
 	}
 }
 
-bool PlayerStatus::LookingAtContainer()
+bool PlayerState::LookingAtContainer()
 {
 	bool container = false;
 	auto objType =  CrosshairFormType();
@@ -181,7 +181,7 @@ bool PlayerStatus::LookingAtContainer()
 	return container;
 }
 
-bool PlayerStatus::LookingAtItem()
+bool PlayerState::LookingAtItem()
 {
 	bool item = false;
 	auto objType = CrosshairFormType();

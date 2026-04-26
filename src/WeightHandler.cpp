@@ -17,16 +17,16 @@ namespace WeightHandler
         };
 
 		// Use default race modifier as a fallback if player's race does not exist in index (to prevent custom races breaking this mod)
-        PlayerStatus::raceWeightMod = *Settings::Get<float*>("fDefaultRaceMod");
-		auto raceID = PlayerStatus::Race->GetFormID();
+        PlayerState::raceWeightMod = *Settings::Get<float*>("fDefaultRaceMod");
+		auto raceID = PlayerState::Race->GetFormID();
         
         if (raceWeightIndex.at(raceID)) {
-            PlayerStatus::raceWeightMod = *Settings::Get<float*>(raceWeightIndex[raceID]);
-            auto raceName = PlayerStatus::Race->GetName();
-            logger::info("Player race identified as {}. Carry weight limit modifier = x{}", raceName, PlayerStatus::raceWeightMod);
+            PlayerState::raceWeightMod = *Settings::Get<float*>(raceWeightIndex[raceID]);
+            auto raceName = PlayerState::Race->GetName();
+            logger::info("Player race identified as {}. Carry weight limit modifier = x{}", raceName, PlayerState::raceWeightMod);
         } else {
 			//TODO: If/when I fix whatever's broken here, move the "raceWeightMod = fDefaultRaceMod" definiton into here
-			logger::warn("Unable to identify player race: reverting to Default race modifier (x{}). A custom player race is the most likely cause for this warning, and if this applies to you then you may ignore this message. Otherwise, this warning may indicate an issue with the mod which you are advised to report.", PlayerStatus::raceWeightMod);
+			logger::warn("Unable to identify player race: reverting to Default race modifier (x{}). A custom player race is the most likely cause for this warning, and if this applies to you then you may ignore this message. Otherwise, this warning may indicate an issue with the mod which you are advised to report.", PlayerState::raceWeightMod);
 		}
 
         // if i need more values stored per race, maybe try something like
@@ -38,8 +38,8 @@ namespace WeightHandler
 	{
 		GetRaceWeightMod(); //NOTE: Check out TESSwitchRaceCompleteEvent, see whether it fires even from racemenu, console etc.
 
-		PlayerStatus::UpdateStamAtMaxGrad();
-		PlayerStatus::UpdateLevelAtMaxGrad();
+		PlayerState::UpdateStamAtMaxGrad();
+		PlayerState::UpdateLevelAtMaxGrad();
 	}
 
     float CalculateWeightLimit()
@@ -55,7 +55,7 @@ namespace WeightHandler
 			weightLimit += (Calc::LevelWeightBonusCurrent() * *Settings::Get<float*>("fLevelWeightMod"));
 		}
         if (*Settings::Get<bool*>("bRaceAffectsWeight")) {
-			weightLimit *= PlayerStatus::raceWeightMod;
+			weightLimit *= PlayerState::raceWeightMod;
 		}
 
         float weightLimitRound = ceil(weightLimit);
@@ -69,7 +69,7 @@ namespace WeightHandler
     {
         float playerWeightLimit = CalculateWeightLimit();
 
-        PlayerStatus::AsAV->SetBaseActorValue(RE::ActorValue::kCarryWeight, playerWeightLimit);
+        PlayerState::AsAV->SetBaseActorValue(RE::ActorValue::kCarryWeight, playerWeightLimit);
 
 		Debuffs::CheckWeight();
     }

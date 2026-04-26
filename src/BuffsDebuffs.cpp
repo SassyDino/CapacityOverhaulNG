@@ -35,8 +35,8 @@ void Debuffs::CheckWeight()
 		return;
 	}
 
-	auto weightLimit = PlayerStatus::AsAV->GetActorValue(RE::ActorValue::kCarryWeight);
-	auto currentWeight = PlayerStatus::UpdateAndGetBurden();
+	auto weightLimit = PlayerState::AsAV->GetActorValue(RE::ActorValue::kCarryWeight);
+	auto currentWeight = PlayerState::UpdateAndGetBurden();
 	float weightFloor = (float)Settings::Get<uint32_t>("uWeightDebuffFloor");
 
 	if (Settings::Get<bool>("bWeightDebuffFloorIsPercentage")) { weightFloor = weightLimit * (weightFloor / 100); }
@@ -68,14 +68,14 @@ void Debuffs::CheckWeight()
 
 void Debuffs::AddDebuffSpellToPlayer()
 {
-	PlayerStatus::Char->AddSpell(Forms::Spell::weightDebuff);
+	PlayerState::Char->AddSpell(Forms::Spell::weightDebuff);
 	logger::info("Added weight debuff spell to player.");
 }
 
 void Debuffs::RefreshDebuffSpell()
 {
-	PlayerStatus::Char->RemoveSpell(Forms::Spell::weightDebuff);
-	PlayerStatus::Char->AddSpell(Forms::Spell::weightDebuff);
+	PlayerState::Char->RemoveSpell(Forms::Spell::weightDebuff);
+	PlayerState::Char->AddSpell(Forms::Spell::weightDebuff);
 }
 
 void Debuffs::EnableWeightEffects()
@@ -194,7 +194,7 @@ void Debuffs::ModifyWeapSpeedMGEF(float a_debuffAmount)
 	auto debuffResult = 1 - debuffMagnitude;
 
 	auto currentMagnitude = Forms::Effect::debuffWeapSpeed->effectItem.magnitude;
-	auto currentAV = PlayerStatus::AsAV->GetActorValue(RE::ActorValue::kWeaponSpeedMult);
+	auto currentAV = PlayerState::AsAV->GetActorValue(RE::ActorValue::kWeaponSpeedMult);
 	auto currNoDebuffAV = currentAV - currentMagnitude;
 	auto newAV = currentAV - debuffMagnitude;
 
@@ -238,7 +238,7 @@ void Debuffs::ModifyAttackDmgMGEF(float a_debuffAmount)
 
 void Debuffs::CapacityEffects()
 {
-	CapacityHandler::Player::CheckIfOverCapacity();
+	CapacityHandler::CheckIfOverCapacity();
 
 	if (!Settings::Get<bool>("bCapacityBasedDebuffs")) {
 		if (Current::capacityDebuffsActive) {
@@ -249,7 +249,7 @@ void Debuffs::CapacityEffects()
 	}
 	
 	//Todo: Can probably add logic here to skip enabling/disabling if debuffs already correctly applied or not
-	if (PlayerStatus::GetOverCapacityStatus()) {
+	if (PlayerState::GetOverCapacityStatus()) {
 		logger::info("Exceeding total capacity.");
 		QueueEnableCapacityDebuffs();
 	} else {
@@ -317,13 +317,13 @@ void Debuffs::DisableHands()
 {
 	logger::info("Disabling player's hands.");
 
-	switch (PlayerStatus::State->GetWeaponState())
+	switch (PlayerState::State->GetWeaponState())
 	{
 		case RE::WEAPON_STATE::kDrawing:
 		case RE::WEAPON_STATE::kDrawn:
 		case RE::WEAPON_STATE::kWantToDraw:
 		case RE::WEAPON_STATE::kWantToSheathe:
-			PlayerStatus::Char->AsActorState()->actorState2.weaponState = RE::WEAPON_STATE::kWantToSheathe;
+			PlayerState::Char->AsActorState()->actorState2.weaponState = RE::WEAPON_STATE::kWantToSheathe;
 			break;
 		default:
 			break;

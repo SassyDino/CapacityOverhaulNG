@@ -1,6 +1,6 @@
 #pragma once
 
-class PlayerStatus
+class PlayerState
 {
 	static float StamBaseAV;
 	static float StamPermAV;
