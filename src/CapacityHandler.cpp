@@ -7,166 +7,317 @@
 
 namespace CapacityHandler
 {
-	//NOTE: With how many maps I now have just associating the category enums to different values (this, capacityMap, countMap, maybe more), I wonder if it might be worth possibly creating
-	//? a custom storage class just for capacity/counts. Look into this at some point, I guess.
-	const std::unordered_map<int, std::string> categoryStrings = {
-		{kHuge, "kHuge"}, {kLarge, "kLarge"}, {kMedium, "kMedium"}, {kSmall, "kSmall"}, {kTiny, "kTiny"},
-		{kAlchemy, "kAlchemy"}, {kAmmo, "kAmmo"}, {kCoin, "kCoin"}, {kGemstone, "kGemstone"},
-		{kWeaponLarge, "kWeaponLarge"}, {kWeaponMedium, "kWeaponMedium"}, {kWeaponSmall, "kWeaponSmall"}, {kWeaponRanged, "kWeaponRanged"}, {kShield, "kShield"},
-		{kWeightless, "kWeightless"}
-	};
+	const std::array<CategoryID, 5> mainCategories = {kHuge, kLarge, kMedium, kSmall, kTiny};
+	const std::array<CategoryID, 3> miscCategories = {kAlchemy, kAmmo, kCoin};
+	const std::array<CategoryID, 5> weaponCategories = {kWeaponLarge, kWeaponMedium, kWeaponSmall, kWeaponRanged, kShield};
 
-	const std::unordered_map<int, std::string> categoryNames = {
-		{kHuge, "Huge"}, {kLarge, "Large"}, {kMedium, "Medium"}, {kSmall, "Small"}, {kTiny, "Tiny"},
-		{kAlchemy, "Alchemy"}, {kAmmo, "Ammo"}, {kCoin, "Coin"}, {kGemstone, "Coin<Gemstone>"},
-		{kWeaponLarge, "Weapon<Large>"}, {kWeaponMedium, "Weapon<Medium>"}, {kWeaponSmall, "Weapon<Small>"}, {kWeaponRanged, "Weapon<Ranged>"}, {kShield, "Shield"},
-		{kWeightless, "Weightless"}
-	};
-
-	const std::array<ItemCategories, 5> mainCategories = {kHuge, kLarge, kMedium, kSmall, kTiny};
-	const std::array<ItemCategories, 3> miscCategories = {kAlchemy, kAmmo, kCoin};
-	const std::array<ItemCategories, 5> weaponCategories = {kWeaponLarge, kWeaponMedium, kWeaponSmall, kWeaponRanged, kShield};
-
-	const std::unordered_map<std::string_view, int> weaponKeywords = {
+	//TODO: Could possibly make this configurable (saving changes in config might be tricky though). Also check that crossbows are considered WeapTypeBow
+	const std::unordered_map<std::string_view, CategoryID> weaponKeywords = {
 		{"WeapTypeGreatsword", kWeaponLarge}, {"WeapTypeBattleaxe", kWeaponLarge}, {"WeapTypeWarhammer", kWeaponLarge}, {"WeapTypeStaff", kWeaponLarge},
 		{"WeapTypeSword", kWeaponMedium}, {"WeapTypeWarAxe", kWeaponMedium}, {"WeapTypeMace", kWeaponMedium},
 		{"WeapTypeDagger", kWeaponSmall},
 		{"WeapTypeBow", kWeaponRanged}
 	};
 
-	
-	int Base::hugeBaseCapacity;
-	int Base::largeBaseCapacity;
-	int Base::mediumBaseCapacity;
-	int Base::smallBaseCapacity;
-	int Base::tinyBaseCapacity;
-	int Base::alchemyBaseCapacity;
-	int Base::ammoBaseCapacity;
-	int Base::coinBaseCapacity;
-	int Base::weaponLargeBaseCapacity;
-	int Base::weaponMediumBaseCapacity;
-	int Base::weaponSmallBaseCapacity;
-	int Base::weaponRangedBaseCapacity;
-	int Base::shieldBaseCapacity;
+	uint32_t hugeToTiny = 0;
+	uint32_t largeToTiny = 0;
+	uint32_t mediumToTiny = 0;
+	uint32_t smallToTiny = 0;
+	uint32_t tinyToTiny = 1;
 
-	int Player::hugeCapacity;
-	int Player::largeCapacity;
-	int Player::mediumCapacity;
-	int Player::smallCapacity;
-	int Player::tinyCapacity;
-	int Player::alchemyCapacity;
-	int Player::ammoCapacity;
-	int Player::coinCapacity;
-	int Player::weaponLargeCapacity;
-	int Player::weaponMediumCapacity;
-	int Player::weaponSmallCapacity;
-	int Player::weaponRangedCapacity;
-	int Player::shieldCapacity;
+	ItemCat::ItemCat(CategoryID a_id, std::string a_idStr, std::string a_name, std::string a_tooltipName)
+	{
+		id = a_id;
+		idStr = a_idStr;
+		name = a_name;
+		tooltipName = a_tooltipName;
 
-	int Player::hugeCount;
-	int Player::largeCount;
-	int Player::mediumCount;
-	int Player::smallCount;
-	int Player::tinyCount;
-	int Player::totalCount;
-	int Player::alchemyCount;
-	int Player::ammoCount;
-	int Player::coinCount;
-	int Player::weaponLargeCount;
-	int Player::weaponMediumCount;
-	int Player::weaponSmallCount;
-	int Player::weaponRangedCount;
-	int Player::shieldCount;
-	int Player::weightlessCount;
+		visualiserColour = Settings::Get<uint32_t>(a_idStr);
 
-	const std::unordered_map<int, int*> Base::baseCapacityMap = {
-		{kHuge, &hugeBaseCapacity}, {kLarge, &largeBaseCapacity}, {kMedium, &mediumBaseCapacity}, {kSmall, &smallBaseCapacity}, {kTiny, &tinyBaseCapacity},
-		{kAlchemy, &alchemyBaseCapacity}, {kAmmo, &ammoBaseCapacity}, {kCoin, &coinBaseCapacity},
-		{kWeaponLarge, &weaponLargeBaseCapacity}, {kWeaponMedium, &weaponMediumBaseCapacity}, {kWeaponSmall, &weaponSmallBaseCapacity}, {kWeaponRanged, &weaponRangedBaseCapacity}, {kShield, &shieldBaseCapacity}
-	};
+		switch (id) {
+			case kWeaponLarge:
+			case kWeaponMedium:
+			case kWeaponSmall:
+			case kWeaponRanged:
+			case kShield:
+				isWeaponCat = true;
+				break;
+			default:
+				isWeaponCat = false;
+		}
 
-	const std::unordered_map<int, int*> Player::capacityMap = {
-		{kHuge, &hugeCapacity}, {kLarge, &largeCapacity}, {kMedium, &mediumCapacity}, {kSmall, &smallCapacity}, {kTiny, &tinyCapacity},
-		{kAlchemy, &alchemyCapacity}, {kAmmo, &ammoCapacity}, {kCoin, &coinCapacity},
-		{kWeaponLarge, &weaponLargeCapacity}, {kWeaponMedium, &weaponMediumCapacity}, {kWeaponSmall, &weaponSmallCapacity}, {kWeaponRanged, &weaponRangedCapacity}, {kShield, &shieldCapacity}
-	};
+		//NOTE: Yeah so I really should redo the entire 'parentModifier' and 'hugeToTiny' thing, cause I am so gonna entirely forget what any of this even means, or how it works
+		switch (id) {
+			case kHuge:
+				parentModifier = &hugeToTiny;
+				break;
+			case kLarge:
+				parentModifier = &largeToTiny;
+				break;
+			case kMedium:
+				parentModifier = &mediumToTiny;
+				break;
+			case kSmall:
+				parentModifier = &smallToTiny;
+				break;
+			case kTiny:
+				parentModifier = &tinyToTiny;
+				break;
+			case kAlchemy:
+				parentModifier = &tinyToTiny;
+				break;
+			case kAmmo:
+				parentModifier = &tinyToTiny;
+				break;
+			case kCoin:
+				parentModifier = &tinyToTiny;
+				break;
+			case kGemstone:
+				parentModifier = &tinyToTiny;
+				break;
+			case kWeaponLarge:
+				parentModifier = &hugeToTiny;
+				break;
+			case kWeaponMedium:
+				parentModifier = &largeToTiny;
+				break;
+			case kWeaponSmall:
+				parentModifier = &mediumToTiny;
+				break;
+			case kWeaponRanged:
+				parentModifier = &hugeToTiny;
+				break;
+			case kShield:
+				parentModifier = &hugeToTiny;
+				break;
+			case kWeightless:
+				parentModifier = &tinyToTiny;
+				break;
+			default:
+				logger::error("Error while initialising ItemCat object '{}' - Invalid ID provided.", this->name);
+				parentModifier = &tinyToTiny;
+		}
+	}
 
-	const std::unordered_map<int, int*> Player::countMap = {
-		{kHuge, &hugeCount}, {kLarge, &largeCount}, {kMedium, &mediumCount}, {kSmall, &smallCount}, {kTiny, &tinyCount},
-		{kAlchemy, &alchemyCount}, {kAmmo, &ammoCount}, {kCoin, &coinCount},
-		{kWeaponLarge, &weaponLargeCount}, {kWeaponMedium, &weaponMediumCount}, {kWeaponSmall, &weaponSmallCount}, {kWeaponRanged, &weaponRangedCount}, {kShield, &shieldCount},
-		{kWeightless, &weightlessCount}
-	};
+	const char* ItemCat::GetTooltipName()
+	{
+		return Lang::Get(this->tooltipName).c_str();
+	}
 
-	float GetCapacityForGUI(ItemCategories a_category)
+	float ItemCat::GetCapacityForGUI()
 	{
 		if (Settings::Get<bool>("bCapacityVisualiserBaseValues")) {
-			return static_cast<float>(*Base::baseCapacityMap.at(a_category));
+			return static_cast<float>(baseCap);
 		} else {
-			return static_cast<float>(*Player::capacityMap.at(a_category));
+			return static_cast<float>(capacity);
 		}
 	}
 
-	float GetCountForGUI(ItemCategories a_category)
+	float ItemCat::GetCountForGUI()
 	{
-		return static_cast<float>(*Player::countMap.at(a_category));
+		return static_cast<float>(count);
 	}
-/* 
-	float CategoryPercentOfTotal(ItemCategories a_category)
+
+	void ItemCat::IncreaseCount(int a_qty)
 	{
-		if (std::ranges::contains(mainCategories, a_category)) {
-			return (GetCountForGUI(a_category) / GetCapacityForGUI(a_category)); //NOTE: This will only stay true if total capacity is always equal to tiny capacity, and tiny equal to small * smallToTiny, etc.
-		} else if (a_category == kCoin) {
+		this->count += a_qty;
+	}
 
-		} else if (std::ranges::contains(miscCategories, a_category)) {
+	void ItemCat::DecreaseCount(int a_qty)
+	{
+		this->count -= a_qty;
+	}
 
-		} else if (std::ranges::contains(weaponCategories, a_category)) {
+	int ItemCat::GetNormCapacity()
+	{
+		int normCapacity = this->capacity * (*this->parentModifier);
 
+		if (this->id == kCoin) {
+			normCapacity = int(ceil(normCapacity / Settings::Get<uint32_t>("uCoinsPerTiny")));
+		} else if (this->id == kGemstone) {
+			normCapacity = int(ceil((normCapacity * Settings::Get<uint32_t>("uCoinCapacityPerGem")) / Settings::Get<uint32_t>("uCoinsPerTiny")));
+		}
+
+		return normCapacity;
+	}
+
+	int ItemCat::GetNormCount()
+	{
+		int normCount = this->count * (*this->parentModifier);
+
+		if (this->id == kCoin) {
+			normCount = int(ceil(normCount / Settings::Get<uint32_t>("uCoinsPerTiny")));
+		} else if (this->id == kGemstone) {
+			normCount = int(ceil((normCount * Settings::Get<uint32_t>("uCoinCapacityPerGem")) / Settings::Get<uint32_t>("uCoinsPerTiny")));
+		}
+
+		return normCount;
+	}
+
+	bool ItemCat::IsOverflowing()
+	{
+		return this->count > this->capacity;
+	}
+
+	int ItemCat::GetOverflow()
+	{
+		int overflow = this->GetNormCount() - this->GetNormCapacity();
+
+		if (overflow < 0) { overflow = 0; }
+		return overflow;
+	}
+
+	float ItemCat::GetMCPPercent()
+	{
+		//NOTE: This code is functionally almost identical to the original code in CapacityVisualiserTotal() (aka not good, possibly even worse). So still try and improve this at some point.
+
+		float pct;
+
+		switch (this->id) {
+			case kHuge:
+			case kLarge:
+			case kMedium:
+			case kSmall:
+			case kTiny:
+				return this->GetCountForGUI() / this->GetCapacityForGUI();
+			case kAlchemy:
+			case kAmmo:
+				pct = (this->GetCountForGUI() - this->GetCapacityForGUI()) / cTiny.GetCapacityForGUI();
+				break;
+			case kCoin:
+				pct = ((this->GetCountForGUI() - this->GetCapacityForGUI()) / Settings::Get<uint32_t>("uCoinsPerTiny")) / cTiny.GetCapacityForGUI();
+				break;
+			case kWeaponLarge:
+			case kWeaponMedium:
+			case kWeaponSmall:
+			case kWeaponRanged:
+			case kShield:
+				pct = (this->GetCountForGUI() - this->GetCapacityForGUI()) / this->GetCapacityForGUI();
+				break;
+			default:
+				pct = 0.0f;
+		}
+
+		if (pct < 0) {
+			return 0.0f;
 		} else {
-			logger::error("fix yo shit");
+			return pct;
 		}
 	}
- */
-	void Base::UpdateBaseCapacities()
+
+	std::string ItemCat::FractionStr()
 	{
-		hugeBaseCapacity = Settings::Get<uint32_t>("uHugeCapacity");
+		return std::format("{}/{}", this->count, this->capacity);
+	}
+
+	ItemCat cHuge = ItemCat::ItemCat(kHuge, "kHuge", "Huge", "$Category.Huge.TooltipName");
+	ItemCat cLarge = ItemCat::ItemCat(kLarge, "kLarge", "Large", "$Category.Large.TooltipName");
+	ItemCat cMedium = ItemCat::ItemCat(kMedium, "kMedium", "Medium", "$Category.Medium.TooltipName");
+	ItemCat cSmall = ItemCat::ItemCat(kSmall, "kSmall", "Small", "$Category.Small.TooltipName");
+	ItemCat cTiny = ItemCat::ItemCat(kTiny, "kTiny", "Tiny", "$Category.Tiny.TooltipName");
+	ItemCat cAlchemy = ItemCat::ItemCat(kAlchemy, "kAlchemy", "Alchemy", "$Category.Alchemy.TooltipName");
+	ItemCat cAmmo = ItemCat::ItemCat(kAmmo, "kAmmo", "Ammo", "$Category.Ammo.TooltipName");
+	ItemCat cCoin = ItemCat::ItemCat(kCoin, "kCoin", "Coin", "$Category.Coin.TooltipName");
+	ItemCat cGemstone = ItemCat::ItemCat(kGemstone, "kGemstone", "Coin<Gemstone>", "$Category.Gemstone.TooltipName");
+	ItemCat cWeaponLarge = ItemCat::ItemCat(kWeaponLarge, "kWeaponLarge", "Weapon<Large>", "$Category.WeaponLarge.TooltipName");
+	ItemCat cWeaponMedium = ItemCat::ItemCat(kWeaponMedium, "kWeaponMedium", "Weapon<Medium>", "$Category.WeaponMedium.TooltipName");
+	ItemCat cWeaponSmall = ItemCat::ItemCat(kWeaponSmall, "kWeaponSmall", "Weapon<Small>", "$Category.WeaponSmall.TooltipName");
+	ItemCat cWeaponRanged = ItemCat::ItemCat(kWeaponRanged, "kWeaponRanged", "Weapon<Ranged>", "$Category.WeaponRanged.TooltipName");
+	ItemCat cShield = ItemCat::ItemCat(kShield, "kShield", "Shield", "$Category.Shield.TooltipName");
+	ItemCat cWeightless = ItemCat::ItemCat(kWeightless, "kWeightless", "Weightless", "$Category.Weightless.TooltipName");
+
+	const std::array<ItemCat*, 15> categoryArr = {&cHuge, &cLarge, &cMedium, &cSmall, &cTiny, &cAlchemy, &cAmmo, &cCoin, &cGemstone, &cWeaponLarge, &cWeaponMedium, &cWeaponSmall, &cWeaponRanged, &cShield, &cWeightless};
+
+	ItemCat* GetCategory(CategoryID a_categoryID)
+	{
+		switch (a_categoryID) {
+			case kHuge: return &cHuge;
+			case kLarge: return &cLarge;
+			case kMedium: return &cMedium;
+			case kSmall: return &cSmall;
+			case kTiny: return &cTiny;
+			case kAlchemy: return &cAlchemy;
+			case kAmmo: return &cAmmo;
+			case kCoin: return &cCoin;
+			case kGemstone: return &cGemstone;
+			case kWeaponLarge: return &cWeaponLarge;
+			case kWeaponMedium: return &cWeaponMedium;
+			case kWeaponSmall: return &cWeaponSmall;
+			case kWeaponRanged: return &cWeaponRanged;
+			case kShield: return &cShield;
+			case kWeightless: return &cWeightless;
+			default: return nullptr;
+		}
+	}
+
+	void ZeroAllCategories(bool suppressLog)
+	{
+		Bonus::equippedStorageItems.clear();
+		totalCount = 0;
+
+		for (auto& cat : categoryArr) { cat->count = 0; }
+
+		if (!suppressLog) { logger::debug("All categories reset to 0.");}
+	}
+
+	void UpdateAllCategories(bool suppressLog)
+	{
+		clib_util::Timer timer;
+		timer.start();
+		if (!suppressLog) { logger::debug("Updating all capacity categories...");}
+
+		ZeroAllCategories(suppressLog);
+
+		ItemCat* category;
+		
+		for (auto& [form, data] : PlayerState::Char->GetInventory()) {
+			auto itemID = form->GetFormID();
+			auto item = RE::TESForm::LookupByID(itemID);
+			auto isQuestItem = data.second.get()->IsQuestObject();
+
+			// For some reason a load of random items with a count of 0 appear in the player's inventory when using GetInventory(), so need to ignore those.
+			// Also, ignore the 20 sawn logs (ID: HF00300E) that appear in the player's inventory when they own a Hearthfire house.
+			if ((data.first > 0) && (itemID != 0x300300E)) {
+				category = GetItemCategory(item, isQuestItem, data.first, suppressLog);
+				bool isStorage = Bonus::ItemIsStorage(item);
+				if (!data.second->IsWorn() || (Settings::Get<bool>("bSeparateWeaponCategories") && category->isWeaponCat)) {
+					category->IncreaseCount(data.first);
+				} else {
+					if (!suppressLog) { logger::trace("{} is Worn", item->GetName()); }
+					if (isStorage) { Bonus::AddEquippedStorage(itemID); }
+				}
+			}
+		}
+	}
+
+	void UpdateBaseCapacities()
+	{
+		cHuge.baseCap = Settings::Get<uint32_t>("uHugeCapacity");
 		if (!Settings::Get<bool>("bHugeCapacityShared")) {
-			largeBaseCapacity = Settings::Get<uint32_t>("uLargeCapacity");
+			cLarge.baseCap = Settings::Get<uint32_t>("uLargeCapacity");
 		} else {
-			largeBaseCapacity = int(ceil(hugeBaseCapacity * Settings::Get<float>("fLargePerHuge")));
+			cLarge.baseCap = int(ceil(cHuge.baseCap * Settings::Get<float>("fLargePerHuge")));
 		}
-		mediumBaseCapacity = int(ceil(largeBaseCapacity * Settings::Get<float>("fMediumPerLarge")));
-		smallBaseCapacity = int(ceil(mediumBaseCapacity * Settings::Get<float>("fSmallPerMedium")));
-		tinyBaseCapacity = int(ceil(smallBaseCapacity * Settings::Get<float>("fTinyPerSmall")));
-		alchemyBaseCapacity = Settings::Get<uint32_t>("uAlchemyCapacity");
-		ammoBaseCapacity = Settings::Get<uint32_t>("uAmmoCapacity");
-		coinBaseCapacity = Settings::Get<uint32_t>("uCoinCapacity");
-		weaponLargeBaseCapacity = Settings::Get<uint32_t>("uLargeWeaponCapacity");
-		weaponMediumBaseCapacity = Settings::Get<uint32_t>("uMediumWeaponCapacity");
-		weaponSmallBaseCapacity = Settings::Get<uint32_t>("uSmallWeaponCapacity");
-		weaponRangedBaseCapacity = Settings::Get<uint32_t>("uRangedWeaponCapacity");
-		shieldBaseCapacity = Settings::Get<uint32_t>("uShieldCapacity");
+		cMedium.baseCap = int(ceil(cLarge.baseCap * Settings::Get<float>("fMediumPerLarge")));
+		cSmall.baseCap = int(ceil(cMedium.baseCap * Settings::Get<float>("fSmallPerMedium")));
+		cTiny.baseCap = int(ceil(cSmall.baseCap * Settings::Get<float>("fTinyPerSmall")));
+		cAlchemy.baseCap = Settings::Get<uint32_t>("uAlchemyCapacity");
+		cAmmo.baseCap  = Settings::Get<uint32_t>("uAmmoCapacity");
+		cCoin.baseCap  = Settings::Get<uint32_t>("uCoinCapacity");
+		cWeaponLarge.baseCap  = Settings::Get<uint32_t>("uLargeWeaponCapacity");
+		cWeaponMedium.baseCap = Settings::Get<uint32_t>("uMediumWeaponCapacity");
+		cWeaponSmall.baseCap = Settings::Get<uint32_t>("uSmallWeaponCapacity");
+		cWeaponRanged.baseCap = Settings::Get<uint32_t>("uRangedWeaponCapacity");
+		cShield.baseCap = Settings::Get<uint32_t>("uShieldCapacity");
 	}
 
-	void Player::CalculateActualCapacities()
+	void CalculateActualCapacities()
 	{
 		clib_util::Timer timer;
 		logger::info("Recalculating adjusted capacity limits...");
 		timer.start();
 
-		hugeCapacity = Base::hugeBaseCapacity;
-		largeCapacity = Base::largeBaseCapacity;
-		mediumCapacity = Base::mediumBaseCapacity;
-		smallCapacity = Base::smallBaseCapacity;
-		tinyCapacity = Base::tinyBaseCapacity;
-		alchemyCapacity = Base::alchemyBaseCapacity;
-		ammoCapacity = Base::ammoBaseCapacity;
-		coinCapacity = Base::coinBaseCapacity;
-		weaponLargeCapacity = Base::weaponLargeBaseCapacity;
-		weaponMediumCapacity = Base::weaponMediumBaseCapacity;
-		weaponSmallCapacity = Base::weaponSmallBaseCapacity;
-		weaponRangedCapacity = Base::weaponRangedBaseCapacity;
-		shieldCapacity = Base::shieldBaseCapacity;
+		for (auto& cat : categoryArr) { cat->capacity = cat->baseCap; }
 
 		//TODO: Need to do some experimentation - GetActorValue vs GetBaseActorValue etc., and kAlchemy vs kAlchemyModifier etc.
 		if (*Settings::Get<bool*>("bSkillsAffectCapacity")) {
@@ -177,253 +328,65 @@ namespace CapacityHandler
 			auto lockpickLvl = playerAVs->GetActorValue(RE::ActorValue::kLockpicking);
 			auto pickpocketLvl = playerAVs->GetActorValue(RE::ActorValue::kPickpocket);
 
-			//TODO: logger::trace("Skills: Alchemy = {} | Archery = {} | Speech = {} | Lockpick = {} | Pickpocket = {}", alchemyLvl, archeryLvl, speechLvl, lockpickLvl, pickpocketLvl);
-
 			//TODO: Consider making these configurable rather than hardcoded
 			auto alchemySkillMod = 1 + (alchemyLvl/100);
 			auto archerySkillMod = 1 + (archeryLvl/100);
 			auto goldSkillMod = 1 + (((speechLvl + lockpickLvl + pickpocketLvl)/3) / 100);
 
-			alchemyCapacity = int(ceil(alchemyCapacity * alchemySkillMod));
-			ammoCapacity = int(ceil(ammoCapacity * archerySkillMod));
-			coinCapacity = int(ceil(coinCapacity * goldSkillMod));
+			cAlchemy.capacity = int(ceil(cAlchemy.capacity * alchemySkillMod));
+			cAmmo.capacity = int(ceil(cAmmo.capacity * archerySkillMod));
+			cCoin.capacity = int(ceil(cCoin.capacity * goldSkillMod));
 		}
 
 		//TODO: Remember to complete this function to add capacity buffs from backpacks etc.
 		for (const auto& [category, bonus] : Bonus::GetEquippedStorage()) {
-			if (bonus != 0) {
-				*Player::capacityMap.at(category) += bonus;
-			}
+				category->capacity += bonus;
 		}
 
 		timer.stop();
 		logger::info("...done in {}μs / {}ms.",  timer.duration_μs(), timer.duration_ms());
 	}
 
-	int Player::GetCategoryCapacity(int a_cat)
+	void UpdateCategoryRatios()
 	{
-		int capacity = *capacityMap.at(a_cat);
-
-		if (capacity != NULL) {
-			return capacity;
-		} else {
-			logger::error("CapacityHandler::Player::GetCategoryCapacity -> Invalid category provided, returning 0");
-			return 0;
-		}
-	}
-
-	int Player::GetCategoryCount(int a_cat)
-	{
-		int count = *countMap.at(a_cat);
-
-		if (count != NULL) {
-			return count;
-		} else {
-			logger::error("CapacityHandler::Player::GetCategoryCount -> Invalid category provided, returning 0");
-			return 0;
-		}
-	}
-
-	//TODO: Look into using pointers or something to reduce these functions down by using GetCategoryCount or something
-	void Player::IncreaseCategory(int a_cat, int a_count)
-	{
-		switch (a_cat)
-		{
-			case kHuge:
-				hugeCount += a_count;
-				break;
-			case kLarge:
-				largeCount += a_count;
-				break;
-			case kMedium:
-				mediumCount += a_count;
-				break;
-			case kSmall:
-				smallCount += a_count;
-				break;
-			case kTiny:
-				tinyCount += a_count;
-				break;
-			case kAlchemy:
-				alchemyCount += a_count;
-				break;
-			case kAmmo:
-				ammoCount += a_count;
-				break;
-			case kCoin:
-				coinCount += a_count;
-				break;
-			case kWeaponLarge:
-				weaponLargeCount += a_count;
-				break;
-			case kWeaponMedium:
-				weaponMediumCount += a_count;
-				break;
-			case kWeaponSmall:
-				weaponSmallCount += a_count;
-				break;
-			case kWeaponRanged:
-				weaponRangedCount += a_count;
-				break;
-			case kShield:
-				shieldCount += a_count;
-				break;
-			case kGemstone:
-				coinCount += a_count * Settings::Get<uint32_t>("uCoinCapacityPerGem");
-				break;
-			case kWeightless:
-				weightlessCount += a_count;
-				break;
-			default:
-				logger::error("CapacityHandler::Player::IncreaseCategory -> Invalid category provided");
-		}
-	}
-
-	void Player::DecreaseCategory(int a_cat, int a_count)
-	{
-		switch (a_cat)
-		{
-			case kHuge:
-				hugeCount -= a_count;
-				break;
-			case kLarge:
-				largeCount -= a_count;
-				break;
-			case kMedium:
-				mediumCount -= a_count;
-				break;
-			case kSmall:
-				smallCount -= a_count;
-				break;
-			case kTiny:
-				tinyCount -= a_count;
-				break;
-			case kAlchemy:
-				alchemyCount -= a_count;
-				break;
-			case kAmmo:
-				ammoCount -= a_count;
-				break;
-			case kCoin:
-				coinCount -= a_count;
-				break;
-			case kWeaponLarge:
-				weaponLargeCount -= a_count;
-				break;
-			case kWeaponMedium:
-				weaponMediumCount -= a_count;
-				break;
-			case kWeaponSmall:
-				weaponSmallCount -= a_count;
-				break;
-			case kWeaponRanged:
-				weaponRangedCount -= a_count;
-				break;
-			case kShield:
-				shieldCount -= a_count;
-				break;
-			case kGemstone:
-				coinCount -= a_count * Settings::Get<uint32_t>("uCoinCapacityPerGem");
-				break;
-			case kWeightless:
-				weightlessCount -= a_count;
-				break;
-			default:
-				logger::error("CapacityHandler::Player::DecreaseCategory -> Invalid category provided");
-		}
-	}
-
-	void Player::ZeroAllCategories(bool suppressLog)
-	{
-		Bonus::equippedStorageItems.clear();
-		hugeCount = 0;
-		largeCount = 0;
-		mediumCount = 0;
-		smallCount = 0;
-		tinyCount = 0;
-		totalCount = 0;
-		alchemyCount = 0;
-		ammoCount = 0;
-		coinCount = 0;
-		weaponLargeCount = 0;
-		weaponMediumCount = 0;
-		weaponSmallCount = 0;
-		weaponRangedCount = 0;
-		shieldCount = 0;
-		weightlessCount = 0;
-		if (!suppressLog) { logger::debug("All categories reset to 0.");}
-	}
-
-	void Player::UpdateAllCategories(bool suppressLog)
-	{
-		clib_util::Timer timer;
-		if (!suppressLog) { logger::debug("Updating all capacity categories...");}
-		timer.start();
-
-		ZeroAllCategories(suppressLog);
-		
-		auto player = RE::PlayerCharacter::GetSingleton();
-		int itemCategory;
-		
-		for (auto& [form, data] : player->GetInventory()) {
-			auto itemID = form->GetFormID();
-			auto item = RE::TESForm::LookupByID(itemID);
-			auto isQuestItem = data.second.get()->IsQuestObject();
-
-			// For some reason a load of random items with a count of 0 appear in the player's inventory when using GetInventory(), so need to ignore those.
-			// Also, ignore the 20 sawn logs (ID: HF00300E) that appear in the player's inventory when they own a Hearthfire house.
-			if ((data.first > 0) && (itemID != 0x300300E)) {
-				itemCategory = Player::GetItemCategory(item, isQuestItem, data.first, suppressLog);
-				bool isStorage = Bonus::ItemIsStorage(item);
-				if (!data.second->IsWorn() || (Settings::Get<bool>("bSeparateWeaponCategories") && std::ranges::contains(CapacityHandler::weaponCategories, itemCategory))) {
-					IncreaseCategory(itemCategory, data.first);
-				} else {
-					if (!suppressLog) { logger::trace("{} is Worn", item->GetName()); }
-					if (isStorage) { Bonus::AddEquippedStorage(itemID); }
-				}
-			}
-		}
-
-		UpdateTotalCount();
-
-		timer.stop();
-		if (!suppressLog) { logger::debug("...done in {}μs / {}ms.",  timer.duration_μs(), timer.duration_ms());}
-	}
-
-	void Player::UpdateTotalCount()
-	{
-		//The "total" count only actually includes the large, medium, small, and tiny categories (plus huge, if bHugeCapacityShared), plus any OVERFLOW from the misc categories
-		int hugeToTiny = (int)(Settings::Get<float>("fLargePerHuge") * 
+		//TODO: If I can figure out some sort of "settingsChanged" bool, these can be made into global/static variables, rather than being recalculated every time UpdateTotalCount() runs
+		hugeToTiny = (int)(Settings::Get<float>("fLargePerHuge") * 
 				Settings::Get<float>("fMediumPerLarge") * 
 				Settings::Get<float>("fSmallPerMedium") * 
 				Settings::Get<float>("fTinyPerSmall"));
-		int largeToTiny = (int)(Settings::Get<float>("fMediumPerLarge") * 
+		largeToTiny = (int)(Settings::Get<float>("fMediumPerLarge") * 
 				Settings::Get<float>("fSmallPerMedium") * 
 				Settings::Get<float>("fTinyPerSmall"));
-		int mediumToTiny = (int)(Settings::Get<float>("fSmallPerMedium") * 
+		mediumToTiny = (int)(Settings::Get<float>("fSmallPerMedium") * 
 				Settings::Get<float>("fTinyPerSmall"));
-		int smallToTiny = (int)(Settings::Get<float>("fTinyPerSmall"));
+		smallToTiny = (int)(Settings::Get<float>("fTinyPerSmall"));
+	}
+
+	void UpdateTotalCount()
+	{
+		//The "total" count only actually includes the large, medium, small, and tiny categories (plus huge, if bHugeCapacityShared), plus any OVERFLOW from the misc categories
+		UpdateCategoryRatios();
 
 		if (!Settings::Get<bool>("bHugeCapacityShared")) {
-			totalCount = (largeCount * largeToTiny) + (mediumCount * mediumToTiny) + (smallCount * smallToTiny) + tinyCount;
+			totalCount = (cLarge.count * largeToTiny) + (cMedium.count * mediumToTiny) + (cSmall.count * smallToTiny) + cTiny.count;
 		} else {
-			totalCount = (hugeCount * hugeToTiny) + (largeCount * largeToTiny) + (mediumCount * mediumToTiny) + (smallCount * smallToTiny) + tinyCount;
+			totalCount = (cHuge.count * hugeToTiny) + (cLarge.count * largeToTiny) + (cMedium.count * mediumToTiny) + (cSmall.count * smallToTiny) + cTiny.count;
 		}
 
-		if (alchemyCount > alchemyCapacity) totalCount += alchemyCount - alchemyCapacity;
-		if (ammoCount > ammoCapacity) totalCount += ammoCount - ammoCapacity;
-		if (coinCount > coinCapacity) totalCount += int(ceil((coinCount - coinCapacity) / Settings::Get<uint32_t>("uCoinsPerTiny")));
+		if (cAlchemy.IsOverflowing()) { totalCount += cAlchemy.GetOverflow(); }
+		if (cAmmo.IsOverflowing()) { totalCount += cAmmo.GetOverflow(); }
+		if (cCoin.IsOverflowing()) { totalCount += cCoin.GetOverflow(); }
 
 		//NOTE: Currently, overflowing weapons are considered huge/large/medium items - could probably come up with a way of making this either more specialised, or user-defined.
 		//? Additionally/alternatively, maybe find some way of making it so that, for example, ranged weapons first overflow into the large weapon category, then into totalCount if no space.
-		if (weaponLargeCount > weaponLargeCapacity) totalCount += (weaponLargeCount - weaponLargeCapacity) * hugeToTiny;
-		if (weaponMediumCount > weaponMediumCapacity) totalCount += (weaponMediumCount - weaponMediumCapacity) * largeToTiny;
-		if (weaponSmallCount > weaponSmallCapacity) totalCount += (weaponSmallCount - weaponSmallCapacity) * mediumToTiny;
-		if (weaponRangedCount > weaponRangedCapacity) totalCount += (weaponRangedCount - weaponRangedCapacity) * hugeToTiny;
-		if (shieldCount > shieldCapacity) totalCount += (shieldCount - shieldCapacity) * hugeToTiny;
+		for (CategoryID weapCatID: weaponCategories) {
+			if (auto weapCat = GetCategory(weapCatID); weapCat->IsOverflowing()) {
+				totalCount += weapCat->GetOverflow();
+			}
+		}
 	}
 
-	void Player::AdjustSingleCategory(const RE::TESContainerChangedEvent *a_event)
+	void AdjustSingleCategory(const RE::TESContainerChangedEvent *a_event)
 	{
 		auto item = RE::TESForm::LookupByID(a_event->baseObj);
 
@@ -433,12 +396,12 @@ namespace CapacityHandler
 		auto isQuestItem = false;
 
 		if (a_event->baseObj != Forms::MISC::BYOHMaterialLog) {
-			RE::FormID itemCategory = Player::GetItemCategory(item, isQuestItem, itemCount, false);
+			ItemCat* itemCategory = GetItemCategory(item, isQuestItem, itemCount, false);
 
 			if (oldContainer == 0x14) { // If moving item out of inventory
-				DecreaseCategory(itemCategory, itemCount);
+				itemCategory->DecreaseCount(itemCount);
 			} else { // If moving item into inventory
-				IncreaseCategory(itemCategory, itemCount);
+				itemCategory->IncreaseCount(itemCount);
 			}
 		}
 
@@ -446,7 +409,7 @@ namespace CapacityHandler
 		LogAllCategories();
 	}
 
-	int Player::GetItemCategory(RE::TESForm *a_item, bool is_questItem, int a_count, bool suppressLog)
+	ItemCat* GetItemCategory(RE::TESForm *a_item, bool is_questItem, int a_qty, bool suppressLog)
 	{
 		auto kwItem = a_item->As<RE::BGSKeywordForm>();
 
@@ -455,135 +418,134 @@ namespace CapacityHandler
 
 		if (kwItem) {
 			if (kwItem->HasKeywordID(Forms::KYWD::VendorItemPotion) || kwItem->HasKeywordID(Forms::KYWD::VendorItemPoison)) {
-				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kAlchemy), is_questItem);}
-				return kAlchemy;
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_qty, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, cAlchemy.name, is_questItem);}
+				return &cAlchemy;
 			} else if (a_item->IsAmmo()) {
-				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kAmmo), is_questItem);}
-				return kAmmo;
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_qty, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, cAmmo.name, is_questItem);}
+				return &cAmmo;
 			} else if ((a_item->IsGold()) || kwItem->HasKeywordID(Forms::KYWD::CONG_CoinItem)) {
-				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kCoin), is_questItem);}
-				return kCoin;
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_qty, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, cCoin.name, is_questItem);}
+				return &cCoin;
 			} else if ((kwItem->HasKeywordID(Forms::KYWD::VendorItemGem)) && (Settings::Get<bool>("bGemsInCoinCategory")) && (a_item->GetWeight() == 0.1f)) {
-				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kGemstone), is_questItem);}
-				return kGemstone;
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_qty, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, cGemstone.name, is_questItem);}
+				return &cGemstone;
 			} else if (Settings::Get<bool>("bSeparateWeaponCategories") && (a_item->Is(RE::FormType::Armor) || a_item->Is(RE::FormType::Weapon))) {
-				if (int weapCat = GetWeaponCategory(a_item); weapCat != kWeightless) {
-					if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(weapCat), is_questItem);}
+				if (ItemCat* weapCat = GetWeaponCategory(a_item); weapCat != &cWeightless) {
+					if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_qty, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, weapCat->name, is_questItem);}
 					return weapCat;
 				}
 			}
 		} else {
 			if (a_item->Is(RE::FormType::Ammo)) {
-				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kAmmo), is_questItem);}
-				return kAmmo;
+				if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_qty, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, cAmmo.name, is_questItem);}
+				return &cAmmo;
 			}
 		}
 
 		//NOTE: Lockpicks have an internal weight of 0.1 (due to Survival Mode), but are weightless (W = -1) when SM is disabled, so they behave a bit weirdly
 		//? So until I find a better solution for whatever's happening there, this is what I'm going with
 		if (a_item->IsLockpick()) {
-			if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(kWeightless), is_questItem);}
-			return kWeightless;
+			if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_qty, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, cWeightless.name, is_questItem);}
+			return &cWeightless;
 		}
 
-		int category = GetBasicCategory(a_item);
-		if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_count, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, categoryNames.at(category), is_questItem);}
+		ItemCat* category = GetBasicCategory(a_item);
+		if (!suppressLog) {logger::trace("{}x {} [{}:0x{:X}] | Weight: {} | Category: {} | Quest Item: {}", a_qty, a_item->GetName(), RE::FormTypeToString(itemType), a_item->GetFormID(), itemWeight, category->name, is_questItem);}
 		return category;
 	}
 
-	int Player::GetCategoryForEquip(RE::TESForm *a_item)
+	ItemCat* GetCategoryForEquip(RE::TESForm *a_item)
 	{
-		int category;
+		ItemCat* category;
 		auto kwItem = a_item->As<RE::BGSKeywordForm>();
 
 		if (kwItem) {
 			if (kwItem->HasKeywordID(Forms::KYWD::VendorItemPotion) || kwItem->HasKeywordID(Forms::KYWD::VendorItemPoison)) {
-				logger::trace("Equipped Item Category: {}", categoryNames.at(kAlchemy));
-				return kAlchemy;
+				logger::trace("Equipped Item Category: {}", cAlchemy.name);
+				return &cAlchemy;
 			}
 			
 			if (Settings::Get<bool>("bSeparateWeaponCategories") && (a_item->Is(RE::FormType::Armor) || a_item->Is(RE::FormType::Weapon))) {
 				category = GetWeaponCategory(a_item);
 
-				if (category != kWeightless) {
-					logger::trace("Equipped Item Category: {}", categoryNames.at(category));
+				if (category != &cWeightless) {
+					logger::trace("Equipped Item Category: {}", category->name);
 					return category;
 				}
 			}
 		}
 		category = GetBasicCategory(a_item);
-		logger::trace("Equipped Item Category: {}", categoryNames.at(category));
+		logger::trace("Equipped Item Category: {}", category->name);
 
 		return category;
 	}
 
-	int Player::GetBasicCategory(RE::TESForm *a_item)
+	ItemCat* GetBasicCategory(RE::TESForm *a_item)
 	{
-		int itemCategory;
+		ItemCat* itemCategory;
 		auto itemWeight = a_item->GetWeight();
 		//TODO: Figure out how to identify quest items, if at all possible
 		auto isQuestItem = false;
 
 		if (itemWeight <= 0 || (!Settings::Get<bool>("bQuestItemsAffectCapacity") && isQuestItem)) {
-			itemCategory = kWeightless;
+			itemCategory = &cWeightless;
 		} else if (itemWeight >= Settings::Get<float>("fHugeItemWeight")) {
-			itemCategory = kHuge;
+			itemCategory = &cHuge;
 		} else if (itemWeight >= Settings::Get<float>("fLargeItemWeight")) {
-			itemCategory = kLarge;
+			itemCategory = &cLarge;
 		} else if (itemWeight >= Settings::Get<float>("fMediumItemWeight")) {
-			itemCategory = kMedium;
+			itemCategory = &cMedium;
 		} else if (itemWeight >= Settings::Get<float>("fSmallItemWeight")) {
-			itemCategory = kSmall;
+			itemCategory = &cSmall;
 		} else {
-			itemCategory = kTiny;
+			itemCategory = &cTiny;
 		}
 
 		return itemCategory;
 	}
 
-	int Player::GetWeaponCategory(RE::TESForm *a_item)
+	ItemCat* GetWeaponCategory(RE::TESForm *a_item)
 	{
 		auto kwItem = a_item->As<RE::BGSKeywordForm>();
 
 		if (kwItem->HasKeywordID(Forms::KYWD::ArmorShield)) {
-			return kShield;
+			return &cShield;
 		}
 
 		for (auto keyword : kwItem->GetKeywords()) {
 			std::string_view kwEditorID{keyword->GetFormEditorID()};
 			if (auto it = weaponKeywords.find(kwEditorID); it != weaponKeywords.end()) {
-				int weaponCategory = it->second;
-				return weaponCategory;
+				return GetCategory(it->second);
 			}
 		}
 
-		return kWeightless;
+		return &cWeightless;
 	}
 
-	void Player::CheckIfOverCapacity()
+	void CheckIfOverCapacity()
 	{
 		// If any or all the large, medium, small, or tiny categories are over-capacity, then the total category is guaranteed be over-capacity
-		if (totalCount > tinyCapacity) {
-			if (PlayerStatus::GetOverCapacityStatus() == false) {
-				PlayerStatus::UpdateCapacityStatus(true);
+		if (totalCount > cTiny.capacity) {
+			if (PlayerState::GetOverCapacityStatus() == false) {
+				PlayerState::UpdateCapacityStatus(true);
 				RE::DebugNotification("You are carrying more than you have space for!");
 			}
 		} else {
-			if (PlayerStatus::GetOverCapacityStatus() == true) {
-				PlayerStatus::UpdateCapacityStatus(false);
+			if (PlayerState::GetOverCapacityStatus() == true) {
+				PlayerState::UpdateCapacityStatus(false);
 				RE::DebugNotification("Your storage is no longer overflowing.");
 			}
 		}
 	};
 
-	void Player::LogAllCategories()
+	void LogAllCategories()
 	{
-		logger::debug("{}\nCapacity Category Counts:\nMAIN || Huge = {}/{}, Large = {}/{}, Medium = {}/{}, Small = {}/{}, Tiny = {}/{}\nMISC || Alchemy = {}/{}, Ammo = {}/{}, Coins = {}/{}\nWEAP || Large = {}/{}, Medium = {}/{}, Small = {}/{}, Ranged = {}/{}, Shields = {}/{}\nTotal = {}/{}, Weightless = {}\n{}", 
+		logger::debug("{}\nCapacity Category Counts:\nMAIN || Huge = {}, Large = {}, Medium = {}, Small = {}, Tiny = {}\nMISC || Alchemy = {}, Ammo = {}, Coins = {}\nWEAP || Large = {}, Medium = {}, Small = {}, Ranged = {}, Shields = {}\nTotal = {}/{}, Weightless = {}\n{}", 
 			std::string(100, '='),
-			hugeCount, hugeCapacity, largeCount, largeCapacity, mediumCount, mediumCapacity, smallCount, smallCapacity, tinyCount, tinyCapacity,
-			alchemyCount, alchemyCapacity, ammoCount, ammoCapacity, coinCount, coinCapacity,
-			weaponLargeCount, weaponLargeCapacity, weaponMediumCount, weaponMediumCapacity, weaponSmallCount, weaponSmallCapacity, weaponRangedCount, weaponRangedCapacity, shieldCount, shieldCapacity,
-			totalCount, tinyCapacity, weightlessCount,
+			cHuge.FractionStr(), cLarge.FractionStr(), cMedium.FractionStr(), cSmall.FractionStr(), cTiny.FractionStr(),
+			cAlchemy.FractionStr(), cAmmo.FractionStr(), cCoin.FractionStr(),
+			cWeaponLarge.FractionStr(), cWeaponMedium.FractionStr(), cWeaponSmall.FractionStr(), cWeaponRanged.FractionStr(), cShield.FractionStr(),
+			totalCount, cTiny.capacity, cWeightless.count,
 			std::string(100, '=')
 		);
 	}

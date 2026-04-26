@@ -108,10 +108,12 @@ namespace Utils
 		WeightHandler::UpdateFromSettings();
 		WeightHandler::UpdateWeightLimit();
 
-		CapacityHandler::Base::UpdateBaseCapacities();
-		CapacityHandler::Player::UpdateAllCategories(false);
-		CapacityHandler::Player::CalculateActualCapacities();
-		CapacityHandler::Player::LogAllCategories();
+		CapacityHandler::UpdateCategoryRatios();
+		CapacityHandler::UpdateBaseCapacities();
+		CapacityHandler::UpdateAllCategories(false);
+		CapacityHandler::UpdateTotalCount();
+		CapacityHandler::CalculateActualCapacities();
+		CapacityHandler::LogAllCategories();
 
 		Debuffs::CheckWeight();
 		Debuffs::CapacityEffects();
@@ -142,18 +144,20 @@ namespace Utils
 
 				Hooks::Install();
 
-				PlayerStatus::Char = RE::PlayerCharacter::GetSingleton();
-				PlayerStatus::AsAV = PlayerStatus::Char->AsActorValueOwner();
-				PlayerStatus::Race = PlayerStatus::Char->GetRace();
+				PlayerState::Char = RE::PlayerCharacter::GetSingleton();
+				PlayerState::AsAV = PlayerState::Char->AsActorValueOwner();
+				PlayerState::Race = PlayerState::Char->GetRace();
 				
-				PlayerStatus::Controls = RE::PlayerControls::GetSingleton();
-				PlayerStatus::State = PlayerStatus::Char->AsActorState();
+				PlayerState::Controls = RE::PlayerControls::GetSingleton();
+				PlayerState::State = PlayerState::Char->AsActorState();
 
 				Lang::InitTranslations();
 
 				Forms::LoadFromGame();
 
 				GUI::Assets::LoadTextures();
+				
+				GUI::MCP::heatmap.Init();
 				
 				CapacityHandler::Bonus::ParseAllTOMLFiles();
 				

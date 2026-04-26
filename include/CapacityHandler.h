@@ -2,7 +2,7 @@
 
 namespace CapacityHandler
 {
-	enum ItemCategories : short {
+	enum CategoryID : short {
 		kHuge,
         kLarge,
         kMedium,
@@ -19,172 +19,102 @@ namespace CapacityHandler
 		kShield,
 		kWeightless
     };
+	
+	const extern std::array<CategoryID, 5> mainCategories;
+	const extern std::array<CategoryID, 3> miscCategories;
+	const extern std::array<CategoryID, 5> weaponCategories;
+	const extern std::unordered_map<std::string_view, CategoryID> weaponKeywords;
 
-	const extern std::unordered_map<int, std::string> categoryStrings;
-	const extern std::unordered_map<int, std::string> categoryNames;
+	extern uint32_t hugeToTiny;
+	extern uint32_t largeToTiny;
+	extern uint32_t mediumToTiny;
+	extern uint32_t smallToTiny;
+	extern uint32_t tinyToTiny;
 
-	const extern std::array<ItemCategories, 5> mainCategories;
-	const extern std::array<ItemCategories, 3> miscCategories;
-	const extern std::array<ItemCategories, 5> weaponCategories;
-	const extern std::unordered_map<std::string_view, int> weaponKeywords;
+	struct ItemCat
+	{
+		CategoryID id;
+		std::string idStr;
 
-	float GetCapacityForGUI(ItemCategories a_category);
-	float GetCountForGUI(ItemCategories a_category);
-//	float CategoryPercentOfTotal(ItemCategories a_category);
+		static const std::unordered_map<CategoryID, std::string> idStrMap;
 
-    struct Base
-    {
-		
-		static int hugeBaseCapacity;
-		static int largeBaseCapacity;
-        static int mediumBaseCapacity;
-        static int smallBaseCapacity;
-        static int tinyBaseCapacity;
-        static int alchemyBaseCapacity;
-        static int ammoBaseCapacity;
-        static int coinBaseCapacity;
-		static int weaponLargeBaseCapacity;
-		static int weaponMediumBaseCapacity;
-		static int weaponSmallBaseCapacity;
-		static int weaponRangedBaseCapacity;
-		static int shieldBaseCapacity;
+		int baseCap = 0;
+		int capacity = 0;
+		int count = 0;
+		int countNorm = 0;
 
-        /** 
-         * Updates the per-category values defining base capacity limits, from settings.
-		 * 
-		 * @note Updated item categories are: large, medium, small, tiny, alchemy, ammo, coin.
-        */
-        static void UpdateBaseCapacities();
+		bool isWeaponCat = false;
 
-		public:
-			static const std::unordered_map<int, int*> baseCapacityMap;
-    };
+		uint32_t* parentModifier;
 
-    class Player
-    {
-		static int hugeCapacity;
-        static int largeCapacity;
-        static int mediumCapacity;
-        static int smallCapacity;
-        static int tinyCapacity;
-        static int alchemyCapacity;
-        static int ammoCapacity;
-        static int coinCapacity;
-		static int weaponLargeCapacity;
-		static int weaponMediumCapacity;
-		static int weaponSmallCapacity;
-		static int weaponRangedCapacity;
-		static int shieldCapacity;
+		std::string name;
 
-		static int hugeCount;
-		static int largeCount;
-        static int mediumCount;
-        static int smallCount;
-        static int tinyCount;
-        static int totalCount;
-        static int alchemyCount;
-        static int ammoCount;
-        static int coinCount;
-		static int weaponLargeCount;
-		static int weaponMediumCount;
-		static int weaponSmallCount;
-		static int weaponRangedCount;
-		static int shieldCount;
-		static int weightlessCount;
+		unsigned int visualiserColour;
 
-        public:
-			static const std::unordered_map<int, int*> capacityMap;
-			static const std::unordered_map<int, int*> countMap;
+		// NOTE: I know I'm implementing this class to try and avoid using a load of maps, but I could possibly consider keeping a couple of maps to associate the id enums with the category names/tooltips etc.
+		ItemCat(CategoryID a_id = kWeightless, std::string a_idStr = "kCategory", std::string a_name = "cCategory", std::string a_tooltipName = "cCategoryTT");
 
-			/** 
-			 * Calculates per-category capacity values used in all gameplay situations. 
-			 * Initial values are based on the settings-derived base values, 
-			 * with adjustments then made where applicable by modifiers such as equipment and skills.
-			 * 
-			 * @note Updated item categories are: large, medium, small, tiny, alchemy, ammo, coin.
-			 */
-			static void CalculateActualCapacities();
+		const char* GetTooltipName();
 
-			static int GetCategoryCapacity(int a_cat);
+		float GetCapacityForGUI();
+		float GetCountForGUI();
 
-			/** 
-			 * Returns the current item count for a given item category.
-			 * 
-			 * @param a_cat An `ItemCategories` Enum identifying the desired item category to inspect.
-			 * 
-			 * @returns the item count `capacityValue` for given item category `a_cat`.
-			 */
-            static int GetCategoryCount(int a_cat);
+		void IncreaseCount(int a_qty);
+		void DecreaseCount(int a_qty);
 
-			//TODO: Need to see how else I can do this, as all the switch statements is probably not the best way. Maps seem promising, but don't seem to want to behave
-			static void IncreaseCategory(int a_cat, int a_count);
-			static void DecreaseCategory(int a_cat, int a_count);
-			static void ZeroAllCategories(bool suppressLog);
+		int GetNormCapacity();
+		int GetNormCount();
 
-			/** 
-			 * Updates all item category counts to reflect the player's current inventory.
-			 */
-            static void UpdateAllCategories(bool suppressLog);
+		bool IsOverflowing();
+		int GetOverflow();
 
-			/** 
-			 * Updates the item count for the `totalCount` category, based on the currently stored values for each individual item category.
-			 */
-            static void UpdateTotalCount();
+		float GetMCPPercent();
 
-			/** 
-			 * Modifies the item count for a single item category.
-			 * 
-			 * @param *a_event A `TESContainerChangedEvent` which contains information (weight, quantity) about the item/stack being transferred, and whether it is being added or removed.
-			 */
-            static void AdjustSingleCategory(const RE::TESContainerChangedEvent *a_event);
+		std::string FractionStr();
 
-			/** 
-			 * @brief Determines the appropriate category for a given `a_item`.
-			 * 
-			 * If no specific category match is found (alchemy, ammo, coin, weapon), then the item's category will be determined based on the item's weight.
-			 * 
-			 * @param a_item An item form containing the relevant information to identify if it's an alchemy item, ammo, or a coin. 
-			 * @param is_questItem Whether `a_item` is a quest item or not
-			 * @param a_count The quantity of `a_item` <ONLY USED BY LOGGER>
-			 * 
-			 * @returns An enum category identifier from `itemCategories`.
-			 */
-			static int GetItemCategory(RE::TESForm *a_item, bool a_quest, int a_count, bool suppressLog);
+		private:
+			std::string tooltipName;
+	};
 
-			/**
-			 * @brief Determines the appropriate category for a given `a_item`. Stripped down compared to `GetItemCategory()`, only accounting for items that may be "equipped" during a game event.
-			 * 
-			 * @param a_item An item form.
-			 * 
-			 * @returns An enum category identifier from `itemCategories`.
-			 */
-			static int GetCategoryForEquip(RE::TESForm *a_item);
+	extern ItemCat cHuge;
+	extern ItemCat cLarge;
+	extern ItemCat cMedium;
+	extern ItemCat cSmall;
+	extern ItemCat cTiny;
+	extern ItemCat cAlchemy;
+	extern ItemCat cAmmo;
+	extern ItemCat cCoin;
+	extern ItemCat cGemstone;
+	extern ItemCat cWeaponLarge;
+	extern ItemCat cWeaponMedium;
+	extern ItemCat cWeaponSmall;
+	extern ItemCat cWeaponRanged;
+	extern ItemCat cShield;
+	extern ItemCat cWeightless;
 
-			/**
-			 * @brief Determines the basic category for a given item.
-			 * 
-			 * Does not take any specific characteristics or details of `a_item` into account, and instead determines the category solely based on the item's weight.
-			 * 
-			 * @param a_item An item form.
-			 * 
-			 * @return An enum category identifier, restricted to either: `kHuge`, `kLarge`, `kMedium`, `kSmall`, `kTiny`, `kWeightless`
-			 */
-			static int GetBasicCategory(RE::TESForm *a_item);
+	inline int totalCount = 0;
 
-			static int GetWeaponCategory(RE::TESForm *a_item);
+	extern const std::array<ItemCat*, 15> categoryArr;
 
-			/** 
-			 * Determines whether the player is considered over-capacity, based on the currently stored values for each individual item category.
-			 * 
-			 * @returns `isOver`, where a result of `true` equates to the player being considered over-capacity.
-			 */
-            static void CheckIfOverCapacity();
+	ItemCat* GetCategory(CategoryID a_categoryID);
 
-			/**
-			 * @brief 
-			 */
-			static void DebuffIfOverCapacity();
+	void UpdateBaseCapacities();
+	void CalculateActualCapacities();
 
-			static void LogAllCategories();
-    };
+	void ZeroAllCategories(bool suppressLog);
+	void UpdateAllCategories(bool suppressLog);
+
+	void UpdateCategoryRatios();
+	void UpdateTotalCount();
+
+	void AdjustSingleCategory(const RE::TESContainerChangedEvent *a_event);
+
+	ItemCat* GetItemCategory(RE::TESForm *a_item, bool a_quest, int a_qty, bool suppressLog);
+	ItemCat* GetCategoryForEquip(RE::TESForm *a_item);
+	ItemCat* GetBasicCategory(RE::TESForm *a_item);
+	ItemCat* GetWeaponCategory(RE::TESForm *a_item);
+
+	void CheckIfOverCapacity();
+
+	void LogAllCategories();
 }

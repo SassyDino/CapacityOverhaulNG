@@ -9,13 +9,13 @@ namespace CapacityHandler
 	std::unordered_map<uint32_t, Bonus::StorageItem> Bonus::storageItems;
 	std::vector<Bonus::StorageItem*> Bonus::equippedStorageItems;
 
-	const std::unordered_map<std::string_view, ItemCategories> Bonus::keyEnumMap = {
-		{"huge", kHuge}, {"large", kLarge}, {"medium", kMedium}, {"small", kSmall}, {"tiny", kTiny}, 
-		{"alchemy", kAlchemy}, {"ammo", kAmmo}, {"coins", kCoin},
-		{"weaponlarge", kWeaponLarge}, {"weaponmedium", kWeaponMedium}, {"weaponsmall", kWeaponSmall}, {"weaponranged", kWeaponRanged}, {"shield", kShield}
+	const std::unordered_map<std::string_view, ItemCat*> Bonus::keyEnumMap = {
+		{"huge", &cHuge}, {"large", &cLarge}, {"medium", &cMedium}, {"small", &cSmall}, {"tiny", &cTiny}, 
+		{"alchemy", &cAlchemy}, {"ammo", &cAmmo}, {"coins", &cCoin},
+		{"weaponlarge", &cWeaponLarge}, {"weaponmedium", &cWeaponMedium}, {"weaponsmall", &cWeaponSmall}, {"weaponranged", &cWeaponRanged}, {"shield", &cShield}
 	};
 
-	Bonus::StorageItem::StorageItem(std::string a_mod, std::string a_name, uint32_t a_rawID, std::unordered_map<ItemCategories, uint32_t> bonusMap)
+	Bonus::StorageItem::StorageItem(std::string a_mod, std::string a_name, uint32_t a_rawID, std::unordered_map<ItemCat*, uint32_t> bonusMap)
 	{
 		modName = a_mod;
 		itemName = a_name;
@@ -41,9 +41,9 @@ namespace CapacityHandler
 	{
 		std::string str;
 
-		for (auto& [category, bonus] : capacityBonuses) {
+		for (auto& [category, bonus] : this->capacityBonuses) {
 			if (bonus != 0) {
-				str.append(std::format("{} = {} | ", categoryStrings.at(category), bonus));
+				str.append(std::format("{} = {} | ", category->idStr, bonus));
 			}
 		}
 
@@ -53,17 +53,17 @@ namespace CapacityHandler
 		return str;
 	}
 
-	std::unordered_map<ItemCategories, uint32_t> Bonus::StorageItem::GetBonuses()
+	std::unordered_map<ItemCat*, uint32_t> Bonus::StorageItem::GetBonuses()
 	{
 		return capacityBonuses;
 	}
 
-	void Bonus::RegisterStorageItem(std::string a_mod, std::string a_name, uint32_t a_rawID, std::unordered_map<ItemCategories, uint32_t> bonusMap)
+	void Bonus::RegisterStorageItem(std::string a_mod, std::string a_name, uint32_t a_rawID, std::unordered_map<ItemCat*, uint32_t> bonusMap)
 	{
 		auto newStorageItem = StorageItem::StorageItem(a_mod, a_name, a_rawID, bonusMap);
 		storageItems.insert({newStorageItem.GetLoadOrderID(), newStorageItem});
 
-		if ((bonusMap.size() == 0) || (bonusMap.contains(kWeightless))) {
+		if ((bonusMap.size() == 0) || (bonusMap.contains(&cWeightless))) {
 			logger::trace("Storage item registered: '{}' [0x{:X}] -> No Capacity Bonuses Found", newStorageItem.GetItemName(), newStorageItem.GetLoadOrderID());
 		} else {
 			logger::trace("Storage item registered: '{}' [0x{:X}] -> {}", newStorageItem.GetItemName(), newStorageItem.GetLoadOrderID(), newStorageItem.GetBonusesAsString());
@@ -133,7 +133,7 @@ namespace CapacityHandler
 		std::unordered_map<std::string, uint32_t> nameIDMap;
 
 		std::vector<uint32_t> bonuses;
-		std::unordered_map<ItemCategories, uint32_t> bonusMap;
+		std::unordered_map<ItemCat*, uint32_t> bonusMap;
 
 		//NOTE: Could probably do with some checks here to make sure that the formIDs actually match up to an item in-game.
 		toml::array& tNames = *tomlTable.get_as<toml::array>("names");
@@ -173,7 +173,7 @@ namespace CapacityHandler
 			tBonuses.for_each([&bonusMap](const toml::key& key, const toml::node& node)
 			{
 				if (auto val = node.value<int64_t>(); val.has_value()) {
-					bonusMap.insert({EnumKeyFromTOML(key), static_cast<uint32_t>(*val)});
+					bonusMap.insert({CategoryFromTOML(key), static_cast<uint32_t>(*val)});
 				}
 			});
 		}
@@ -183,13 +183,13 @@ namespace CapacityHandler
 		}
 	}
 
-	ItemCategories Bonus::EnumKeyFromTOML(toml::key a_key)
+	ItemCat* Bonus::CategoryFromTOML(toml::key a_key)
 	{
-		ItemCategories enumKey = kWeightless;
+		ItemCat* enumKey = &cWeightless;
 
 		enumKey = keyEnumMap.at(a_key.str());
 
-		if (enumKey == kWeightless) { logger::error("Error occurred obtaining equivalent enum for category key."); }
+		if (enumKey == &cWeightless) { logger::error("Error occurred obtaining equivalent enum for category key."); }
 
 		return enumKey;
 	}
@@ -224,11 +224,11 @@ namespace CapacityHandler
 		equippedStorageItems.erase(find(equippedStorageItems.begin(), equippedStorageItems.end(), bag));
 	}
 
-	std::unordered_map<ItemCategories, uint32_t> Bonus::GetEquippedStorage()
+	std::unordered_map<ItemCat*, uint32_t> Bonus::GetEquippedStorage()
 	{
-		std::unordered_map<ItemCategories, uint32_t> bonusMap = {
-			{kHuge, 0}, {kLarge, 0}, {kMedium, 0}, {kSmall, 0}, {kTiny, 0}, {kAlchemy, 0}, {kAmmo, 0}, {kCoin, 0},
-			{kWeaponLarge, 0}, {kWeaponMedium, 0}, {kWeaponSmall, 0}, {kWeaponRanged, 0}, {kShield, 0}
+		std::unordered_map<ItemCat*, uint32_t> bonusMap = {
+			{&cHuge, 0}, {&cLarge, 0}, {&cMedium, 0}, {&cSmall, 0}, {&cTiny, 0}, {&cAlchemy, 0}, {&cAmmo, 0}, {&cCoin, 0},
+			{&cWeaponLarge, 0}, {&cWeaponMedium, 0}, {&cWeaponSmall, 0}, {&cWeaponRanged, 0}, {&cShield, 0}
 		};
 
 		if (equippedStorageItems.size() == 0) { return bonusMap;}
@@ -242,11 +242,11 @@ namespace CapacityHandler
 		}
 
 		if (Settings::Get<bool>("bHugeCapacityShared")) {
-			bonusMap.at(kLarge) += uint32_t(ceil(bonusMap.at(kHuge) * Settings::Get<float>("fLargePerHuge")));
+			bonusMap.at(&cLarge) += uint32_t(ceil(bonusMap.at(&cHuge) * Settings::Get<float>("fLargePerHuge")));
 		}
-		bonusMap.at(kMedium) += uint32_t(ceil(bonusMap.at(kLarge) * Settings::Get<float>("fMediumPerLarge")));
-		bonusMap.at(kSmall) += uint32_t(ceil(bonusMap.at(kMedium) * Settings::Get<float>("fSmallPerMedium")));
-		bonusMap.at(kTiny) += uint32_t(ceil(bonusMap.at(kSmall) * Settings::Get<float>("fTinyPerSmall")));
+		bonusMap.at(&cMedium) += uint32_t(ceil(bonusMap.at(&cLarge) * Settings::Get<float>("fMediumPerLarge")));
+		bonusMap.at(&cSmall) += uint32_t(ceil(bonusMap.at(&cMedium) * Settings::Get<float>("fSmallPerMedium")));
+		bonusMap.at(&cTiny) += uint32_t(ceil(bonusMap.at(&cSmall) * Settings::Get<float>("fTinyPerSmall")));
 
 		return bonusMap;
 	}

@@ -18,24 +18,14 @@ namespace Events
 		if (event->oldContainer) from = RE::TESForm::LookupByID<RE::TESObjectREFR>(event->oldContainer)->GetName();
 		if (event->newContainer) to = RE::TESForm::LookupByID<RE::TESObjectREFR>(event->newContainer)->GetName();
 
-		//RE::TESObjectREFR* itemRef = nullptr;
 		auto refHandle = event->reference;
-		if (refHandle) {
-			//TODO: Double check whether this is of any use (no clue what it's for), and get rid of it if not
-			logger::debug("refHandle found...");
-			//RE::TESForm* refForm = RE::TESForm::LookupByID(refHandle.native_handle());
-			//if (refForm) {
-			//	logger::debug("refForm found...");
-			//	itemRef = refForm->AsReference();
-			//}
-		}
 
 		// Consuming or dropping items triggers ContainerChangedEvents with a newContainer of 0x0, but dropping items provides a refHandle we can use to filter out consumption triggers
 		if ((event->newContainer > 0x0) || refHandle) {
 			logger::trace("<CapacityEventHandler::ContainerChanged> -> {}x '{}' from '{}' <0x{:X}> ---> '{}' <0x{:X}> | uID = {}", 
 				event->itemCount, item, from, event->oldContainer, to, event->newContainer, event->uniqueID);
 
-			CapacityHandler::Player::AdjustSingleCategory(event);
+			CapacityHandler::AdjustSingleCategory(event);
 
 			//TODO: Create WeightEventHandler function for ContainerChangedEvent, and move CheckWeight() into it
 			SKSE::GetTaskInterface()->AddTask([]() {
@@ -58,24 +48,24 @@ namespace Events
 		logger::trace("<CapacityEventHandler::Equip> -> BaseObj: '{} [0x{:X}]', Equipped: '{}'", item->GetName(), item->GetFormID(), event->equipped);
 
 		// Prevent equipped apparel from taking up storage space/capacity slots
-		auto itemCategory = CapacityHandler::Player::GetCategoryForEquip(item);
-		logger::trace("Equipped Item Category: {}", CapacityHandler::categoryNames.at(itemCategory));
+		auto itemCategory = CapacityHandler::GetCategoryForEquip(item);
+		logger::trace("Equipped Item Category: {}", itemCategory->name);
 
-		if (!std::ranges::contains(CapacityHandler::weaponCategories, itemCategory)) {
+		if (!itemCategory->isWeaponCat) {
 			bool isBag = CapacityHandler::Bonus::ItemIsStorage(item);
 			if (event->equipped) {
-				CapacityHandler::Player::DecreaseCategory(itemCategory, 1);
+				itemCategory->DecreaseCount(1);
 				if (isBag) { CapacityHandler::Bonus::AddEquippedStorage(event->baseObject); }
 			} else {
-				CapacityHandler::Player::IncreaseCategory(itemCategory, 1);
+				itemCategory->IncreaseCount(1);
 				if (isBag) { CapacityHandler::Bonus::RemoveEquippedStorage(event->baseObject); }
 			}
 		}
 
 		SKSE::GetTaskInterface()->AddTask([]() {
-			CapacityHandler::Player::CalculateActualCapacities();
-			CapacityHandler::Player::UpdateTotalCount();
-			CapacityHandler::Player::LogAllCategories();
+			CapacityHandler::CalculateActualCapacities();
+			CapacityHandler::UpdateTotalCount();
+			CapacityHandler::LogAllCategories();
 			Debuffs::CapacityEffects();
 		});
 		
@@ -85,8 +75,8 @@ namespace Events
 	auto CapacityEventHandler::ProcessEvent(const RE::SkillIncrease::Event*event, RE::BSTEventSource<RE::SkillIncrease::Event>*) -> Result {
 		logger::trace("<CapacityEventHandler::SkillIncrease> -> Skill: '{}'", event->actorValue);
 
-		CapacityHandler::Player::CalculateActualCapacities();
-		CapacityHandler::Player::LogAllCategories();
+		CapacityHandler::CalculateActualCapacities();
+		CapacityHandler::LogAllCategories();
 		Debuffs::CapacityEffects();
 
 		return Result::kContinue;
@@ -111,8 +101,8 @@ namespace Events
 				event->caster->GetName(), event->target->GetName(), RE::TESForm::LookupByID(event->magicEffect)->GetName(), event->magicEffect);
 
 			SKSE::GetTaskInterface()->AddTask([]() {
-				CapacityHandler::Player::CalculateActualCapacities();
-				CapacityHandler::Player::LogAllCategories();
+				CapacityHandler::CalculateActualCapacities();
+				CapacityHandler::LogAllCategories();
 				Debuffs::CapacityEffects();
 			});
 		}
