@@ -1,12 +1,16 @@
 #include "MCP.h"
+#include "MCPStyle.h"
+#include "MCPWidgets.h"
+#include "MCPVisualiser.h"
+#include "MCPHeatmap.h"
 #include "WeightHandler.h"
 #include "Player.h"
 #include "Calc.h"
-#include "GUICustom.h"
 #include <imgui.h>
 #include <imgui_internal.h>
-#include <implot.h>
+
 using namespace SKSEMenuFramework;
+
 namespace MCP_API = ImGuiMCP::ImGui;
 namespace MCPDraw = MCP_API::ImDrawListManager;
 

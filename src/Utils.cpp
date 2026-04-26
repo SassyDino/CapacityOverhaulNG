@@ -7,7 +7,8 @@
 #include "FormHandler.h"
 #include "Hooks.h"
 #include "BuffsDebuffs.h"
-#include "GUICustom.h"
+#include "GUIAssets.h"
+#include "MCPHeatmap.h"
 
 namespace Utils
 {   

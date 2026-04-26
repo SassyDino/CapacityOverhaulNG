@@ -1,5 +1,6 @@
 #pragma once
 #include "SKSEMCP/SKSEMenuFramework.hpp"
+#include "MCPColour.h"
 
 namespace GUI::MCP
 {
@@ -8,6 +9,13 @@ namespace GUI::MCP
 		static bool testBool;
 		static int testInt;
 		static float testFloat;
+	};
+
+	struct Selections
+	{
+		static inline Colour::Gradient::Scheme* heatmapGradient = &Colour::Gradient::gClassic;
+		static inline bool heatmapConstrainGradient = true;
+		static inline float heatmapConstraintVal = 1500;
 	};
 
 	extern bool showSeparateWindow;
