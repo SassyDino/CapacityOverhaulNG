@@ -175,9 +175,6 @@ void __stdcall GUI::MCP::AdvWeightConfigs::Render()
 	static int *lvlPivotTemp = reinterpret_cast<int*>(Settings::Get<uint32_t*>("uLevelWeightPivot"));
 	static uint32_t *baseCarryTemp = Settings::Get<uint32_t*>("uBaseCarryWeight");
 
-	//static float maxGradStam = Player::CalcStamAtMaxGrad(stamRateTemp, stamPivotTemp, baseCarryTemp);
-	///static float maxGradLvl = Player::CalcLevelAtMaxGrad(lvlRateTemp, lvlPivotTemp, baseCarryTemp);
-	//TODO: Make these into adjustable values, controllable in the MCP to change the graph plotspaces
 	static int stamMaxX = 250;
 	static int lvlMaxX = 100;
 
@@ -189,10 +186,10 @@ void __stdcall GUI::MCP::AdvWeightConfigs::Render()
 	struct Funcs
 	{
 		static float StamBonus(void*, int i) {
-			return Calc::StaminaWeightBonus(i, *stamRateTemp, *stamPivotTemp, *baseCarryTemp, PlayerStatus::CalcStamAtMaxGrad(*stamRateTemp, *stamPivotTemp, *baseCarryTemp));
+			return Calc::StaminaWeightBonus(i, *stamRateTemp, *stamPivotTemp, *baseCarryTemp, PlayerState::CalcStamAtMaxGrad(*stamRateTemp, *stamPivotTemp, *baseCarryTemp));
 		}
 		static float LvlBonus(void*, int i) {
-			return Calc::LevelWeightBonus(i, *lvlRateTemp, *lvlPivotTemp, *baseCarryTemp, PlayerStatus::CalcLevelAtMaxGrad(*lvlRateTemp, *lvlPivotTemp, *baseCarryTemp));
+			return Calc::LevelWeightBonus(i, *lvlRateTemp, *lvlPivotTemp, *baseCarryTemp, PlayerState::CalcLevelAtMaxGrad(*lvlRateTemp, *lvlPivotTemp, *baseCarryTemp));
 		}
 	};
 
@@ -255,11 +252,7 @@ void __stdcall GUI::MCP::AdvDebug::Render()
 
 void __stdcall GUI::MCP::Example4::Render()
 {
-	MCP_API::Text("Testing Map String (Lang::Get()):");
-	MCP_API::Text(Lang::Get("$MCP.Gen.Weight.General.Level.Simple"));
-
-	MCP_API::Text("Testing Map String (_tr):");
-	MCP_API::Text("$MCP.Adv.Weight.Stamina"_tr);
+	GUI::MCP::CustomSeparator("Custom Interactables");
 
 	CustomCheckbox("Test Checkbox", &Testing::testBool);
 	MCP_API::Text("Test: %d", Testing::testBool);
@@ -267,23 +260,7 @@ void __stdcall GUI::MCP::Example4::Render()
 	CustomSlider("Test Slider", &Testing::testFloat, 0.0f, 250.0f);
 	MCP_API::Text("Test: %d", Testing::testFloat);
 
-	MCP_API::Separator();
-	MCP_API::Text("Testing Separator");
-
-	MCP_API::SeparatorEx(NULL, 10);
-	MCP_API::Text("Testing SeparatorEx");
-
-	MCP_API::SeparatorText("SeparatorText");
-	MCP_API::Text("Testing SeparatorText");
-
-	if (CustomHeader("CollapsingHeader")) {
-		MCP_API::Text("Testing CollapsingHeader");
-	}
-
-	GUI::MCP::CustomSeparator("CustomSeparator");
-	MCP_API::Text("Testing CustomSeparator");
-
-	if (GUI::MCP::CustomHeader("CustomHeader")) {
-		MCP_API::Text("Testing CustomHeader!!!");
+	if (CustomHeader("Testing Heatmap")) {
+		HeatmapWidget(900, 450);
 	}
 }

@@ -1,12 +1,17 @@
 #include "Calc.h"
 #include "Player.h"
 
+std::vector<float> Calc::Data::Plot::heatmapData;
+
+float Calc::Data::Plot::heatmapMax;
+float Calc::Data::Plot::heatmapMin;
+
 float Calc::StaminaWeightBonus(float a_stamVal, float a_rate, uint32_t a_pivot, uint32_t baseCarry, float maxGradStam)
 {
-	if (a_stamVal <= PlayerStatus::BaseStam) {return { 0.0f };}
+	if (a_stamVal <= PlayerState::BaseStam) {return { 0.0f };}
 
 	float eq1;
-	float eq2 = (a_rate - (a_rate * (a_stamVal - PlayerStatus::BaseStam)) + a_pivot);
+	float eq2 = (a_rate - (a_rate * (a_stamVal - PlayerState::BaseStam)) + a_pivot);
 	float eq3 = baseCarry / 4;
 	float eq4;
 
@@ -17,7 +22,7 @@ float Calc::StaminaWeightBonus(float a_stamVal, float a_rate, uint32_t a_pivot, 
 		eq2 = a_rate - (a_rate * maxGradStam) + a_pivot;
 		eq4 = (a_stamVal - maxGradStam) * 200;
 	} else {
-		eq1 = (a_stamVal - PlayerStatus::BaseStam) - (a_rate * (a_stamVal - PlayerStatus::BaseStam));
+		eq1 = (a_stamVal - PlayerState::BaseStam) - (a_rate * (a_stamVal - PlayerState::BaseStam));
 		eq4 = 0;
 	}
 
@@ -29,18 +34,18 @@ float Calc::StaminaWeightBonus(float a_stamVal, float a_rate, uint32_t a_pivot, 
 float Calc::StaminaWeightBonusCurrent()
 {
 	return { StaminaWeightBonus(
-		PlayerStatus::UpdateAndGetStamAV(), 
+		PlayerState::UpdateAndGetStamAV(), 
 		*Settings::Get<float*>("fStaminaWeightRate"), 
 		*Settings::Get<uint32_t*>("uStaminaWeightPivot"), 
 		*Settings::Get<uint32_t*>("uBaseCarryWeight"),
-		PlayerStatus::StamAtMaxGrad
+		PlayerState::StamAtMaxGrad
 	) };
 }
 
 float Calc::GradientAtStamina(float stamVal, float a_rate, uint32_t a_pivot)
 {
 	float grad1 = (a_rate - 1) * (a_rate + a_pivot);
-	float grad2 = a_rate + a_pivot - (a_rate * (stamVal - PlayerStatus::BaseStam));
+	float grad2 = a_rate + a_pivot - (a_rate * (stamVal - PlayerState::BaseStam));
 	float grad = grad1 / float(pow(grad2, 2));
 
 	return { grad };
@@ -79,11 +84,11 @@ float Calc::LevelWeightBonus(float a_Lvl, float a_rate, uint32_t a_pivot, uint32
 float Calc::LevelWeightBonusCurrent()
 {
 	return { LevelWeightBonus(
-		PlayerStatus::UpdateAndGetLevel(), 
+		PlayerState::UpdateAndGetLevel(), 
 		*Settings::Get<float*>("fLevelWeightRate"), 
 		*Settings::Get<uint32_t*>("uLevelWeightPivot"), 
 		*Settings::Get<uint32_t*>("uBaseCarryWeight"),
-		PlayerStatus::LevelAtMaxGrad
+		PlayerState::LevelAtMaxGrad
 	) };
 }
 
@@ -96,11 +101,65 @@ float Calc::GradientAtLevel(float a_Lvl, float a_rate, uint32_t a_pivot, uint32_
 	return { grad };
 }
 
+void Calc::ComputeHeatmapData()
+{
+	logger::debug("Computing heatmap data...");
+	clib_util::Timer timer;
+	timer.start();
+
+	int d = 0;
+
+	for (int l = 1; l <= Data::Plot::heatmapMaxLevel; l++) {
+		for (int s = 1; s <= Data::Plot::heatmapMaxStamina; s++) {
+			Data::Plot::heatmapData.push_back(static_cast<float>(Settings::Get<uint32_t>("uBaseCarryWeight")));
+
+			if (Settings::Get<bool>("bStaminaAffectsWeight")) {
+				PlayerState::UpdateStamAtMaxGrad();
+
+				Data::Plot::heatmapData.at(d) += (
+					StaminaWeightBonus(
+						s,
+						Settings::Get<float>("fStaminaWeightRate"),
+						Settings::Get<uint32_t>("uStaminaWeightPivot"),
+						Settings::Get<uint32_t>("uBaseCarryWeight"),
+						PlayerState::StamAtMaxGrad
+					)
+					* Settings::Get<float>("fStaminaWeightMod"));
+			}
+
+			if (Settings::Get<bool>("bLevelAffectsWeight")) {
+				PlayerState::UpdateLevelAtMaxGrad();
+
+				Data::Plot::heatmapData.at(d) += (
+					LevelWeightBonus(
+						l,
+						Settings::Get<float>("fLevelWeightRate"),
+						Settings::Get<uint32_t>("uLevelWeightPivot"),
+						Settings::Get<uint32_t>("uBaseCarryWeight"),
+						PlayerState::LevelAtMaxGrad
+					)
+					* Settings::Get<float>("fLevelWeightMod"));
+			}
+
+			if (Settings::Get<bool>("bRaceAffectsWeight")) {
+				Data::Plot::heatmapData.at(d) *= PlayerState::raceWeightMod;
+			}
+
+			ceil(Data::Plot::heatmapData.at(d));
+
+			d++;
+		}
+	}
+
+	timer.stop();
+	logger::debug("Finished computing heatmap data (len = {}). Time taken: {}μs / {}ms", Data::Plot::heatmapData.size(), timer.duration_μs(), timer.duration_ms());
+}
+
 float* Calc::GetStaminaPlotData(int x_max, float a_rate, uint32_t a_pivot, uint32_t baseCarry, int sampleRate)
 {
 	std::vector<float> data;
 	int i = 0;
-	float maxGradStam = PlayerStatus::CalcStamAtMaxGrad(a_rate, a_pivot, baseCarry);
+	float maxGradStam = PlayerState::CalcStamAtMaxGrad(a_rate, a_pivot, baseCarry);
 
 	while (i <= x_max) {
 		data.push_back(StaminaWeightBonus(i, a_rate, a_pivot, baseCarry, maxGradStam));

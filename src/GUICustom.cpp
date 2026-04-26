@@ -1,6 +1,7 @@
 #include "GUICustom.h"
 #include "MCP.h"
 #include "CapacityHandler.h"
+#include "Calc.h"
 //using namespace SKSEMenuFramework;
 using namespace ImGuiMCP;
 using namespace CapacityHandler;
@@ -68,9 +69,106 @@ namespace GUI
 		ScrollbarRight = SKSEMF::LoadTexture(GetTexPath("Scrollbar_Arrow_Right"));
 		ScrollbarSelector = SKSEMF::LoadTexture(GetTexPath("Scrollbar_Selector"));
 
-		logger::trace("Checkbox_Empty = {:X} | Checkbox_Filled = {:X}", reinterpret_cast<uint64_t>(CheckboxEmpty), reinterpret_cast<uint64_t>(CheckboxFilled));
-
 		logger::info("Textures loaded!\n{}", std::string(100, '='));
+	}
+
+	std::vector<ImU32> Colour::Gradient::LUT;
+	bool Colour::Gradient::newLUTRequested = true;
+	Colour::Gradient::Scheme* Colour::Gradient::newLUT = &Colour::Gradient::gClassic;
+
+	const char* Colour::Gradient::Scheme::GetName() const
+	{
+		return Lang::Get(nameKey.c_str());
+	}
+
+	void Colour::Gradient::HexToRGBA(ImU32 a_col, uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a)
+	{
+		r = (a_col >> 0) & 0xFF;
+		g = (a_col >> 8) & 0xFF;
+		b = (a_col >> 16) & 0xFF;
+		a = (a_col >> 24) & 0xFF;
+	}
+
+	ImU32 Colour::Gradient::Interpolate(ImU32 col1, ImU32 col2, float t)
+	{
+		uint8_t r1, g1, b1, a1;
+		uint8_t r2, g2, b2, a2;
+
+		HexToRGBA(col1, r1, g1, b1, a1);
+		HexToRGBA(col2, r2, g2, b2, a2);
+
+		uint8_t r = static_cast<uint8_t>(r1 + t * (r2 - r1));
+		uint8_t g = static_cast<uint8_t>(g1 + t * (g2 - g1));
+		uint8_t b = static_cast<uint8_t>(b1 + t * (b2 - b1));
+		uint8_t a = static_cast<uint8_t>(a1 + t * (a2 - a1));
+
+		return (r << 0) | (g << 8) | (b << 16) | (a << 24);
+	}
+
+	ImU32 Colour::Gradient::Sample(float a_val, Scheme* a_gradient)
+	{
+		a_val = std::clamp(a_val, 0.0f, 1.0f);
+
+		for (size_t i = 0; i < a_gradient->scheme.size() - 1; i++) {
+			if (a_val >= a_gradient->scheme[i].t && a_val <= a_gradient->scheme[i + 1].t) {
+				float localT = (a_val - a_gradient->scheme[i].t) / (a_gradient->scheme[i + 1].t - a_gradient->scheme[i].t);
+
+				return Interpolate(a_gradient->scheme[i].col, a_gradient->scheme[i + 1].col, localT);
+			}
+		}
+
+		return a_gradient->scheme.back().col;
+	}
+
+	void Colour::Gradient::GenerateLUT(Scheme* a_gradient)
+	{
+		logger::trace("Generating gradient LUT for scheme '{}'", a_gradient->GetName());
+		
+		//logger::trace("Scheme stops: 0x{:X}, 0x{:X}, 0x{:X}, 0x{:X}, 0x{:X}", a_gradient.scheme.at(0).col, a_gradient.scheme.at(1).col, a_gradient.scheme.at(2).col, a_gradient.scheme.at(3).col, a_gradient.scheme.at(4).col);
+		uint8_t tr, tg, tb, ta;
+		HexToRGBA(HEX_COL32(0xA1B2C3FF), tr, tg, tb, ta);
+		
+
+		if (!LUT.empty()) {
+			for (int i = 0; i < 256; i++) {
+				float val = i / 255.0f;
+				LUT.at(i) = Sample(val, a_gradient);
+			}
+		} else {
+			for (int i = 0; i < 256; i++) {
+				float val = i / 255.0f;
+				LUT.push_back(Sample(val, a_gradient));
+			}
+		}
+
+		logger::trace("Gradient LUT generated!");
+	}
+
+	void Colour::Gradient::RequestNewLUT(Scheme* a_gradient)
+	{
+		newLUTRequested = true;
+		newLUT = a_gradient;
+	}
+
+	//NOTE: Currently, I'm taking in a hex colour, converting it to RGBA to modify it, changing it back to hex to store it, and then converting to RGBA again to add to texture pixel map
+	//TODO: So, definitely refine/optimise this at some point. For now though, just wanna try and get it all working.
+	ImU32 Colour::Gradient::GetLUTVal(float a_val)
+	{
+		//TODO: Add a setting/global val that determines which gradient to use, and only default to classic if none is set.
+		if (LUT.empty() || newLUTRequested) {
+			logger::debug("New LUT requested...");
+			if (newLUT == nullptr) { newLUT = &gClassic; }
+
+			GenerateLUT(newLUT);
+			newLUTRequested = false;
+		}
+
+		if (a_val > 1.0f || a_val < 0.0f) {
+			logger::warn("Value of '{}' provided to GetLUTVal is outside of bounds: [ 0.0f < val < 1.0f ] -> Clamping value", a_val);
+			a_val = std::clamp(a_val, 0.0f, 1.0f);
+		}
+
+		return LUT[static_cast<ImU32>(a_val * 255)];
 	}
 }
 
@@ -79,20 +177,22 @@ namespace GUI::MCP
 	const float borderThick = 1.0f;
 	const float borderThin = 1.0f;
 
-	const std::unordered_map<ItemCategories, const char *> categoryTooltips = {
-		{ItemCategories::kHuge, "Huge Items"},
-		{ItemCategories::kLarge, "Large Items"},
-		{ItemCategories::kMedium, "Medium Items"},
-		{ItemCategories::kSmall, "Small Items"},
-		{ItemCategories::kTiny, "Tiny Items"},
-		{ItemCategories::kAlchemy, "Alchemy Items (Overflow)"},
-		{ItemCategories::kAmmo, "Ammunition (Overflow)"},
-		{ItemCategories::kCoin, "Coins (Overflow)"},
-		{ItemCategories::kWeaponLarge, "Large Weapons (Overflow)"},
-		{ItemCategories::kWeaponMedium, "Medium Weapons (Overflow)"},
-		{ItemCategories::kWeaponSmall, "Small Weapons (Overflow)"},
-		{ItemCategories::kWeaponRanged, "Ranged Weapons (Overflow)"},
-		{ItemCategories::kShield, "Shields (Overflow)"}
+	Heatmap heatmap;
+
+	const std::unordered_map<CategoryID, const char *> categoryTooltips = {
+		{CategoryID::kHuge, "Huge Items"},
+		{CategoryID::kLarge, "Large Items"},
+		{CategoryID::kMedium, "Medium Items"},
+		{CategoryID::kSmall, "Small Items"},
+		{CategoryID::kTiny, "Tiny Items"},
+		{CategoryID::kAlchemy, "Alchemy Items (Overflow)"},
+		{CategoryID::kAmmo, "Ammunition (Overflow)"},
+		{CategoryID::kCoin, "Coins (Overflow)"},
+		{CategoryID::kWeaponLarge, "Large Weapons (Overflow)"},
+		{CategoryID::kWeaponMedium, "Medium Weapons (Overflow)"},
+		{CategoryID::kWeaponSmall, "Small Weapons (Overflow)"},
+		{CategoryID::kWeaponRanged, "Ranged Weapons (Overflow)"},
+		{CategoryID::kShield, "Shields (Overflow)"}
 	};
 
 	void PushCustomText(float a_scaleMult, unsigned int a_colour)
@@ -120,35 +220,55 @@ namespace GUI::MCP
 		float availWidth = a_p1.x - a_p0.x;
 		float availHeight = a_p1.y - a_p0.y;
 
-		ImVec2 p2;
-		MCP_API::GetCursorScreenPos(&p2);
+		float hOffset = 0.0f;
+		float vOffset = 0.0f;
 
 		switch(kh) {
 			case CentreHAlign:
-				MCP_API::SetCursorScreenPos(ImVec2(p2.x + ((availWidth - textSize.x) * 0.5f), p2.y));
+				hOffset = 0.5f;
 				break;
 			case RightAlign:
-				MCP_API::SetCursorScreenPos(ImVec2(p2.x + (availWidth - textSize.x), p2.y));
+				hOffset = 1.0f;
 				break;
 			default:
 				break;
 		}
 
-		MCP_API::GetCursorScreenPos(&p2);
 		switch(kv) {
 			case CentreVAlign:
-				MCP_API::SetCursorScreenPos(ImVec2(p2.x, p2.y + ((availHeight - textSize.y) * 0.5f)));
+				vOffset = 0.5f;
 				break;
 			case BottomAlign:
-				MCP_API::SetCursorScreenPos(ImVec2(p2.x, p2.y + (availHeight - textSize.y)));
+				vOffset = 1.0f;
 				break;
 			default:
 				break;
 		}
+
+		ImVec2 p2 = a_p0;
+		p2.x += (availWidth - textSize.x) * hOffset;
+		p2.y += (availHeight - textSize.y) * vOffset;
+
+		MCP_API::SetCursorScreenPos(p2);
 
 		MCP_API::Text(text);
 
 		return ImVec4(p2.x, p2.y, p2.x+textSize.x, p2.y+textSize.y);
+	}
+
+	void CenteredText(const char *text, SKSEMenuFramework::ImVec2 a_p0)
+	{
+		ImVec2 textSize;
+		MCP_API::CalcTextSize(&textSize, text, NULL, false, 0.0f);
+
+		MCP_API::SetCursorScreenPos(ImVec2(a_p0.x-(textSize.x*0.5), a_p0.y-(textSize.y*0.5)));
+		MCP_API::Text(text);
+	}
+
+	void VerticalText(ImDrawList* draw_list, const char *text, SKSEMenuFramework::ImVec2* a_p0)
+	{
+		//TODO: try and figure out a way of doing this
+		return;
 	}
 
 	bool CustomHeader(const char *text)
@@ -160,6 +280,7 @@ namespace GUI::MCP
 		ImVec2 p0;
 		ImDrawList *drawList = MCP_API::GetWindowDrawList();
 		MCP_API::GetCursorScreenPos(&p0);
+		p0.x += 10.0f;
 
 		PushCustomText(1.35f, Colour::separatorText);
 
@@ -597,15 +718,15 @@ namespace GUI::MCP
 		return MCP_API::ColorConvertFloat4ToU32(ImVec4(colR , colG, colB, 1.0f));
 	}
 
-	void CapacityCategoryTooltip(ImVec2 a_p0, ImVec2 a_p1, const char* a_title, ItemCategories a_category)
+	void CapacityCategoryTooltip(ImVec2 a_p0, ImVec2 a_p1, const char* a_title, ItemCat* a_category)
 	{
-		std::string tooltipQuanStr;
+		std::string tooltipQtyStr;
 		if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-			tooltipQuanStr = std::format("{}/{}", CapacityHandler::GetCountForGUI(a_category), CapacityHandler::GetCapacityForGUI(a_category));
+			tooltipQtyStr = std::format("{}/{}", a_category->GetCountForGUI(), a_category->GetCapacityForGUI());
 		} else {
-			tooltipQuanStr = std::format("-/{}", CapacityHandler::GetCapacityForGUI(a_category));
+			tooltipQtyStr = std::format("-/{}", a_category->GetCapacityForGUI());
 		}
-		const char *tooltipQuantity = tooltipQuanStr.c_str();
+		const char* tooltipQuantity = tooltipQtyStr.c_str();
 
 		if (MCP_API::IsMouseHoveringRect(a_p0, a_p1)) {
 			MCP_API::BeginTooltip();
@@ -654,12 +775,12 @@ namespace GUI::MCP
 
 	void CapacityVisualiser()
 	{
-		CapacityHandler::Base::UpdateBaseCapacities();
+		CapacityHandler::UpdateBaseCapacities();
 		if (!Settings::Get<bool>("bCapacityVisualiserBaseValues")) {
-			CapacityHandler::Player::CalculateActualCapacities();
+			CapacityHandler::CalculateActualCapacities();
 		}
 		if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-			CapacityHandler::Player::UpdateAllCategories(true);
+			CapacityHandler::UpdateAllCategories(true);
 		}
 		
 		float windowWidth = MCP_API::GetWindowWidth();
@@ -719,20 +840,20 @@ namespace GUI::MCP
 		int rowCount = (Settings::Get<bool>("bHugeCapacityShared")) ? 5 : 4;
 		float mainRowGap = 40.0f;
 		ImVec2 mainSize = ImVec2(MCP_API::GetWindowWidth() * 0.65f, mainRowGap*rowCount);
-		float hugeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge);
-		float largeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kLarge);
-		float mediumDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kMedium);
-		float smallDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kSmall);
-		float tinyDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
+		float hugeDivGap = mainSize.x/CapacityHandler::cHuge.GetCapacityForGUI();
+		float largeDivGap = mainSize.x/CapacityHandler::cLarge.GetCapacityForGUI();
+		float mediumDivGap = mainSize.x/CapacityHandler::cMedium.GetCapacityForGUI();
+		float smallDivGap = mainSize.x/CapacityHandler::cSmall.GetCapacityForGUI();
+		float tinyDivGap = mainSize.x/CapacityHandler::cTiny.GetCapacityForGUI();
 		ImU32 fillColour;
 
 		std::vector<float> dividerVec = {hugeDivGap, largeDivGap, mediumDivGap, smallDivGap, tinyDivGap};
-		std::vector<ItemCategories> categoryVec = {
-			ItemCategories::kHuge,
-			ItemCategories::kLarge,
-			ItemCategories::kMedium,
-			ItemCategories::kSmall,
-			ItemCategories::kTiny
+		std::vector<CapacityHandler::ItemCat*> categoryVec = {
+			&cHuge,
+			&cLarge,
+			&cMedium,
+			&cSmall,
+			&cTiny
 		};
 
 		// Just some misc iterator values
@@ -744,15 +865,15 @@ namespace GUI::MCP
 		// Draw independent "huge" category bar, if settings are set as so
 		if (!Settings::Get<bool>("bHugeCapacityShared")) {
 			fillColour = PercentageColour(
-				CapacityHandler::GetCountForGUI(ItemCategories::kHuge),
-				CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge)
+				CapacityHandler::cHuge.GetCountForGUI(),
+				CapacityHandler::cHuge.GetCapacityForGUI()
 			);
 
 			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-				if (CapacityHandler::GetCountForGUI(ItemCategories::kHuge) < CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge)) {
+				if (CapacityHandler::cHuge.GetCountForGUI() < CapacityHandler::cHuge.GetCapacityForGUI()) {
 					MCPDraw::AddRectFilled(drawList, 
 						ImVec2(p0.x, p0.y), 
-						ImVec2(p0.x+(hugeDivGap*CapacityHandler::GetCountForGUI(ItemCategories::kHuge)), p0.y+mainRowGap), 
+						ImVec2(p0.x+(hugeDivGap*CapacityHandler::cHuge.GetCountForGUI()), p0.y+mainRowGap), 
 						fillColour, 0.0f, 0
 					);
 				} else {
@@ -764,11 +885,11 @@ namespace GUI::MCP
 				}
 			}
 			
-			CapacityCategoryTooltip(p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), categoryTooltips.at(ItemCategories::kHuge), ItemCategories::kHuge);
+			CapacityCategoryTooltip(p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), CapacityHandler::cHuge.GetTooltipName(), &CapacityHandler::cHuge);
 
 			MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), borderCol, 0.0f, 0, borderThick);
 
-			while (i < CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge)) {
+			while (i < CapacityHandler::cHuge.GetCapacityForGUI()) {
 				MCPDraw::AddLine(drawList, ImVec2(p0.x+(hugeDivGap*i), p0.y), ImVec2(p0.x+(hugeDivGap*i), p0.y+mainRowGap), borderCol, borderThin);
 				i++;
 			}
@@ -783,20 +904,20 @@ namespace GUI::MCP
 		// Draw the filled & coloured progress/fill bars for each main category
 		for (auto category: categoryVec) {
 			// Skip drawing kHuge progress bar if the setting is disabled
-			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == ItemCategories::kHuge)) {
+			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == &CapacityHandler::cHuge)) {
 				itDiv++;
 				continue;
 			}
 
 			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
 				// Determine colour (on a green-yellow-red scale) based on capacity filled per category
-				fillColour = PercentageColour(CapacityHandler::GetCountForGUI(category), CapacityHandler::GetCapacityForGUI(category));
+				fillColour = PercentageColour(category->GetCountForGUI(), category->GetCapacityForGUI());
 
 				// Draw progress bar
-				if (CapacityHandler::GetCountForGUI(category) < CapacityHandler::GetCapacityForGUI(category)) {
+				if (category->GetCountForGUI() < category->GetCapacityForGUI()) {
 					MCPDraw::AddRectFilled(drawList, 
 						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
-						ImVec2(p0.x+(dividerVec[itDiv]*(CapacityHandler::GetCountForGUI(category))), p0.y+(mainRowGap*itRow2)), 
+						ImVec2(p0.x+(dividerVec[itDiv]*(category->GetCountForGUI())), p0.y+(mainRowGap*itRow2)), 
 						fillColour, 0.0f, 0
 					);
 				} else {
@@ -809,7 +930,7 @@ namespace GUI::MCP
 				
 			}
 
-			CapacityCategoryTooltip(ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), categoryTooltips.at(category), category);
+			CapacityCategoryTooltip(ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), category->GetTooltipName(), category);
 
 			itRow1++;
 			itRow2++;
@@ -833,14 +954,14 @@ namespace GUI::MCP
 		// Draw vertical dividers for each main storage category
 		for (auto category: categoryVec) {
 			// Skip drawing kHuge row/dividers if the setting is disabled
-			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == ItemCategories::kHuge)) {
+			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == &CapacityHandler::cHuge)) {
 				itDiv++;
 				continue;
 			}
 
 			// Draw vertical dividers
 			i = 1;
-			while (i < CapacityHandler::GetCapacityForGUI(category)) {
+			while (i < category->GetCapacityForGUI()) {
 				MCPDraw::AddLine(drawList, ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(mainRowGap*itRow2)), borderCol, borderThin);
 				i++;
 			}
@@ -855,106 +976,68 @@ namespace GUI::MCP
 	{
 		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
-		ImDrawList *drawList = MCP_API::GetWindowDrawList();
+		ImDrawList* drawList = MCP_API::GetWindowDrawList();
 		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
 		ImVec2 boxSize = ImVec2(MCP_API::GetWindowWidth()-35.0f, 40.0f);
 		
-		std::unordered_map<ItemCategories, ImU32> categoryColours = {
-			{ItemCategories::kHuge, HEX_COL32(0xA8005BFF)},
-			{ItemCategories::kLarge, HEX_COL32(0xBA422FFF)},
-			{ItemCategories::kMedium, HEX_COL32(0xA87A00FF)},
-			{ItemCategories::kSmall, HEX_COL32(0x7AA62EFF)},
-			{ItemCategories::kTiny, HEX_COL32(0x00CC85FF)},
-			{ItemCategories::kAlchemy, HEX_COL32(0xBF4FB0FF)},
-			{ItemCategories::kAmmo, HEX_COL32(0xA64FD6FF)},
-			{ItemCategories::kCoin, HEX_COL32(0x635CFFFF)},
-			{ItemCategories::kWeaponLarge, HEX_COL32(0x292E57FF)},
-			{ItemCategories::kWeaponMedium, HEX_COL32(0x6B4573FF)},
-			{ItemCategories::kWeaponSmall, HEX_COL32(0xAD597DFF)},
-			{ItemCategories::kWeaponRanged, HEX_COL32(0xE07D78FF)},
-			{ItemCategories::kShield, HEX_COL32(0xFAB270FF)}
+		std::unordered_map<CategoryID, ImU32> categoryColours = {
+			{CategoryID::kHuge, HEX_COL32(0xA8005BFF)},
+			{CategoryID::kLarge, HEX_COL32(0xBA422FFF)},
+			{CategoryID::kMedium, HEX_COL32(0xA87A00FF)},
+			{CategoryID::kSmall, HEX_COL32(0x7AA62EFF)},
+			{CategoryID::kTiny, HEX_COL32(0x00CC85FF)},
+			{CategoryID::kAlchemy, HEX_COL32(0xBF4FB0FF)},
+			{CategoryID::kAmmo, HEX_COL32(0xA64FD6FF)},
+			{CategoryID::kCoin, HEX_COL32(0x635CFFFF)},
+			{CategoryID::kWeaponLarge, HEX_COL32(0x292E57FF)},
+			{CategoryID::kWeaponMedium, HEX_COL32(0x6B4573FF)},
+			{CategoryID::kWeaponSmall, HEX_COL32(0xAD597DFF)},
+			{CategoryID::kWeaponRanged, HEX_COL32(0xE07D78FF)},
+			{CategoryID::kShield, HEX_COL32(0xFAB270FF)}
 		};
 		
 		//TODO: I absolutely hate all of this, I really need to find some better way of doing it bruh
 		//NOTE: Also, even aside from the stupidly dense blocks of code that look terrible, there's no way that this is gonna run anywhere near to optimal when going multiple times a second.
 		//? Could possibly make the xxxxPercent variables static, and then check for changes to any of the capacities/counts, and only recalculate each percentage as and when needed.
-		float hugePercent = CapacityHandler::GetCountForGUI(ItemCategories::kHuge) / CapacityHandler::GetCapacityForGUI(ItemCategories::kHuge);
-		float largePercent = CapacityHandler::GetCountForGUI(ItemCategories::kLarge) / CapacityHandler::GetCapacityForGUI(ItemCategories::kLarge);
-		float mediumPercent = CapacityHandler::GetCountForGUI(ItemCategories::kMedium) / CapacityHandler::GetCapacityForGUI(ItemCategories::kMedium);
-		float smallPercent = CapacityHandler::GetCountForGUI(ItemCategories::kSmall) / CapacityHandler::GetCapacityForGUI(ItemCategories::kSmall);
-		float tinyPercent = CapacityHandler::GetCountForGUI(ItemCategories::kTiny) / CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
 
-		float alchemyPercent = (
-			CapacityHandler::GetCountForGUI(ItemCategories::kAlchemy) - CapacityHandler::GetCapacityForGUI(ItemCategories::kAlchemy))
-			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
-		float ammoPercent = (
-			CapacityHandler::GetCountForGUI(ItemCategories::kAmmo) - CapacityHandler::GetCapacityForGUI(ItemCategories::kAmmo))
-			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
-		float coinPercent = (
-			(CapacityHandler::GetCountForGUI(ItemCategories::kCoin) - CapacityHandler::GetCapacityForGUI(ItemCategories::kCoin))
-			/ Settings::Get<uint32_t>("uCoinsPerTiny")) / CapacityHandler::GetCapacityForGUI(ItemCategories::kTiny);
-		
-		float lWeapPercent = (
-			CapacityHandler::GetCountForGUI(ItemCategories::kWeaponLarge) 
-			- CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponLarge))
-			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponLarge);
-		float mWeapPercent = (
-			CapacityHandler::GetCountForGUI(ItemCategories::kWeaponMedium) 
-			- CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponMedium))
-			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponMedium);
-		float sWeapPercent = (
-			CapacityHandler::GetCountForGUI(ItemCategories::kWeaponSmall) 
-			- CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponSmall))
-			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponSmall);
-		float rWeapPercent = (
-			CapacityHandler::GetCountForGUI(ItemCategories::kWeaponRanged) 
-			- CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponRanged))
-			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponRanged);
-		float shieldPercent = (
-			CapacityHandler::GetCountForGUI(ItemCategories::kShield) 
-			- CapacityHandler::GetCapacityForGUI(ItemCategories::kShield))
-			/ CapacityHandler::GetCapacityForGUI(ItemCategories::kShield);
-		
-		std::unordered_map<ItemCategories, float> categoryPercent = {
-			{ItemCategories::kHuge, hugePercent},
-			{ItemCategories::kLarge, largePercent},
-			{ItemCategories::kMedium, mediumPercent},
-			{ItemCategories::kSmall, smallPercent},
-			{ItemCategories::kTiny, tinyPercent},
-			{ItemCategories::kAlchemy, alchemyPercent},
-			{ItemCategories::kAmmo, ammoPercent},
-			{ItemCategories::kCoin, coinPercent},
-			{ItemCategories::kWeaponLarge, lWeapPercent},
-			{ItemCategories::kWeaponMedium, mWeapPercent},
-			{ItemCategories::kWeaponSmall, sWeapPercent},
-			{ItemCategories::kWeaponRanged, rWeapPercent},
-			{ItemCategories::kShield, shieldPercent}
+		std::unordered_map<CategoryID, float> categoryPercent = {
+			{CategoryID::kHuge, CapacityHandler::cHuge.GetMCPPercent()},
+			{CategoryID::kLarge, CapacityHandler::cLarge.GetMCPPercent()},
+			{CategoryID::kMedium, CapacityHandler::cMedium.GetMCPPercent()},
+			{CategoryID::kSmall, CapacityHandler::cSmall.GetMCPPercent()},
+			{CategoryID::kTiny, CapacityHandler::cTiny.GetMCPPercent()},
+			{CategoryID::kAlchemy, CapacityHandler::cAlchemy.GetMCPPercent()},
+			{CategoryID::kAmmo, CapacityHandler::cAmmo.GetMCPPercent()},
+			{CategoryID::kCoin, CapacityHandler::cCoin.GetMCPPercent()},
+			{CategoryID::kWeaponLarge, CapacityHandler::cWeaponLarge.GetMCPPercent()},
+			{CategoryID::kWeaponMedium, CapacityHandler::cWeaponMedium.GetMCPPercent()},
+			{CategoryID::kWeaponSmall, CapacityHandler::cWeaponSmall.GetMCPPercent()},
+			{CategoryID::kWeaponRanged, CapacityHandler::cWeaponRanged.GetMCPPercent()},
+			{CategoryID::kShield, CapacityHandler::cShield.GetMCPPercent()}
 		};
 		
-		std::vector<ItemCategories> drawCategories;
+		std::vector<CategoryID> drawCategories;
 
-		if (Settings::Get<bool>("bHugeCapacityShared")) { drawCategories.push_back(ItemCategories::kHuge); }
-		drawCategories.push_back(ItemCategories::kLarge);
-		drawCategories.push_back(ItemCategories::kMedium);
-		drawCategories.push_back(ItemCategories::kSmall);
-		drawCategories.push_back(ItemCategories::kTiny);
-		drawCategories.push_back(ItemCategories::kAlchemy);
-		drawCategories.push_back(ItemCategories::kAmmo);
-		drawCategories.push_back(ItemCategories::kCoin);
+		if (Settings::Get<bool>("bHugeCapacityShared")) { drawCategories.push_back(CategoryID::kHuge); }
+		drawCategories.push_back(CategoryID::kLarge);
+		drawCategories.push_back(CategoryID::kMedium);
+		drawCategories.push_back(CategoryID::kSmall);
+		drawCategories.push_back(CategoryID::kTiny);
+		drawCategories.push_back(CategoryID::kAlchemy);
+		drawCategories.push_back(CategoryID::kAmmo);
+		drawCategories.push_back(CategoryID::kCoin);
 		if (Settings::Get<bool>("bSeparateWeaponCategories")) {
-			drawCategories.push_back(ItemCategories::kWeaponLarge);
-			drawCategories.push_back(ItemCategories::kWeaponMedium);
-			drawCategories.push_back(ItemCategories::kWeaponSmall);
-			drawCategories.push_back(ItemCategories::kWeaponRanged);
-			drawCategories.push_back(ItemCategories::kShield);
+			drawCategories.push_back(CategoryID::kWeaponLarge);
+			drawCategories.push_back(CategoryID::kWeaponMedium);
+			drawCategories.push_back(CategoryID::kWeaponSmall);
+			drawCategories.push_back(CategoryID::kWeaponRanged);
+			drawCategories.push_back(CategoryID::kShield);
 		}
 
 		float percentTotal = 0;
-		for (auto category : drawCategories) {
-			if (categoryPercent.at(category) < 0) { categoryPercent.at(category) = 0; }
-			percentTotal += categoryPercent.at(category);
-		}
+		for (auto category : drawCategories) { percentTotal += categoryPercent.at(category); }
+
 		float refitMult = 1 / percentTotal;
 
 		float fillX;
@@ -1000,17 +1083,17 @@ namespace GUI::MCP
 
 		ImVec2 boxSize = ImVec2(40.0f, (y_max-p0.y));
 
-		float alchemyDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(ItemCategories::kAlchemy);
-		float ammoDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(ItemCategories::kAmmo);
-		float coinDivGap = boxSize.y/CapacityHandler::GetCapacityForGUI(ItemCategories::kCoin);
+		float alchemyDivGap = boxSize.y/CapacityHandler::cAlchemy.GetCapacityForGUI();
+		float ammoDivGap = boxSize.y/CapacityHandler::cAmmo.GetCapacityForGUI();
+		float coinDivGap = boxSize.y/CapacityHandler::cCoin.GetCapacityForGUI();
 		ImU32 fillColour;
 		ImVec2 p1 = ImVec2(p0.x+boxSize.x, p0.y+boxSize.y);
 
 		std::vector<float> dividerVec = {alchemyDivGap, ammoDivGap, coinDivGap};
-		std::vector<ItemCategories> categoryVec = {
-			ItemCategories::kAlchemy,
-			ItemCategories::kAmmo,
-			ItemCategories::kCoin
+		std::vector<CapacityHandler::ItemCat*> categoryVec = {
+			&cAlchemy,
+			&cAmmo,
+			&cCoin
 		};
 
 		int itDiv = 0;
@@ -1018,21 +1101,21 @@ namespace GUI::MCP
 			// Draw progress bar fill colour
 			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
 				// Determine colour (on a green-yellow-red scale) based on percentage of capacity filled, per category
-				fillColour = PercentageColour(CapacityHandler::GetCountForGUI(category), CapacityHandler::GetCapacityForGUI(category));
+				fillColour = PercentageColour(category->GetCountForGUI(), category->GetCapacityForGUI());
 
-				if (CapacityHandler::GetCountForGUI(category) < CapacityHandler::GetCapacityForGUI(category)) {
-					MCPDraw::AddRectFilled(drawList, ImVec2(p0.x, p1.y-(dividerVec[itDiv]*CapacityHandler::GetCountForGUI(category))), p1, fillColour, 0.0f, 0);
+				if (category->GetCountForGUI() < category->GetCapacityForGUI()) {
+					MCPDraw::AddRectFilled(drawList, ImVec2(p0.x, p1.y-(dividerVec[itDiv]*category->GetCountForGUI())), p1, fillColour, 0.0f, 0);
 				} else {
 					MCPDraw::AddRectFilled(drawList, p0, p1, fillColour, 0.0f, 0);
 				}
 			}
 
 			const char *tooltipText;
-			if (category == ItemCategories::kAlchemy) {
+			if (category == &cAlchemy) {
 				tooltipText = "Alchemy";
-			} else if (category == ItemCategories::kAmmo) {
+			} else if (category == &cAmmo) {
 				tooltipText = "Ammunition";
-			} else if (category == ItemCategories::kCoin) {
+			} else if (category == &cCoin) {
 				tooltipText = "Coins";
 			} else {
 				tooltipText = "CATEGORY ERROR";
@@ -1045,8 +1128,8 @@ namespace GUI::MCP
 
 			int i = 1;
 			// Capacity dividers (skip drawing the dividing lines if there are too many, as it just makes the fill colour go weird)
-			if (CapacityHandler::GetCapacityForGUI(category) < (p1.y - p0.y)) {
-				while (i < CapacityHandler::GetCapacityForGUI(category)) {
+			if (category->GetCapacityForGUI() < (p1.y - p0.y)) {
+				while (i < category->GetCapacityForGUI()) {
 					MCPDraw::AddLine(drawList, ImVec2(p0.x, p0.y+(dividerVec[itDiv]*i)), ImVec2(p1.x-1, p0.y+(dividerVec[itDiv]*i)), borderCol, borderThin);
 					i++;
 				}
@@ -1069,20 +1152,20 @@ namespace GUI::MCP
 		int rowCount = 5;
 		float mainRowGap = 40.0f;
 		ImVec2 mainSize = ImVec2(MCP_API::GetWindowWidth() * 0.65f, mainRowGap*rowCount);
-		float largeDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponLarge);
-		float mediumDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponMedium);
-		float smallDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponSmall);
-		float rangedDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kWeaponRanged);
-		float shieldDivGap = mainSize.x/CapacityHandler::GetCapacityForGUI(ItemCategories::kShield);
+		float largeDivGap = mainSize.x/CapacityHandler::cWeaponLarge.GetCapacityForGUI();
+		float mediumDivGap = mainSize.x/CapacityHandler::cWeaponMedium.GetCapacityForGUI();
+		float smallDivGap = mainSize.x/CapacityHandler::cWeaponSmall.GetCapacityForGUI();
+		float rangedDivGap = mainSize.x/CapacityHandler::cWeaponRanged.GetCapacityForGUI();
+		float shieldDivGap = mainSize.x/CapacityHandler::cShield.GetCapacityForGUI();
 		ImU32 fillColour;
 
 		std::vector<float> dividerVec = {largeDivGap, mediumDivGap, smallDivGap, rangedDivGap, shieldDivGap};
-		std::vector<ItemCategories> categoryVec = {
-			ItemCategories::kWeaponLarge,
-			ItemCategories::kWeaponMedium,
-			ItemCategories::kWeaponSmall,
-			ItemCategories::kWeaponRanged,
-			ItemCategories::kShield
+		std::vector<CapacityHandler::ItemCat*> categoryVec = {
+			&cWeaponLarge,
+			&cWeaponMedium,
+			&cWeaponSmall,
+			&cWeaponRanged,
+			&cShield
 		};
 
 		// Just some misc iterator values
@@ -1095,13 +1178,13 @@ namespace GUI::MCP
 		for (auto category: categoryVec) {
 			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
 				// Determine colour (on a green-yellow-red scale) based on capacity filled per category
-				fillColour = PercentageColour(CapacityHandler::GetCountForGUI(category), CapacityHandler::GetCapacityForGUI(category));
+				fillColour = PercentageColour(category->GetCountForGUI(), category->GetCapacityForGUI());
 
 				// Draw progress bar
-				if (CapacityHandler::GetCountForGUI(category) < CapacityHandler::GetCapacityForGUI(category)) {
+				if (category->GetCountForGUI() < category->GetCapacityForGUI()) {
 					MCPDraw::AddRectFilled(drawList, 
 						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
-						ImVec2(p0.x+(dividerVec[itDiv]*(CapacityHandler::GetCountForGUI(category))), p0.y+(mainRowGap*itRow2)), 
+						ImVec2(p0.x+(dividerVec[itDiv]*(category->GetCountForGUI())), p0.y+(mainRowGap*itRow2)), 
 						fillColour, 0.0f, 0
 					);
 				} else {
@@ -1114,15 +1197,15 @@ namespace GUI::MCP
 			}
 
 			const char *tooltipText;
-			if (category == ItemCategories::kWeaponLarge) {
+			if (category == &cWeaponLarge) {
 				tooltipText = "Large Weapons";
-			} else if (category == ItemCategories::kWeaponMedium) {
+			} else if (category == &cWeaponMedium) {
 				tooltipText = "Medium Weapons";
-			} else if (category == ItemCategories::kWeaponSmall) {
+			} else if (category == &cWeaponSmall) {
 				tooltipText = "Small Weapons";
-			} else if (category == ItemCategories::kWeaponRanged) {
+			} else if (category == &cWeaponRanged) {
 				tooltipText = "Ranged Weapons";
-			} else if (category == ItemCategories::kShield) {
+			} else if (category == &cShield) {
 				tooltipText = "Shields";
 			} else {
 				tooltipText = "CATEGORY ERROR";
@@ -1152,7 +1235,7 @@ namespace GUI::MCP
 		// Draw vertical dividers for each main storage category
 		for (auto category: categoryVec) {
 			i = 1;
-			while (i < CapacityHandler::GetCapacityForGUI(category)) {
+			while (i < category->GetCapacityForGUI()) {
 				MCPDraw::AddLine(drawList, ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(mainRowGap*itRow2)), borderCol, borderThin);
 				i++;
 			}
@@ -1163,6 +1246,301 @@ namespace GUI::MCP
 		}
 
 		return { p0.y + mainSize.y };
+	}
+
+	void Heatmap::Init()
+	{
+		m_device = reinterpret_cast<ID3D11Device*>(RE::BSGraphics::Renderer::GetSingleton()->GetDevice());
+		m_device->GetImmediateContext(&m_ctx);
+	}
+
+	void Heatmap::Update(const std::vector<float>& data)
+	{
+		logger::debug("Updating heatmap with new data...");
+
+		//TODO: Probably need to handle these errors if they happen?
+		if (!m_device || !m_ctx || data.empty()) { return; }
+
+		if (!m_texture || Calc::Data::Plot::heatmapMaxStamina != m_width || Calc::Data::Plot::heatmapMaxLevel != m_height) { CreateTexture(); }
+
+		GeneratePixels(data);
+
+		Upload();
+
+		logger::debug("Heatmap updated!");
+	}
+
+	ImTextureID Heatmap::GetTextureID() const
+	{
+		return static_cast<ImTextureID>(m_srv);
+	}
+
+	void Heatmap::Release()
+	{
+		if (m_srv) {
+			m_srv->Release();
+			m_srv = nullptr;
+		}
+
+		if (m_texture) {
+			m_texture->Release();
+			m_texture = nullptr;
+		}	
+	}
+
+	void Heatmap::CreateTexture()
+	{
+		Release();
+
+		m_width = Calc::Data::Plot::heatmapMaxStamina;
+		m_height = Calc::Data::Plot::heatmapMaxLevel;
+
+		m_padWidth = m_width + 2;
+		m_padHeight = m_height + 2;
+
+		D3D11_TEXTURE2D_DESC texDesc = {};
+		texDesc.Width = m_padWidth;
+		texDesc.Height = m_padHeight;
+		texDesc.MipLevels = 1;
+		texDesc.ArraySize = 1;
+		texDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+		texDesc.SampleDesc.Count = 1;
+		texDesc.Usage = D3D11_USAGE_DYNAMIC;
+		texDesc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		texDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
+
+		HRESULT hr = m_device->CreateTexture2D(&texDesc, nullptr, &m_texture);
+		if (FAILED(hr)) { logger::error("Failed to create texture."); return; }
+
+		hr = m_device->CreateShaderResourceView(m_texture, nullptr, &m_srv);
+		if (FAILED(hr)) { logger::error("Failed to create shader resource view."); return; }
+	}
+
+	void Heatmap::GeneratePixels(const std::vector<float>& data)
+	{
+		logger::debug("Generating pixels...");
+		clib_util::Timer timer;
+		timer.start();
+
+		m_padWidth = m_width + 2;
+		m_padHeight = m_height + 2;
+		m_pixels.resize(m_padWidth * m_padHeight * 4);
+
+		Calc::Data::Plot::heatmapMin = *std::min_element(data.begin(), data.end());
+		Calc::Data::Plot::heatmapMax = *std::max_element(data.begin(), data.end());
+
+		if (Selections::heatmapConstrainGradient && (Calc::Data::Plot::heatmapMax > Selections::heatmapConstraintVal)) {
+			Calc::Data::Plot::heatmapMax = Selections::heatmapConstraintVal;
+		}
+
+		auto SetPixel = [&](int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+		{
+			int idx = ((y * m_padWidth) + x) * 4;
+			m_pixels[idx] = r;
+			m_pixels[idx + 1] = g;
+			m_pixels[idx + 2] = b;
+			m_pixels[idx + 3] = a;
+		};
+
+		for (int y = 0; y < m_height; y++) {
+			for (int x = 0; x < m_width; x++) {
+				float dataVal = data[(y * m_width) + x];
+
+				if (Selections::heatmapConstrainGradient && (dataVal > Selections::heatmapConstraintVal)) {
+					dataVal = Selections::heatmapConstraintVal;
+				}
+
+				float val = (dataVal - Calc::Data::Plot::heatmapMin) / (Calc::Data::Plot::heatmapMax - Calc::Data::Plot::heatmapMin);
+
+				ImU32 hexCol = Colour::Gradient::GetLUTVal(val);
+				uint8_t r, g, b, a;
+				Colour::Gradient::HexToRGBA(hexCol, r, g, b, a);
+
+				SetPixel(x+1, y+1, r, g, b, a);
+			}
+		}
+
+		for (int x = 0; x < m_width; x++) {
+			memcpy(
+				&m_pixels[((0 * m_padWidth) + (x + 1)) * 4],
+				&m_pixels[((1 * m_padWidth) + (x + 1)) * 4],
+				4
+			);
+
+			memcpy(
+				&m_pixels[(((m_padHeight - 1) * m_padWidth) + (x + 1)) * 4],
+				&m_pixels[(((m_padHeight - 2) * m_padWidth) + (x + 1)) * 4],
+				4
+			);
+		}
+
+		for (int y = 0; y < m_padHeight; y++) {
+			memcpy(
+				&m_pixels[((y * m_padWidth) + 0) * 4],
+				&m_pixels[((y * m_padWidth) + 1) * 4],
+				4
+			);
+
+			memcpy(
+				&m_pixels[((y * m_padWidth) + (m_padWidth - 1)) * 4],
+				&m_pixels[((y * m_padWidth) + (m_padWidth - 2)) * 4],
+				4
+			);
+		}
+
+		timer.stop();
+		logger::debug("Pixels generated! Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
+	}
+
+	void Heatmap::Upload()
+	{
+		logger::debug("Uploading texture to memory...");
+
+		D3D11_MAPPED_SUBRESOURCE mapped;
+
+		if (FAILED(m_ctx->Map(m_texture, 0, D3D11_MAP_WRITE_DISCARD, 0, &mapped))) { logger::error("Failed to upload texture to GPU."); return; }
+
+		for (int y = 0; y < m_padHeight; y++) {
+			memcpy(static_cast<uint8_t*>(mapped.pData) + y * mapped.RowPitch,
+				m_pixels.data() + y * m_padWidth * 4,
+				m_padWidth * 4
+			);
+		}
+
+		m_ctx->Unmap(m_texture, 0);
+
+		logger::debug("Texture uploaded!");
+	}
+
+	void HeatmapWidget(int plot_width, int plot_height)
+	{
+		if (Calc::Data::Plot::heatmapData.empty()) {
+			Calc::ComputeHeatmapData();
+			heatmap.Update(Calc::Data::Plot::heatmapData);
+		}
+
+		HeatmapPlot(plot_width, plot_height);
+
+		HeatmapUpdateButton();
+
+		HeatmapGradientSelector();
+		CustomCheckbox("Exclude high values from gradient scaling", &Selections::heatmapConstrainGradient);
+		MCP_API::SliderFloat("Maximum value to display", &Selections::heatmapConstraintVal, 100, 3000, "%f");
+
+		//TODO: Add button to allow toggling of applying a maximum value for heatmap colour scaling
+	}
+
+	void HeatmapUpdateButton()
+	{
+		if (MCP_API::Button("$MCP.Widgets.Heatmap.Update"_tr)) {
+			Calc::Data::Plot::heatmapData.clear();
+			Calc::ComputeHeatmapData();
+
+			heatmap.Update(Calc::Data::Plot::heatmapData);
+		}
+	}
+	
+	void HeatmapGradientSelector()
+	{
+		const char* previewGradient = Selections::heatmapGradient->GetName();
+
+		MCP_API::SetNextItemWidth(300.0f);
+
+		if (MCP_API::BeginCombo("$MCP.Widgets.Heatmap.Gradient"_tr, previewGradient)) {
+			for (int n = 0; n < Colour::Gradient::availableSchemes.size(); n++) {
+				const bool is_selected = (Selections::heatmapGradient == Colour::Gradient::availableSchemes[n]);
+
+				if (MCP_API::Selectable(Colour::Gradient::availableSchemes[n]->GetName(), is_selected)) {
+					Selections::heatmapGradient = Colour::Gradient::availableSchemes[n];
+
+					Colour::Gradient::RequestNewLUT(Colour::Gradient::availableSchemes[n]);
+				}
+
+				if (is_selected) { MCP_API::SetItemDefaultFocus(); }
+			}
+
+			MCP_API::EndCombo();
+		}
+	}
+	
+	void HeatmapPlot(int a_width, int a_height)
+	{
+		ImVec2 p0in;
+		MCP_API::GetCursorScreenPos(&p0in);
+		ImDrawList *drawList = MCP_API::GetWindowDrawList();
+
+		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
+		float lineThick = 5.0f;
+		float topBuffer = 50.0f;
+		float tick = 20.0f;
+
+		ImVec2 pEnd = {p0in.x, p0in.y+a_height+topBuffer+40};
+
+		p0in = {p0in.x+80, p0in.y+topBuffer};
+		ImVec2 p1in = {p0in.x + a_width, p0in.y + a_height};
+		ImVec2 p0out = {p0in.x-lineThick, p0in.y-lineThick}; // top L
+		ImVec2 p1out = {p1in.x+lineThick, p1in.y+lineThick}; // bottom R
+		ImVec2 p2out = {p0out.x, p1out.y}; // bottom L
+		ImVec2 p3out = {p1out.x, p0out.y}; // top R
+
+		float u0 = 1.0f / heatmap.m_padWidth;
+		float v0 = 1.0f / heatmap.m_padHeight;
+		float u1 = (heatmap.m_padWidth - 1.0f) / heatmap.m_padWidth;
+		float v1 = (heatmap.m_padHeight - 1.0f) / heatmap.m_padHeight;
+
+		MCPDraw::AddImage(drawList, heatmap.GetTextureID(), p0in, p1in, {u0,v1}, {u1,v0}, HEX_COL32(0xFFFFFFFF));
+
+		MCPDraw::AddRectFilled(drawList, p0in, {p0out.x, p2out.y+tick}, borderCol, 0.0f, NULL); // left
+		MCPDraw::AddRectFilled(drawList, {p3out.x, p0in.y}, {p1in.x, p1out.y+tick}, borderCol, 0.0f, NULL); // right
+		MCPDraw::AddRectFilled(drawList, p3out, {p0out.x-tick, p0in.y}, borderCol, 0.0f, NULL); // top
+		MCPDraw::AddRectFilled(drawList, p1in, {p2out.x-tick, p2out.y}, borderCol, 0.0f, NULL); // bottom
+
+		CenteredText("0", ImVec2(p2out.x-15, p2out.y+15));
+		CenteredText("Stamina", ImVec2(p2out.x+(a_width*0.5f), p2out.y+15));
+		CenteredText("Level", ImVec2(p0out.x-40, p0in.y+(a_height*0.5f)));
+
+		MCP_API::SetCursorScreenPos({p1out.x+5, p1out.y});
+		MCP_API::Text("%i", Calc::Data::Plot::heatmapMaxStamina);
+
+		MCP_API::SetCursorScreenPos({p0out.x-tick, p0out.y-35});
+		MCP_API::Text("%i", Calc::Data::Plot::heatmapMaxLevel);
+
+
+		if (MCP_API::IsMouseHoveringRect(p0in, p1in)) {
+			MCP_API::BeginTooltip();
+
+			auto io = MCP_API::GetIO();
+			auto cursorData = GetHeatmapCursorVal(io->MousePos, p0in, p1in);
+
+			MCP_API::Text("Carry Weight: %.0f", cursorData.weight);
+			MCP_API::Text("S: %i | L: %i", cursorData.stamina, cursorData.level);
+
+			MCP_API::EndTooltip();
+		}
+
+		MCP_API::SetCursorScreenPos(pEnd);
+	}
+
+	HeatmapCursorData GetHeatmapCursorVal(ImVec2 a_pCursor, ImVec2 a_p0, ImVec2 a_p1)
+	{
+		HeatmapCursorData cursorData;
+
+		float u = (a_pCursor.x - a_p0.x) / (a_p1.x - a_p0.x);
+		float v = (a_pCursor.y - a_p0.y) / (a_p1.y - a_p0.y);
+
+		u = std::clamp(u, 0.0f, 1.0f);
+		v = std::clamp(v, 0.0f, 1.0f);
+
+		cursorData.stamina = static_cast<int>(u * (Calc::Data::Plot::heatmapMaxStamina));
+		cursorData.level = static_cast<int>((1.0f - v) * (Calc::Data::Plot::heatmapMaxLevel-1));
+
+		int index = ((cursorData.level) * Calc::Data::Plot::heatmapMaxStamina) + cursorData.stamina;
+
+		//logger::trace("Stamina (X) = {} | Level (Y) = {} | heatmapData[{}]", cursorData.stamina, cursorData.level, index);
+
+		cursorData.stamina++, cursorData.level++;
+		cursorData.weight = Calc::Data::Plot::heatmapData.at(index);
+		return cursorData;
 	}
 
 	void CursorDebugMarker(unsigned int a_colour, ImVec2 a_p0, float a_radius)

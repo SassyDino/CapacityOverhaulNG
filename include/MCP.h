@@ -3,22 +3,6 @@
 
 namespace GUI::MCP
 {
-	class TestSettings final : public REX::Singleton<TestSettings>
-	{
-		public:
-			bool noHands = true;
-			bool noPickup = true;
-			bool capacitySkills = true;
-			bool capacityQuest = false;
-			bool hugeNotShared = true;
-
-			bool vanillaWeight = false;
-			bool staminaWeight = true;
-			bool levelWeight = true;
-			bool raceWeight = true;
-
-	};
-
 	struct Testing
 	{
 		static bool testBool;

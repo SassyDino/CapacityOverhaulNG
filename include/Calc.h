@@ -4,6 +4,20 @@ namespace Calc
 {
 	static const float sqrt2 = float(sqrt(2));
 
+	struct Data
+	{
+		struct Plot
+		{
+			//TODO: Make these values adjustable
+			const static int heatmapMaxLevel = 150;
+			const static int heatmapMaxStamina = 300;
+			
+			static std::vector<float> heatmapData;
+			static float heatmapMax;
+			static float heatmapMin;
+		};
+	};
+
 	/**
 	 * @brief Uses player-set values to calculate the bonus to carry weight gained from the player's maximum stamina.
 	 * @param a_stamVal A max stamina value (typically the player's Actor Value)
@@ -31,6 +45,8 @@ namespace Calc
 	float LevelWeightBonus(float a_Lvl, float a_rate, uint32_t a_pivot, uint32_t baseCarry, float maxGradLvl);
 	float LevelWeightBonusCurrent();
 	float GradientAtLevel(float a_Lvl, float a_rate, uint32_t a_pivot, uint32_t baseCarry);
+
+	void ComputeHeatmapData();
 
 	float* GetStaminaPlotData(int x_max, float a_rate, uint32_t a_pivot, uint32_t baseCarry, int sampleRate);
 	float* GetLevelPlotData();
