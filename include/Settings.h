@@ -1,5 +1,5 @@
 #pragma once
-#include "Utils.h"
+#include "Logging.h"
 
 class Settings final : public REX::Singleton<Settings>
 {
@@ -49,20 +49,21 @@ class Settings final : public REX::Singleton<Settings>
 	static inline bool		bPreventInteractionsOverCap{true};
 
 	static inline bool		bWeightDebuffFloorIsPercentage{false};
-	static inline uint32_t	uWeightDebuffFloor{50};
+	static inline uint32_t	uWeightDebuffFloorConst{50};
+	static inline float		fWeightDebuffFloorPct{0.5};
 
 	static inline bool		bWeightAffectsSpeed{true};
-	static inline uint32_t	uSpeedDebuffMax{75};
+	static inline float		fSpeedDebuffMax{0.5};
 	static inline bool		bWeightAffectsStealth{true};
-	static inline uint32_t	uStealthDebuffMax{100};
+	static inline float		fStealthDebuffMax{1.0};
 	static inline bool		bWeightAffectsStamDrain{true};
-	static inline uint32_t	uStamDrainDebuffMax{100};
+	static inline float		fStamDrainDebuffMax{1.0};
 	static inline bool		bWeightAffectsStamRegen{true};
-	static inline uint32_t	uStamRegenDebuffMax{50};
+	static inline float		fStamRegenDebuffMax{0.5};
 	static inline bool		bWeightAffectsWeapSpeed{true};
-	static inline uint32_t	uWeapSpeedDebuffMax{50};
+	static inline float		fWeapSpeedDebuffMax{0.5};
 	static inline bool		bWeightAffectsAttackDmg{true};
-	static inline uint32_t	uAttackDmgDebuffMax{50};
+	static inline float		fAttackDmgDebuffMax{0.5};
 
 	// UI Settings
 	static inline bool		bCustomMenuStyling{true};
@@ -119,16 +120,18 @@ class Settings final : public REX::Singleton<Settings>
 
 	static inline std::unordered_map <std::string, std::pair<std::variant<bool*, float*, uint32_t*, std::string*>, std::string>> settingMap = {
 		{"bCapacityBasedDebuffs", {&bCapacityBasedDebuffs, "ToggleFeatures"}},
-		{"bWeightBasedDebuffs", {&bWeightBasedDebuffs, "ToggleFeatures"}},
+		{"bNoHandsOverCap", {&bNoHandsOverCap, "ToggleFeatures"}},
+		{"bPreventPickupOverCap", {&bPreventPickupOverCap, "ToggleFeatures"}},
+		{"bNoContainerAccessOverCap", {&bNoContainerAccessOverCap, "ToggleFeatures"}},
+		{"bPreventInteractionsOverCap", {&bPreventInteractionsOverCap, "ToggleFeatures"}},
 		{"bSkillsAffectCapacity", {&bSkillsAffectCapacity, "ToggleFeatures"}},
 		{"bQuestItemsAffectCapacity", {&bQuestItemsAffectCapacity, "ToggleFeatures"}},
 		{"bSeparateWeaponCategories", {&bSeparateWeaponCategories, "ToggleFeatures"}},
+		{"bWeightBasedDebuffs", {&bWeightBasedDebuffs, "ToggleFeatures"}},
 		{"bVanillaWeightLimit", {&bVanillaWeightLimit, "ToggleFeatures"}},
 		{"bStaminaAffectsWeight", {&bStaminaAffectsWeight, "ToggleFeatures"}},
 		{"bLevelAffectsWeight", {&bLevelAffectsWeight, "ToggleFeatures"}},
 		{"bRaceAffectsWeight", {&bRaceAffectsWeight, "ToggleFeatures"}},
-		{"bCapacityVisualiserBaseValues", {&bCapacityVisualiserBaseValues, "CapacitySettings"}},
-		{"bCapacityVisualiserShowFilled", {&bCapacityVisualiserShowFilled, "CapacitySettings"}},
 		{"bHugeCapacityShared", {&bHugeCapacityShared, "CapacitySettings"}},
 		{"uHugeCapacity", {&uHugeCapacity, "CapacitySettings"}},
 		{"uLargeCapacity", {&uLargeCapacity, "CapacitySettings"}},
@@ -151,59 +154,49 @@ class Settings final : public REX::Singleton<Settings>
 		{"fLargeItemWeight", {&fLargeItemWeight, "CapacitySettings"}},
 		{"fMediumItemWeight", {&fMediumItemWeight, "CapacitySettings"}},
 		{"fSmallItemWeight", {&fSmallItemWeight, "CapacitySettings"}},
-		{"bNoHandsOverCap", {&bNoHandsOverCap, "BuffsDebuffs"}},
-		{"bPreventPickupOverCap", {&bPreventPickupOverCap, "BuffsDebuffs"}},
-		{"bNoContainerAccessOverCap", {&bNoContainerAccessOverCap, "BuffsDebuffs"}},
-		{"bPreventInteractionsOverCap", {&bPreventInteractionsOverCap, "BuffsDebuffs"}},
-		{"bWeightDebuffFloorIsPercentage", {&bWeightDebuffFloorIsPercentage, "BuffsDebuffs"}},
-		{"uWeightDebuffFloor", {&uWeightDebuffFloor, "BuffsDebuffs"}},
-		{"bWeightAffectsSpeed", {&bWeightAffectsSpeed, "BuffsDebuffs"}},
-		{"uSpeedDebuffMax", {&uSpeedDebuffMax, "BuffsDebuffs"}},
-		{"bWeightAffectsStealth", {&bWeightAffectsStealth, "BuffsDebuffs"}},
-		{"uStealthDebuffMax", {&uStealthDebuffMax, "BuffsDebuffs"}},
-		{"bWeightAffectsStamDrain", {&bWeightAffectsStamDrain, "BuffsDebuffs"}},
-		{"uStamDrainDebuffMax", {&uStamDrainDebuffMax, "BuffsDebuffs"}},
-		{"bWeightAffectsStamRegen", {&bWeightAffectsStamRegen, "BuffsDebuffs"}},
-		{"uStamRegenDebuffMax", {&uStamRegenDebuffMax, "BuffsDebuffs"}},
-		{"bWeightAffectsWeapSpeed", {&bWeightAffectsWeapSpeed, "BuffsDebuffs"}},
-		{"uWeapSpeedDebuffMax", {&uWeapSpeedDebuffMax, "BuffsDebuffs"}},
-		{"bWeightAffectsAttackDmg", {&bWeightAffectsAttackDmg, "BuffsDebuffs"}},
-		{"uAttackDmgDebuffMax", {&uAttackDmgDebuffMax, "BuffsDebuffs"}},
+		{"uBaseCarryWeight", {&uBaseCarryWeight, "WeightGeneral"}},
+		{"fStaminaWeightMod", {&fStaminaWeightMod, "WeightGeneral"}},
+		{"bStaminaWeightSimple", {&bStaminaWeightSimple, "WeightGeneral"}},
+		{"fWeightPerStamina", {&fWeightPerStamina, "WeightGeneral"}},
+		{"bTempStaminaAddsWeight", {&bTempStaminaAddsWeight, "WeightGeneral"}},
+		{"fLevelWeightMod", {&fLevelWeightMod, "WeightGeneral"}},
+		{"bLevelWeightSimple", {&bLevelWeightSimple, "WeightGeneral"}},
+		{"fWeightPerLevel", {&fWeightPerLevel, "WeightGeneral"}},
+		{"fDefaultRaceMod", {&fDefaultRaceMod, "WeightGeneral"}},
+		{"fAltmerRaceMod", {&fAltmerRaceMod, "WeightGeneral"}},
+		{"fArgonianRaceMod", {&fArgonianRaceMod, "WeightGeneral"}},
+		{"fBosmerRaceMod", {&fBosmerRaceMod, "WeightGeneral"}},
+		{"fBretonRaceMod", {&fBretonRaceMod, "WeightGeneral"}},
+		{"fDunmerRaceMod", {&fDunmerRaceMod, "WeightGeneral"}},
+		{"fImperialRaceMod", {&fImperialRaceMod, "WeightGeneral"}},
+		{"fKhajiitRaceMod", {&fKhajiitRaceMod, "WeightGeneral"}},
+		{"fNordRaceMod", {&fNordRaceMod, "WeightGeneral"}},
+		{"fOrcRaceMod", {&fOrcRaceMod, "WeightGeneral"}},
+		{"fRedguardRaceMod", {&fRedguardRaceMod, "WeightGeneral"}},
+		{"bWeightDebuffFloorIsPercentage", {&bWeightDebuffFloorIsPercentage, "Debuffs"}},
+		{"uWeightDebuffFloorConst", {&uWeightDebuffFloorConst, "Debuffs"}},
+		{"fWeightDebuffFloorPct", {&fWeightDebuffFloorPct, "Debuffs"}},
+		{"bWeightAffectsSpeed", {&bWeightAffectsSpeed, "Debuffs"}},
+		{"fSpeedDebuffMax", {&fSpeedDebuffMax, "Debuffs"}},
+		{"bWeightAffectsStealth", {&bWeightAffectsStealth, "Debuffs"}},
+		{"fStealthDebuffMax", {&fStealthDebuffMax, "Debuffs"}},
+		{"bWeightAffectsStamDrain", {&bWeightAffectsStamDrain, "Debuffs"}},
+		{"fStamDrainDebuffMax", {&fStamDrainDebuffMax, "Debuffs"}},
+		{"bWeightAffectsStamRegen", {&bWeightAffectsStamRegen, "Debuffs"}},
+		{"fStamRegenDebuffMax", {&fStamRegenDebuffMax, "Debuffs"}},
+		{"bWeightAffectsWeapSpeed", {&bWeightAffectsWeapSpeed, "Debuffs"}},
+		{"fWeapSpeedDebuffMax", {&fWeapSpeedDebuffMax, "Debuffs"}},
+		{"bWeightAffectsAttackDmg", {&bWeightAffectsAttackDmg, "Debuffs"}},
+		{"fAttackDmgDebuffMax", {&fAttackDmgDebuffMax, "Debuffs"}},
 		{"bCustomMenuStyling", {&bCustomMenuStyling, "UI"}},
 		{"bOverrideLanguage", {&bOverrideLanguage, "UI"}},
 		{"sLanguage", {&sLanguage, "UI"}},
+		{"fStaminaWeightRate", {&fStaminaWeightRate, "WeightAdvanced"}},
+		{"uStaminaWeightPivot", {&uStaminaWeightPivot, "WeightAdvanced"}},
+		{"fLevelWeightRate", {&fLevelWeightRate, "WeightAdvanced"}},
+		{"uLevelWeightPivot", {&uLevelWeightPivot, "WeightAdvanced"}},
 		{"bModEnabled", {&bModEnabled, "Debug"}},
-		{"uLogLevel", {&uLogLevel, "Debug"}},
-		{"bLogContainerEvents", {&bLogContainerEvents, "Debug"}},
-		{"bLogOnlyPlayerContainerEvents", {&bLogOnlyPlayerContainerEvents, "Debug"}},
-		{"bLogLoadEvents", {&bLogLoadEvents, "Debug"}},
-		{"bLogMenuEvents", {&bLogMenuEvents, "Debug"}},
-		{"bLogOnlyRelevantMenuEvents", {&bLogOnlyRelevantMenuEvents, "Debug"}},
-		{"bLogEquipEvents", {&bLogEquipEvents, "Debug"}},
-		{"bLogOnlyPlayerEquipEvents", {&bLogOnlyPlayerEquipEvents, "Debug"}},
-		{"uBaseCarryWeight", {&uBaseCarryWeight, "WeightModifiers"}},
-		{"fDefaultRaceMod", {&fDefaultRaceMod, "WeightModifiers"}},
-		{"fAltmerRaceMod", {&fAltmerRaceMod, "WeightModifiers"}},
-		{"fArgonianRaceMod", {&fArgonianRaceMod, "WeightModifiers"}},
-		{"fBosmerRaceMod", {&fBosmerRaceMod, "WeightModifiers"}},
-		{"fBretonRaceMod", {&fBretonRaceMod, "WeightModifiers"}},
-		{"fDunmerRaceMod", {&fDunmerRaceMod, "WeightModifiers"}},
-		{"fImperialRaceMod", {&fImperialRaceMod, "WeightModifiers"}},
-		{"fKhajiitRaceMod", {&fKhajiitRaceMod, "WeightModifiers"}},
-		{"fNordRaceMod", {&fNordRaceMod, "WeightModifiers"}},
-		{"fOrcRaceMod", {&fOrcRaceMod, "WeightModifiers"}},
-		{"fRedguardRaceMod", {&fRedguardRaceMod, "WeightModifiers"}},
-		{"fStaminaWeightMod", {&fStaminaWeightMod, "WeightModifiers"}},
-		{"bTempStaminaAddsWeight", {&bTempStaminaAddsWeight, "WeightModifiers"}},
-		{"bStaminaWeightSimple", {&bStaminaWeightSimple, "WeightModifiers"}},
-		{"fWeightPerStamina", {&fWeightPerStamina, "WeightModifiers"}},
-		{"fStaminaWeightRate", {&fStaminaWeightRate, "WeightModifiers"}},
-		{"uStaminaWeightPivot", {&uStaminaWeightPivot, "WeightModifiers"}},
-		{"fLevelWeightMod", {&fLevelWeightMod, "WeightModifiers"}},
-		{"bLevelWeightSimple", {&bLevelWeightSimple, "WeightModifiers"}},
-		{"fWeightPerLevel", {&fWeightPerLevel, "WeightModifiers"}},
-		{"fLevelWeightRate", {&fLevelWeightRate, "WeightModifiers"}},
-		{"uLevelWeightPivot", {&uLevelWeightPivot, "WeightModifiers"}}
+		{"uLogLevel", {&uLogLevel, "Debug"}}
 	};
 
 	static void ReadIniSetting(CSimpleIniA& a_ini, const char* a_sectionName, const char* a_settingName);
@@ -230,7 +223,7 @@ class Settings final : public REX::Singleton<Settings>
 				}
 				catch(const std::bad_variant_access& e)
 				{
-					SKSE::log::error("ERROR ---> bad_variant_access");
+					SKSE::log::error("ERROR ---> bad_variant_access : {}", a_settingName);
 					setting = 0;
 				}
 			} else if constexpr (std::is_same_v<T, bool> || std::is_same_v<T, float> || std::is_same_v<T, uint32_t>) {
@@ -240,7 +233,7 @@ class Settings final : public REX::Singleton<Settings>
 				}
 				catch(const std::exception& e)
 				{
-					SKSE::log::error("ERROR ---> bad_variant_access");
+					SKSE::log::error("ERROR ---> bad_variant_access : {}", a_settingName);
 					setting = 0;
 				}
 			} else if (std::is_same_v<T, std::string>) {
@@ -250,7 +243,7 @@ class Settings final : public REX::Singleton<Settings>
 				}
 				catch(const std::exception& e)
 				{
-					SKSE::log::error("ERROR ---> bad_variant_access");
+					SKSE::log::error("ERROR ---> bad_variant_access : {}", a_settingName);
 					setting = "0";
 				}
 			} else {
