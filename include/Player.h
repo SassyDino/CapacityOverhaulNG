@@ -48,4 +48,6 @@ class PlayerState
 		static void UpdateLevelAtMaxGrad();
 
 		static bool AllowActivation();
+
+		static bool IsGameWorldLoaded();
 };

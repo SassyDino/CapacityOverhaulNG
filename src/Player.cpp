@@ -142,6 +142,12 @@ bool PlayerState::AllowActivation()
 	}
 	return true;
 }
+
+bool PlayerState::IsGameWorldLoaded()
+{
+	return Char && Char->Is3DLoaded();
+}
+
 /* 
 RE::FormType PlayerState::CrosshairFormType()
 {

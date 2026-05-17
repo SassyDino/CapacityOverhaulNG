@@ -1,8 +1,10 @@
 #include "MCPVisualiser.h"
 #include "MCPHelpers.h"
 #include "MCPStyle.h"
+#include "MCPSettings.h"
 #include "MCP.h"
 #include "CapacityHandler.h"
+#include "Player.h"
 
 using namespace ImGuiMCP;
 using namespace CapacityHandler;
@@ -12,22 +14,6 @@ namespace MCPDraw = MCP_API::ImDrawListManager;
 
 namespace GUI::MCP
 {
-	const std::unordered_map<CategoryID, const char *> categoryTooltips = {
-		{CategoryID::kHuge, "Huge Items"},
-		{CategoryID::kLarge, "Large Items"},
-		{CategoryID::kMedium, "Medium Items"},
-		{CategoryID::kSmall, "Small Items"},
-		{CategoryID::kTiny, "Tiny Items"},
-		{CategoryID::kAlchemy, "Alchemy Items (Overflow)"},
-		{CategoryID::kAmmo, "Ammunition (Overflow)"},
-		{CategoryID::kCoin, "Coins (Overflow)"},
-		{CategoryID::kWeaponLarge, "Large Weapons (Overflow)"},
-		{CategoryID::kWeaponMedium, "Medium Weapons (Overflow)"},
-		{CategoryID::kWeaponSmall, "Small Weapons (Overflow)"},
-		{CategoryID::kWeaponRanged, "Ranged Weapons (Overflow)"},
-		{CategoryID::kShield, "Shields (Overflow)"}
-	};
-
 	//TODO: Try and rework this to use my main colour system
 	SKSEMenuFramework::ImU32 PercentageColour(float a_count, float a_capacity)
 	{
@@ -56,7 +42,7 @@ namespace GUI::MCP
 	void CapacityCategoryTooltip(ImVec2 a_p0, ImVec2 a_p1, const char* a_title, ItemCat* a_category)
 	{
 		std::string tooltipQtyStr;
-		if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
+		if (Selections::visualiserShowFilled && PlayerState::Char) {
 			tooltipQtyStr = std::format("{}/{}", a_category->GetCountForGUI(), a_category->GetCapacityForGUI());
 		} else {
 			tooltipQtyStr = std::format("-/{}", a_category->GetCapacityForGUI());
@@ -71,186 +57,111 @@ namespace GUI::MCP
 		}
 	}
 
-	void CapacityVisualiser()
+	void CapacityVisualiser(bool isPlayerLoaded)
 	{
-		CapacityHandler::UpdateBaseCapacities();
-		if (!Settings::Get<bool>("bCapacityVisualiserBaseValues")) {
-			CapacityHandler::CalculateActualCapacities();
-		}
-		if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-			CapacityHandler::UpdateAllCategories(true);
-		}
-		
-		float windowWidth = MCP_API::GetWindowWidth();
-		float pEnd;
+		ImDrawList *drawList = MCP_API::GetWindowDrawList();
 
+		CapacityHandler::UpdateBaseCapacities();
+
+		if (isPlayerLoaded) {
+			if (Selections::visualiserBaseValues) {
+				CapacityHandler::CalculateActualCapacities();
+			}
+			if (Selections::visualiserShowFilled) {
+				CapacityHandler::UpdateAllCategories(true);
+			}
+		}
+
+		ImVec2 p0;
+		MCP_API::GetCursorScreenPos(&p0);
+
+		ImVec2 windowPos;
+		MCP_API::GetWindowPos(&windowPos);
+		Layout::windowWidth = MCP_API::GetWindowWidth() - ((p0.x - windowPos.x) * 2);
+		if (MCP_API::GetScrollMaxY() > 0.0f) { Layout::windowWidth -= MCP_API::GetStyle()->ScrollbarSize; }
+
+		Layout::cvBorderCol = MCP_API::GetColorU32(ImGuiCol_Border);
+
+		float pEnd;
 		MCP_API::BeginGroup();
 		{
-			MCP_API::Checkbox("Show Base Capacity Values (Unaltered by player stats)", Settings::Get<bool*>("bCapacityVisualiserBaseValues"));
-			MCP_API::SameLine();
-			MCP_API::Checkbox("Show Fill Status of Categories", Settings::Get<bool*>("bCapacityVisualiserShowFilled"));
-
-			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-				MCP_API::Text("Total Capacity Summary");
-				CapacityVisualiserTotal();
-				MCP_API::Dummy(ImVec2(windowWidth, 45));
+			if (Selections::visualiserShowFilled && isPlayerLoaded) {
+				MCP_API::Text("$MCP.Widgets.CapacityVisualiser.Summary"_tr);
+				CapacityVisualiserTotal(drawList, p0);
 			}
 
 			MCP_API::BeginGroup();
 			{
-				MCP_API::Text("Main/Standard Categories");
-				CapacityVisualiserMain();
-				MCP_API::Dummy(ImVec2(windowWidth*0.65f, 205));
-				MCP_API::Text("Weapon Categories");
-				pEnd = CapacityVisualiserWeapons();
-				MCP_API::Dummy(ImVec2(windowWidth*0.65f, 200));
+				MCP_API::Text("$MCP.Widgets.CapacityVisualiser.Main"_tr);
+				CapacityVisualiserMain(drawList, p0, isPlayerLoaded);
+
+				MCP_API::Text("$MCP.Widgets.CapacityVisualiser.Weapon"_tr);
+				pEnd = CapacityVisualiserWeapons(drawList, p0, isPlayerLoaded);
 				MCP_API::EndGroup();
 			}
 			MCP_API::SameLine();
 
 			MCP_API::BeginGroup();
 			{
-				MCP_API::Text("Misc Categories");
-				CapacityVisualiserMisc(pEnd);
+				MCP_API::Text("$MCP.Widgets.CapacityVisualiser.Misc"_tr);
+				CapacityVisualiserMisc(drawList, p0, isPlayerLoaded, pEnd);
 				MCP_API::EndGroup();
 			}
 		}
 		MCP_API::NewLine();
 	}
 
-	void CapacityVisualiserWindow(bool *open_state)
+	void CapacityVisualiserWindow(bool *isOpen, bool isPlayerLoaded)
 	{
-		if (*open_state) {
-			MCP_API::Begin("Capacity Visualiser", open_state, 0);
-			CapacityVisualiser();
+		if (*isOpen) {
+			MCP_API::Begin("$MCP.Widgets.CapacityVisualiserWindow.Title"_tr, isOpen, 0);
+			CapacityVisualiser(isPlayerLoaded);
 			MCP_API::End();
 		}
 	}
 
-	void CapacityVisualiserMain()
+	void CapacityVisualiserMain(ImDrawList* drawList, ImVec2 &p0, bool isPlayerLoaded)
 	{
-		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
-		ImDrawList *drawList = MCP_API::GetWindowDrawList();
-		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
 		// Determine row/column dimensions depending on what data is being shown
 		int rowCount = (Settings::Get<bool>("bHugeCapacityShared")) ? 5 : 4;
-		float mainRowGap = 40.0f;
-		ImVec2 mainSize = ImVec2(MCP_API::GetWindowWidth() * 0.65f, mainRowGap*rowCount);
-		float hugeDivGap = mainSize.x/CapacityHandler::cHuge.GetCapacityForGUI();
-		float largeDivGap = mainSize.x/CapacityHandler::cLarge.GetCapacityForGUI();
-		float mediumDivGap = mainSize.x/CapacityHandler::cMedium.GetCapacityForGUI();
-		float smallDivGap = mainSize.x/CapacityHandler::cSmall.GetCapacityForGUI();
-		float tinyDivGap = mainSize.x/CapacityHandler::cTiny.GetCapacityForGUI();
-		ImU32 fillColour;
+		Layout::cvMainSize = ImVec2(Layout::windowWidth * 0.65f, Layout::cvBarThickness*rowCount);
+		Layout::cvHugeDivGap = Layout::cvMainSize.x/cHuge.GetCapacityForGUI();
+		Layout::cvLargeDivGap = Layout::cvMainSize.x/cLarge.GetCapacityForGUI();
+		Layout::cvMediumDivGap = Layout::cvMainSize.x/cMedium.GetCapacityForGUI();
+		Layout::cvSmallDivGap = Layout::cvMainSize.x/cSmall.GetCapacityForGUI();
+		Layout::cvTinyDivGap = Layout::cvMainSize.x/cTiny.GetCapacityForGUI();
 
-		std::vector<float> dividerVec = {hugeDivGap, largeDivGap, mediumDivGap, smallDivGap, tinyDivGap};
-		std::vector<CapacityHandler::ItemCat*> categoryVec = {
-			&cHuge,
-			&cLarge,
-			&cMedium,
-			&cSmall,
-			&cTiny
-		};
-
-		// Just some misc iterator values
-		float itRow1 = 0;
-		float itRow2 = 1;
-		int itDiv = 0;
-		int i = 1;
+		float dummyHeight = Layout::cvMainSize.y;
 
 		// Draw independent "huge" category bar, if settings are set as so
 		if (!Settings::Get<bool>("bHugeCapacityShared")) {
-			fillColour = PercentageColour(
-				CapacityHandler::cHuge.GetCountForGUI(),
-				CapacityHandler::cHuge.GetCapacityForGUI()
-			);
-
-			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-				if (CapacityHandler::cHuge.GetCountForGUI() < CapacityHandler::cHuge.GetCapacityForGUI()) {
-					MCPDraw::AddRectFilled(drawList, 
-						ImVec2(p0.x, p0.y), 
-						ImVec2(p0.x+(hugeDivGap*CapacityHandler::cHuge.GetCountForGUI()), p0.y+mainRowGap), 
-						fillColour, 0.0f, 0
-					);
-				} else {
-					MCPDraw::AddRectFilled(drawList, 
-						ImVec2(p0.x, p0.y), 
-						ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), 
-						fillColour, 0.0f, 0
-					);
-				}
-			}
-			
-			CapacityCategoryTooltip(p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), CapacityHandler::cHuge.GetTooltipName(), &CapacityHandler::cHuge);
-
-			MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+mainSize.x, p0.y+mainRowGap), borderCol, 0.0f, 0, borderThick);
-
-			while (i < CapacityHandler::cHuge.GetCapacityForGUI()) {
-				MCPDraw::AddLine(drawList, ImVec2(p0.x+(hugeDivGap*i), p0.y), ImVec2(p0.x+(hugeDivGap*i), p0.y+mainRowGap), borderCol, borderThin);
-				i++;
-			}
-
-			p0.y += (mainRowGap + 5.0f); // Add height of bar, plus 5 for padding - need to check that this number is ok
+			dummyHeight += Layout::cvBarThickness + Layout::smallGap;
+			CapacityVisualiserSeparateHuge(drawList, p0, isPlayerLoaded);
 		}
 
-		itRow1 = 0;
-		itRow2 = 1;
-		itDiv = 0;
-
-		// Draw the filled & coloured progress/fill bars for each main category
-		for (auto category: categoryVec) {
-			// Skip drawing kHuge progress bar if the setting is disabled
-			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == &CapacityHandler::cHuge)) {
-				itDiv++;
-				continue;
-			}
-
-			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
-				// Determine colour (on a green-yellow-red scale) based on capacity filled per category
-				fillColour = PercentageColour(category->GetCountForGUI(), category->GetCapacityForGUI());
-
-				// Draw progress bar
-				if (category->GetCountForGUI() < category->GetCapacityForGUI()) {
-					MCPDraw::AddRectFilled(drawList, 
-						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
-						ImVec2(p0.x+(dividerVec[itDiv]*(category->GetCountForGUI())), p0.y+(mainRowGap*itRow2)), 
-						fillColour, 0.0f, 0
-					);
-				} else {
-					MCPDraw::AddRectFilled(drawList, 
-						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
-						ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), 
-						fillColour, 0.0f, 0
-					);
-				}
-				
-			}
-
-			CapacityCategoryTooltip(ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), category->GetTooltipName(), category);
-
-			itRow1++;
-			itRow2++;
-			itDiv++;
-		}
+		CapacityVisualiserFillMain(drawList, p0, isPlayerLoaded);
 
 		// Draw visualiser box/outer borders
-		MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+mainSize.x, p0.y+mainSize.y), borderCol, 0.0f, 0, borderThick);
+		MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+Layout::cvMainSize.x, p0.y+Layout::cvMainSize.y), Layout::cvBorderCol, 0.0f, 0, Layout::borderThin);
 
 		// Draw horizontal dividers for each main storage category
-		i = 1;
-		while (i < rowCount) {
-			MCPDraw::AddLine(drawList, ImVec2(p0.x, p0.y+(mainRowGap*i)), ImVec2(p0.x+mainSize.x-1, p0.y+(mainRowGap*i)), borderCol, borderThick);
-			i++;
+		for (int i = 1; i < rowCount; i++) {
+			MCPDraw::AddLine(drawList,
+				ImVec2(p0.x, p0.y+(Layout::cvBarThickness*i)),
+				ImVec2(p0.x+Layout::cvMainSize.x-1, p0.y+(Layout::cvBarThickness*i)),
+				Layout::cvBorderCol,
+				Layout::borderThin
+			);
 		}
 
-		itRow1 = 0;
-		itRow2 = 1;
-		itDiv = 0;
+		float itRow1 = 0;
+		float itRow2 = 1;
+		int itDiv = 0;
 
 		// Draw vertical dividers for each main storage category
-		for (auto category: categoryVec) {
+		for (auto category: Layout::cvCategoryVec) {
 			// Skip drawing kHuge row/dividers if the setting is disabled
 			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == &CapacityHandler::cHuge)) {
 				itDiv++;
@@ -258,11 +169,98 @@ namespace GUI::MCP
 			}
 
 			// Draw vertical dividers
-			i = 1;
-			while (i < category->GetCapacityForGUI()) {
-				MCPDraw::AddLine(drawList, ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(mainRowGap*itRow2)), borderCol, borderThin);
-				i++;
+			for (int i = 1; i < category->GetCapacityForGUI(); i++) {
+				MCPDraw::AddLine(drawList,
+					ImVec2(p0.x+(*Layout::cvDividerVec[itDiv]*i), p0.y+(Layout::cvBarThickness*itRow1)),
+					ImVec2(p0.x+(*Layout::cvDividerVec[itDiv]*i), p0.y+(Layout::cvBarThickness*itRow2)),
+					Layout::cvBorderCol,
+					Layout::borderThin
+				);
 			}
+
+			itRow1++;
+			itRow2++;
+			itDiv++;
+		}
+
+		MCP_API::Dummy({Layout::windowWidth*0.65f, dummyHeight});
+	}
+
+	void CapacityVisualiserSeparateHuge(ImDrawList* drawList, ImVec2 &p0, bool isPlayerLoaded)
+	{
+		if (isPlayerLoaded && Selections::visualiserShowFilled) {
+
+			ImU32 fillColour = PercentageColour(
+				CapacityHandler::cHuge.GetCountForGUI(),
+				CapacityHandler::cHuge.GetCapacityForGUI()
+			);
+
+			if (CapacityHandler::cHuge.GetCountForGUI() < CapacityHandler::cHuge.GetCapacityForGUI()) {
+				MCPDraw::AddRectFilled(drawList, 
+					ImVec2(p0.x, p0.y), 
+					ImVec2(p0.x+(Layout::cvHugeDivGap*CapacityHandler::cHuge.GetCountForGUI()), p0.y+Layout::cvBarThickness), 
+					fillColour, 0.0f, 0
+				);
+			} else {
+				MCPDraw::AddRectFilled(drawList, 
+					ImVec2(p0.x, p0.y), 
+					ImVec2(p0.x+Layout::cvMainSize.x, p0.y+Layout::cvBarThickness), 
+					fillColour, 0.0f, 0
+				);
+			}
+		}
+		
+		CapacityCategoryTooltip(p0, ImVec2(p0.x+Layout::cvMainSize.x, p0.y+Layout::cvBarThickness), CapacityHandler::cHuge.GetTooltipText(), &CapacityHandler::cHuge);
+
+		MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+Layout::cvMainSize.x, p0.y+Layout::cvBarThickness), Layout::cvBorderCol, 0.0f, 0, Layout::borderThin);
+
+		for (int i = 1; i < CapacityHandler::cHuge.GetCapacityForGUI(); i++) {
+			MCPDraw::AddLine(drawList,
+				ImVec2(p0.x+(Layout::cvHugeDivGap*i), p0.y),
+				ImVec2(p0.x+(Layout::cvHugeDivGap*i), p0.y+Layout::cvBarThickness),
+				Layout::cvBorderCol,
+				Layout::borderThin);
+		}
+
+		p0.y += (Layout::cvBarThickness + Layout::smallGap); // Add height of bar, plus 5 for padding - need to check that this number is ok
+	}
+
+	void CapacityVisualiserFillMain(ImDrawList* drawList, ImVec2 &p0, bool isPlayerLoaded)
+	{
+		float itRow1 = 0;
+		float itRow2 = 1;
+		int itDiv = 0;
+
+		// Draw the filled & coloured progress/fill bars for each main category
+		for (auto category: Layout::cvCategoryVec) {
+			// Skip drawing kHuge progress bar if the setting is disabled
+			if (!Settings::Get<bool>("bHugeCapacityShared") && (category == &CapacityHandler::cHuge)) {
+				itDiv++;
+				continue;
+			}
+
+			if (Selections::visualiserShowFilled && isPlayerLoaded) {
+				// Determine colour (on a green-yellow-red scale) based on capacity filled per category
+				ImU32 fillColour = PercentageColour(category->GetCountForGUI(), category->GetCapacityForGUI());
+
+				// Draw progress bar
+				if (category->GetCountForGUI() < category->GetCapacityForGUI()) {
+					MCPDraw::AddRectFilled(drawList, 
+						ImVec2(p0.x, p0.y+(Layout::cvBarThickness*itRow1)), 
+						ImVec2(p0.x+(*Layout::cvDividerVec[itDiv]*(category->GetCountForGUI())), p0.y+(Layout::cvBarThickness*itRow2)), 
+						fillColour, 0.0f, 0
+					);
+				} else {
+					MCPDraw::AddRectFilled(drawList, 
+						ImVec2(p0.x, p0.y+(Layout::cvBarThickness*itRow1)), 
+						ImVec2(p0.x+Layout::cvMainSize.x, p0.y+(Layout::cvBarThickness*itRow2)), 
+						fillColour, 0.0f, 0
+					);
+				}
+				
+			}
+
+			CapacityCategoryTooltip(ImVec2(p0.x, p0.y+(Layout::cvBarThickness*itRow1)), ImVec2(p0.x+Layout::cvMainSize.x, p0.y+(Layout::cvBarThickness*itRow2)), category->GetTooltipText(), category);
 
 			itRow1++;
 			itRow2++;
@@ -270,71 +268,26 @@ namespace GUI::MCP
 		}
 	}
 
-	void CapacityVisualiserTotal()
+	void CapacityVisualiserTotal(ImDrawList* drawList, ImVec2 &p0)
 	{
-		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
-		ImDrawList* drawList = MCP_API::GetWindowDrawList();
-		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
-		ImVec2 boxSize = ImVec2(MCP_API::GetWindowWidth()-35.0f, 40.0f);
+		ImVec2 boxSize = ImVec2(Layout::windowWidth, Layout::cvBarThickness);
 		
-		std::unordered_map<CategoryID, ImU32> categoryColours = {
-			{CategoryID::kHuge, HEX_COL32(0xA8005BFF)},
-			{CategoryID::kLarge, HEX_COL32(0xBA422FFF)},
-			{CategoryID::kMedium, HEX_COL32(0xA87A00FF)},
-			{CategoryID::kSmall, HEX_COL32(0x7AA62EFF)},
-			{CategoryID::kTiny, HEX_COL32(0x00CC85FF)},
-			{CategoryID::kAlchemy, HEX_COL32(0xBF4FB0FF)},
-			{CategoryID::kAmmo, HEX_COL32(0xA64FD6FF)},
-			{CategoryID::kCoin, HEX_COL32(0x635CFFFF)},
-			{CategoryID::kWeaponLarge, HEX_COL32(0x292E57FF)},
-			{CategoryID::kWeaponMedium, HEX_COL32(0x6B4573FF)},
-			{CategoryID::kWeaponSmall, HEX_COL32(0xAD597DFF)},
-			{CategoryID::kWeaponRanged, HEX_COL32(0xE07D78FF)},
-			{CategoryID::kShield, HEX_COL32(0xFAB270FF)}
-		};
+		//? Could possibly save the percent variables somehow, and then maybe check for changes to any of the capacities/counts etc, to save calling GetMCPPercent multiple times.
 		
-		//TODO: I absolutely hate all of this, I really need to find some better way of doing it bruh
-		//NOTE: Also, even aside from the stupidly dense blocks of code that look terrible, there's no way that this is gonna run anywhere near to optimal when going multiple times a second.
-		//? Could possibly make the xxxxPercent variables static, and then check for changes to any of the capacities/counts, and only recalculate each percentage as and when needed.
+		std::vector<ItemCat*> drawCategories;
 
-		std::unordered_map<CategoryID, float> categoryPercent = {
-			{CategoryID::kHuge, CapacityHandler::cHuge.GetMCPPercent()},
-			{CategoryID::kLarge, CapacityHandler::cLarge.GetMCPPercent()},
-			{CategoryID::kMedium, CapacityHandler::cMedium.GetMCPPercent()},
-			{CategoryID::kSmall, CapacityHandler::cSmall.GetMCPPercent()},
-			{CategoryID::kTiny, CapacityHandler::cTiny.GetMCPPercent()},
-			{CategoryID::kAlchemy, CapacityHandler::cAlchemy.GetMCPPercent()},
-			{CategoryID::kAmmo, CapacityHandler::cAmmo.GetMCPPercent()},
-			{CategoryID::kCoin, CapacityHandler::cCoin.GetMCPPercent()},
-			{CategoryID::kWeaponLarge, CapacityHandler::cWeaponLarge.GetMCPPercent()},
-			{CategoryID::kWeaponMedium, CapacityHandler::cWeaponMedium.GetMCPPercent()},
-			{CategoryID::kWeaponSmall, CapacityHandler::cWeaponSmall.GetMCPPercent()},
-			{CategoryID::kWeaponRanged, CapacityHandler::cWeaponRanged.GetMCPPercent()},
-			{CategoryID::kShield, CapacityHandler::cShield.GetMCPPercent()}
-		};
-		
-		std::vector<CategoryID> drawCategories;
+		if (Settings::Get<bool>("bHugeCapacityShared")) { drawCategories.push_back(&cHuge); }
 
-		if (Settings::Get<bool>("bHugeCapacityShared")) { drawCategories.push_back(CategoryID::kHuge); }
-		drawCategories.push_back(CategoryID::kLarge);
-		drawCategories.push_back(CategoryID::kMedium);
-		drawCategories.push_back(CategoryID::kSmall);
-		drawCategories.push_back(CategoryID::kTiny);
-		drawCategories.push_back(CategoryID::kAlchemy);
-		drawCategories.push_back(CategoryID::kAmmo);
-		drawCategories.push_back(CategoryID::kCoin);
+		drawCategories.insert(drawCategories.end(), {&cLarge, &cMedium, &cSmall, &cTiny, &cAlchemy, &cAmmo, &cCoin});
+
 		if (Settings::Get<bool>("bSeparateWeaponCategories")) {
-			drawCategories.push_back(CategoryID::kWeaponLarge);
-			drawCategories.push_back(CategoryID::kWeaponMedium);
-			drawCategories.push_back(CategoryID::kWeaponSmall);
-			drawCategories.push_back(CategoryID::kWeaponRanged);
-			drawCategories.push_back(CategoryID::kShield);
+			drawCategories.insert(drawCategories.end(), {&cWeaponLarge, &cWeaponMedium, &cWeaponSmall, &cWeaponRanged, &cShield});
 		}
 
 		float percentTotal = 0;
-		for (auto category : drawCategories) { percentTotal += categoryPercent.at(category); }
+		for (auto category : drawCategories) { percentTotal += category->GetMCPPercent(); }
 
 		float refitMult = 1 / percentTotal;
 
@@ -342,20 +295,20 @@ namespace GUI::MCP
 		float px = p0.x;
 		for (auto category : drawCategories) {
 			if (refitMult >= 1) {
-				fillX = boxSize.x * categoryPercent.at(category);
+				fillX = boxSize.x * category->GetMCPPercent();
 			} else {
-				fillX = (boxSize.x * categoryPercent.at(category)) * refitMult;
+				fillX = (boxSize.x * category->GetMCPPercent()) * refitMult;
 			}
 
 			MCPDraw::AddRectFilled(drawList, 
 				ImVec2(px, p0.y), 
 				ImVec2(px+fillX, p0.y+boxSize.y), 
-				categoryColours.at(category), 0.0f, 0
+				category->visualiserColour, 0.0f, 0
 			);
 
-			if (MCP_API::IsMouseHoveringRect(ImVec2(px, p0.y), ImVec2(px+fillX, p0.y+boxSize.y), ImGuiHoveredFlags_DelayNone)) {
+			if (MCP_API::IsMouseHoveringRect(ImVec2(px, p0.y), ImVec2(px+fillX, p0.y+boxSize.y))) {
 				MCP_API::BeginTooltip();
-				MCP_API::Text(categoryTooltips.at(category));
+				MCP_API::Text(category->GetTooltipText());
 				MCP_API::EndTooltip();
 			}
 
@@ -363,23 +316,25 @@ namespace GUI::MCP
 		}
 
 		if (refitMult < 1) {
-			MCPDraw::AddLine(drawList, ImVec2(p0.x+(boxSize.x*refitMult), p0.y), ImVec2(p0.x+(boxSize.x*refitMult), p0.y+boxSize.y), borderCol, 5.0f);
+			MCPDraw::AddLine(drawList,
+				ImVec2(p0.x+(boxSize.x*refitMult), p0.y),
+				ImVec2(p0.x+(boxSize.x*refitMult), p0.y+boxSize.y),
+				Layout::cvBorderCol, Layout::borderThick
+			);
+
 			DrawHatchFill(drawList, ImVec2(p0.x+(boxSize.x*refitMult)+2.0f, p0.y+1.0f), ImVec2(p0.x+boxSize.x-1.0f, p0.y+boxSize.y-1.0f));
 		}
 
-		MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+boxSize.x, p0.y+boxSize.y), borderCol, 0.0f, 0, borderThick);
+		MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+boxSize.x, p0.y+boxSize.y), Layout::cvBorderCol, 0.0f, 0, Layout::borderThin);
+
+		MCP_API::Dummy(ImVec2(Layout::windowWidth, 40));
 	}
 
-	void CapacityVisualiserMisc(float y_max)
+	void CapacityVisualiserMisc(ImDrawList* drawList, ImVec2 &p0, bool isPlayerLoaded, float y_max)
 	{
-		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
-		ImDrawList *drawList = MCP_API::GetWindowDrawList();
-		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
-		auto barGap = 10.0f;
-
-		ImVec2 boxSize = ImVec2(40.0f, (y_max-p0.y));
+		ImVec2 boxSize = ImVec2(Layout::cvBarThickness, (y_max-p0.y));
 
 		float alchemyDivGap = boxSize.y/CapacityHandler::cAlchemy.GetCapacityForGUI();
 		float ammoDivGap = boxSize.y/CapacityHandler::cAmmo.GetCapacityForGUI();
@@ -397,7 +352,7 @@ namespace GUI::MCP
 		int itDiv = 0;
 		for (auto category: categoryVec) {
 			// Draw progress bar fill colour
-			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
+			if (Selections::visualiserShowFilled && isPlayerLoaded) {
 				// Determine colour (on a green-yellow-red scale) based on percentage of capacity filled, per category
 				fillColour = PercentageColour(category->GetCountForGUI(), category->GetCapacityForGUI());
 
@@ -422,34 +377,32 @@ namespace GUI::MCP
 			CapacityCategoryTooltip(p0, p1, tooltipText, category);
 
 			// Bounding box
-			MCPDraw::AddRect(drawList, p0, p1, borderCol, 0.0f, 0, borderThick);
+			MCPDraw::AddRect(drawList, p0, p1, Layout::cvBorderCol, 0.0f, 0, Layout::borderThin);
 
-			int i = 1;
 			// Capacity dividers (skip drawing the dividing lines if there are too many, as it just makes the fill colour go weird)
 			if (category->GetCapacityForGUI() < (p1.y - p0.y)) {
-				while (i < category->GetCapacityForGUI()) {
-					MCPDraw::AddLine(drawList, ImVec2(p0.x, p0.y+(dividerVec[itDiv]*i)), ImVec2(p1.x-1, p0.y+(dividerVec[itDiv]*i)), borderCol, borderThin);
-					i++;
+				for (int i = 1; i < category->GetCapacityForGUI(); i++) {
+					MCPDraw::AddLine(drawList,
+						ImVec2(p0.x, p0.y+(dividerVec[itDiv]*i)),
+						ImVec2(p1.x-1, p0.y+(dividerVec[itDiv]*i)),
+						Layout::cvBorderCol, Layout::borderThin
+					);
 				}
 			}
 			
 			itDiv++;
-			p0.x += boxSize.x + barGap;
-			p1.x += boxSize.x + barGap;
+			p0.x += boxSize.x + Layout::smallGap;
+			p1.x += boxSize.x + Layout::smallGap;
 		}
 	}
 
-	float CapacityVisualiserWeapons()
+	float CapacityVisualiserWeapons(ImDrawList* drawList, ImVec2 &p0, bool isPlayerLoaded)
 	{
-		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
-		ImDrawList *drawList = MCP_API::GetWindowDrawList();
-		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
 
 		// Determine row/column dimensions depending on what data is being shown
 		int rowCount = 5;
-		float mainRowGap = 40.0f;
-		ImVec2 mainSize = ImVec2(MCP_API::GetWindowWidth() * 0.65f, mainRowGap*rowCount);
+		ImVec2 mainSize = ImVec2(Layout::windowWidth * 0.65f, Layout::cvBarThickness*rowCount);
 		float largeDivGap = mainSize.x/CapacityHandler::cWeaponLarge.GetCapacityForGUI();
 		float mediumDivGap = mainSize.x/CapacityHandler::cWeaponMedium.GetCapacityForGUI();
 		float smallDivGap = mainSize.x/CapacityHandler::cWeaponSmall.GetCapacityForGUI();
@@ -474,21 +427,21 @@ namespace GUI::MCP
 
 		// Draw the filled & coloured progress/fill bars for each main category
 		for (auto category: categoryVec) {
-			if (Settings::Get<bool>("bCapacityVisualiserShowFilled")) {
+			if (Selections::visualiserShowFilled && isPlayerLoaded) {
 				// Determine colour (on a green-yellow-red scale) based on capacity filled per category
 				fillColour = PercentageColour(category->GetCountForGUI(), category->GetCapacityForGUI());
 
 				// Draw progress bar
 				if (category->GetCountForGUI() < category->GetCapacityForGUI()) {
 					MCPDraw::AddRectFilled(drawList, 
-						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
-						ImVec2(p0.x+(dividerVec[itDiv]*(category->GetCountForGUI())), p0.y+(mainRowGap*itRow2)), 
+						ImVec2(p0.x, p0.y+(Layout::cvBarThickness*itRow1)), 
+						ImVec2(p0.x+(dividerVec[itDiv]*(category->GetCountForGUI())), p0.y+(Layout::cvBarThickness*itRow2)), 
 						fillColour, 0.0f, 0
 					);
 				} else {
 					MCPDraw::AddRectFilled(drawList, 
-						ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), 
-						ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), 
+						ImVec2(p0.x, p0.y+(Layout::cvBarThickness*itRow1)), 
+						ImVec2(p0.x+mainSize.x, p0.y+(Layout::cvBarThickness*itRow2)), 
 						fillColour, 0.0f, 0
 					);
 				}
@@ -509,7 +462,7 @@ namespace GUI::MCP
 				tooltipText = "CATEGORY ERROR";
 			}
 
-			CapacityCategoryTooltip(ImVec2(p0.x, p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+mainSize.x, p0.y+(mainRowGap*itRow2)), tooltipText, category);
+			CapacityCategoryTooltip(ImVec2(p0.x, p0.y+(Layout::cvBarThickness*itRow1)), ImVec2(p0.x+mainSize.x, p0.y+(Layout::cvBarThickness*itRow2)), tooltipText, category);
 
 			itRow1++;
 			itRow2++;
@@ -517,13 +470,15 @@ namespace GUI::MCP
 		}
 
 		// Draw visualiser box/outer borders
-		MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+mainSize.x, p0.y+mainSize.y), borderCol, 0.0f, 0, borderThick);
+		MCPDraw::AddRect(drawList, p0, ImVec2(p0.x+mainSize.x, p0.y+mainSize.y), Layout::cvBorderCol, 0.0f, 0, Layout::borderThin);
 
 		// Draw horizontal dividers for each main storage category
-		i = 1;
-		while (i < rowCount) {
-			MCPDraw::AddLine(drawList, ImVec2(p0.x, p0.y+(mainRowGap*i)), ImVec2(p0.x+mainSize.x-1, p0.y+(mainRowGap*i)), borderCol, borderThick);
-			i++;
+		for (i = 1; i < rowCount; i++) {
+			MCPDraw::AddLine(drawList,
+				ImVec2(p0.x, p0.y+(Layout::cvBarThickness*i)),
+				ImVec2(p0.x+mainSize.x-1, p0.y+(Layout::cvBarThickness*i)),
+				Layout::cvBorderCol, Layout::borderThin
+			);
 		}
 
 		itRow1 = 0;
@@ -532,16 +487,20 @@ namespace GUI::MCP
 
 		// Draw vertical dividers for each main storage category
 		for (auto category: categoryVec) {
-			i = 1;
-			while (i < category->GetCapacityForGUI()) {
-				MCPDraw::AddLine(drawList, ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(mainRowGap*itRow1)), ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(mainRowGap*itRow2)), borderCol, borderThin);
-				i++;
+			for (i = 1; i < category->GetCapacityForGUI(); i++) {
+				MCPDraw::AddLine(drawList,
+					ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(Layout::cvBarThickness*itRow1)),
+					ImVec2(p0.x+(dividerVec[itDiv]*i), p0.y+(Layout::cvBarThickness*itRow2)),
+					Layout::cvBorderCol, Layout::borderThin
+				);
 			}
 
 			itRow1++;
 			itRow2++;
 			itDiv++;
 		}
+
+		MCP_API::Dummy(ImVec2(Layout::windowWidth*0.65f, 200));
 
 		return { p0.y + mainSize.y };
 	}
