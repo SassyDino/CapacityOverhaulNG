@@ -4,19 +4,25 @@
 
 const char* operator"" _tr(const char* key, std::size_t len)
 {
-	return Lang::translationMap.at(key).c_str();
+	return Lang::translationMap.at(key);
 }
 
 namespace Lang
 {
-	std::string test1;
-	std::string test2;
-	bool testing = SKSE::Translation::Translate(test1, test2);
+	void TranslationVal::SetText(std::string text)
+	{
+		sText = text;
+		cText = sText.c_str();
+
+		logger::trace("Set translation key ---> '{}'", sText);
+	}
 
 	void InitTranslations()
 	{
 		clib_util::Timer timer;
 		timer.start();
+		logger::info("{:=^50}", "Initialising Translations");
+
 		std::string gameLang = GetGameLanguage();
 		std::string settingsLang = Settings::Get<std::string>("sLanguage");
 
@@ -29,7 +35,7 @@ namespace Lang
 					LoadTranslations();
 				}
 			} else {
-				logger::warn("No langauge has been provided in settings file, despite manual override. Reverting to default behaviour.");
+				logger::warn("No language has been provided in settings file, despite manual override. Reverting to default behaviour.");
 				LoadTranslations();
 			}
 		} else {
@@ -38,7 +44,7 @@ namespace Lang
 
 		timer.stop();
 
-		logger::info("Translations finished initialising.  Time taken: {}μs / {}ms\n{}", timer.duration_μs(), timer.duration_ms(), std::string(100, '='));
+		logger::info("Translations finished initialising. Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
 	}
 
 	std::string GetLanguageFromFileName(std::string a_file)
@@ -65,9 +71,10 @@ namespace Lang
 	{
 		auto path = std::string(langDir + GetFileNameFromLanguage(a_language));
 
-		logger::debug("Looking for a translation file at '{}'", path);
+		logger::trace("Looking for a translation file at '{}'", path);
 
 		if (std::filesystem::exists(std::filesystem::path(path))) {
+			logger::debug("Found translation file at '{}'", path);
 			return path;
 		} else if (std::filesystem::exists(std::filesystem::path(langDir + "CapacityOverhaulNG_ENGLISH.toml"))) {
 			logger::warn("Could not find a language file at '{}' -> Reverting to default file 'CapacityOverhaulNG_ENGLISH.toml'", path);
@@ -95,12 +102,10 @@ namespace Lang
 		
 		toml::table result;
 
-		logger::debug("Attempting to open translation file '{}'", path);
-
 		try
 		{
 			result = toml::parse_file(path);
-			logger::debug("Translation file '{}' succesfully opened", path);
+			logger::debug("Succesfully opened translation file '{}'", path);
 		}
 		catch(const toml::parse_error& err)
 		{
@@ -130,23 +135,21 @@ namespace Lang
 		int tomlCount = (int)translations.as_table()->size();
 		int validCount = 0;
 
-		logger::debug("Attempting to read translation file '{}'", path);
+		logger::trace("Attempting to read translation file '{}'", path);
 
-		for (const auto& [key, val] : translationMap) {
-			logger::trace("Attempting to obtain value for key '{}' from translation file.", key);
-
+		for (auto& [key, val] : translationMap) {
 			if (auto tomlVal = translations[key].value<std::string>()) {
 				if (!tomlVal.has_value()) {
 					logger::error("Key '{}' does not have an assigned value in translation file '{}'", key, path);
-					translationMap.at(key) = key;
+					translationMap.at(key).SetText(key);
 				} else {
-					translationMap.at(key) = tomlVal.value();
+					logger::trace("Setting translation key '{}'", key);
+					translationMap.at(key).SetText(tomlVal.value());
 					validCount++;
-					logger::trace("Key '{}' succesfully read from translation file '{}' -> '{}' || '{}'", key, path, val, tomlVal.value());
 				}
 			} else {
 				logger::error("Could not find key '{}' in translation file '{}'", key, path);
-				translationMap.at(key) = key;
+				translationMap.at(key).SetText(key);
 			}
 		}
 
@@ -154,9 +157,13 @@ namespace Lang
 
 		logger::debug("Finished reading translation file '{}'", path);
 
-		logger::debug("Translation summary:\nRequired translations = {}\nProvided translations = {}\nAccepted translations = {}\nMissing translations = {}", mapCount, tomlCount, validCount, mapCount-validCount);
+		logger::debug("Translation summary:");
+		logger::debug("\t-> Required = {}", mapCount);
+		logger::debug("\t-> Provided = {}", tomlCount);
+		logger::debug("\t-> Accepted = {}", validCount);
+		logger::debug("\t-> Missing = {}", mapCount-validCount);
 
-		logger::debug("All valid translations loaded");
+		logger::debug("All valid translations loaded.");
 	}
 
 	void LoadPlaceholderStrings()
@@ -164,7 +171,7 @@ namespace Lang
 		logger::debug("Loading placeholder translations...");
 
 		for (const auto& [key, val] : translationMap) {
-			translationMap.at(key) = key;
+			translationMap.at(key).SetText(key);
 		}
 
 		currentLanguage = "N/A";
@@ -172,13 +179,17 @@ namespace Lang
 		logger::debug("Placeholder translations loaded");
 	}
 
-	const char* Get(const char* a_key)
+	TranslationVal Get(std::string a_key)
 	{
-		return translationMap.at(a_key).c_str();
-	}
-
-	std::string Get(std::string a_key)
-	{
-		return translationMap.at(a_key);
+		try
+		{
+			return translationMap.at(a_key);
+		}
+		catch(const std::out_of_range& err)
+		{
+			logger::error("{}", err.what());
+			logger::error("Attempted to find translation for key '{}', but was unsuccesful. Most likely cause is key not existing in internal translation map.", a_key);
+			return translationMap.at("$Error.KeyNotFound");
+		}
 	}
 }
