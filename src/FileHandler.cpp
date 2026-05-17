@@ -11,8 +11,6 @@ namespace FileHandler
 	{
 		std::vector<std::filesystem::path> tomlPaths = clib_util::distribution::get_configs_paths(tomlDir, "_CONG"sv, ".toml"sv);
 
-		LogFilePaths(tomlPaths);
-
 		return tomlPaths;
 	}
 
@@ -35,6 +33,10 @@ namespace FileHandler
 
 	bool TOML::LoadTOMLData()
 	{
+		clib_util::Timer timer;
+		timer.start();
+		logger::info("{:=^50}", "Loading TOML Config Files");
+
 		logger::info("Looking for TOML config files...");
 		auto tomlPaths = FindTOMLFiles();
 
@@ -43,23 +45,20 @@ namespace FileHandler
 			return false;
 		}
 
-		logger::info("Loading TOML config files...");
+		LogFilePaths(tomlPaths);
+
+		logger::info("Loading files...");
 		ReadAllTOML(tomlPaths);
 
-		logger::info("All TOML config files loaded!\n{}", std::string(100, '-'));
+		timer.stop();
+		logger::info("All TOML config files loaded. Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
 		return true;
 	}
 
 	void LogFilePaths(std::vector<std::filesystem::path> file_paths)
 	{
-		std::string pathsStr;
+		logger::debug("TOML config files located:");
 
-		for (auto path : file_paths) {
-			pathsStr.append(path.string());
-			pathsStr.append("\n");
-		}
-
-		if (pathsStr.size() == 0) { return; }
-		logger::debug("TOML config files located:\n{}{}", pathsStr, std::string(100, '-'));
+		for (auto path : file_paths) { logger::debug("{}", path.string()); }
 	}
 }

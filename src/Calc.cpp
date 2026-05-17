@@ -1,11 +1,6 @@
 #include "Calc.h"
 #include "Player.h"
 
-std::vector<float> Calc::Data::Plot::heatmapData;
-
-float Calc::Data::Plot::heatmapMax;
-float Calc::Data::Plot::heatmapMin;
-
 float Calc::StaminaWeightBonus(float a_stamVal, float a_rate, uint32_t a_pivot, uint32_t baseCarry, float maxGradStam)
 {
 	if (a_stamVal <= PlayerState::BaseStam) {return { 0.0f };}
@@ -99,60 +94,6 @@ float Calc::GradientAtLevel(float a_Lvl, float a_rate, uint32_t a_pivot, uint32_
 	float grad = grad1 / (2 * float(pow(grad2, 2)));
 
 	return { grad };
-}
-
-void Calc::ComputeHeatmapData()
-{
-	logger::debug("Computing heatmap data...");
-	clib_util::Timer timer;
-	timer.start();
-
-	int d = 0;
-
-	for (int l = 1; l <= Data::Plot::heatmapMaxLevel; l++) {
-		for (int s = 1; s <= Data::Plot::heatmapMaxStamina; s++) {
-			Data::Plot::heatmapData.push_back(static_cast<float>(Settings::Get<uint32_t>("uBaseCarryWeight")));
-
-			if (Settings::Get<bool>("bStaminaAffectsWeight")) {
-				PlayerState::UpdateStamAtMaxGrad();
-
-				Data::Plot::heatmapData.at(d) += (
-					StaminaWeightBonus(
-						s,
-						Settings::Get<float>("fStaminaWeightRate"),
-						Settings::Get<uint32_t>("uStaminaWeightPivot"),
-						Settings::Get<uint32_t>("uBaseCarryWeight"),
-						PlayerState::StamAtMaxGrad
-					)
-					* Settings::Get<float>("fStaminaWeightMod"));
-			}
-
-			if (Settings::Get<bool>("bLevelAffectsWeight")) {
-				PlayerState::UpdateLevelAtMaxGrad();
-
-				Data::Plot::heatmapData.at(d) += (
-					LevelWeightBonus(
-						l,
-						Settings::Get<float>("fLevelWeightRate"),
-						Settings::Get<uint32_t>("uLevelWeightPivot"),
-						Settings::Get<uint32_t>("uBaseCarryWeight"),
-						PlayerState::LevelAtMaxGrad
-					)
-					* Settings::Get<float>("fLevelWeightMod"));
-			}
-
-			if (Settings::Get<bool>("bRaceAffectsWeight")) {
-				Data::Plot::heatmapData.at(d) *= PlayerState::raceWeightMod;
-			}
-
-			ceil(Data::Plot::heatmapData.at(d));
-
-			d++;
-		}
-	}
-
-	timer.stop();
-	logger::debug("Finished computing heatmap data (len = {}). Time taken: {}μs / {}ms", Data::Plot::heatmapData.size(), timer.duration_μs(), timer.duration_ms());
 }
 
 float* Calc::GetStaminaPlotData(int x_max, float a_rate, uint32_t a_pivot, uint32_t baseCarry, int sampleRate)

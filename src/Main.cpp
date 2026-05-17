@@ -1,6 +1,7 @@
 #include "Papyrus.h"
 #include "Events.h"
 #include "MCP.h"
+#include "Logging.h"
 
 SKSEPluginLoad(const SKSE::LoadInterface *skse)
 {
@@ -26,13 +27,13 @@ SKSEPluginLoad(const SKSE::LoadInterface *skse)
 
     SKSE::Init(skse);
 
-    Utils::SetupLog();
-	SKSE::log::info("SKSEPluginLoad: Log Setup");
+    Logging::Init();
 
 	SKSE::GetMessagingInterface()->RegisterListener(Utils::MessageListener);
 
-    Papyrus::Register();
     Events::SinkEventHandlers();
+
+	Lang::InitTranslations();
 
 	GUI::MCP::Register();
 

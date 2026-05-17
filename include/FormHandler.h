@@ -30,6 +30,7 @@ class Forms final : public REX::Singleton<Forms>
 
 		struct Effect
 		{
+			const static RE::FormID UnspecifiedDamageFFAimed = 0xEA075;
 			static RE::Effect* debuffSpeed;
 			static RE::Effect* debuffStealth;
 			static RE::Effect* debuffStamDrain;
@@ -43,15 +44,15 @@ class Forms final : public REX::Singleton<Forms>
 		{
 			static RE::FormID CONG_CoinItem;
 
-			static RE::FormID VendorItemPotion;
-			static RE::FormID VendorItemPoison;
-			static RE::FormID VendorItemGem;
-			static RE::FormID ArmorShield;
+			const static RE::FormID VendorItemPotion = 0x8CDEC;
+			const static RE::FormID VendorItemPoison = 0x8CDED;
+			const static RE::FormID VendorItemGem = 0x914ED;
+			const static RE::FormID ArmorShield = 0x965B2;
 		};
 		
 		struct MISC
 		{
-			static RE::FormID BYOHMaterialLog;
+			const static RE::FormID BYOHMaterialLog = 0x300300E;
 		};
 
 		static void LoadFromGame();

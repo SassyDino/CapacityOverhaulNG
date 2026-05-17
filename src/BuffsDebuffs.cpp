@@ -16,16 +16,6 @@ bool Debuffs::Current::enableContainers = true;
 bool Debuffs::Current::containersEnabled = true;
 bool Debuffs::Current::enableInteract = true;
 bool Debuffs::Current::interactEnabled= true;
-/* 
-std::string_view Debuffs::pluginName = "CapacityOverhaulNG.esp";
-RE::TESDataHandler* Debuffs::dataHandler = RE::TESDataHandler::GetSingleton();
-
-RE::TESGlobal* Debuffs::speedGlobal = dataHandler->LookupForm(RE::FormID(0x804), pluginName)->As<RE::TESGlobal>();
-
-RE::SpellItem* Debuffs::weightSpell = dataHandler->LookupForm(RE::FormID(0x802), pluginName)->As<RE::SpellItem>();
-
-RE::Effect* Debuffs::speedEffect = weightSpell->GetEffectIsMatch(dataHandler->LookupForm(RE::FormID(0x803), pluginName)->As<RE::EffectSetting>(), Current::speedMod, 0, 0, 0);
- */
 
 //NOTE: Best first guess, inv weight isn't changing until after the containerchanged event has ran, so its calculating the debuff amount based on old weight?
 void Debuffs::CheckWeight()
@@ -37,9 +27,13 @@ void Debuffs::CheckWeight()
 
 	auto weightLimit = PlayerState::AsAV->GetActorValue(RE::ActorValue::kCarryWeight);
 	auto currentWeight = PlayerState::UpdateAndGetBurden();
-	float weightFloor = (float)Settings::Get<uint32_t>("uWeightDebuffFloor");
+	float weightFloor = 0.0f;
 
-	if (Settings::Get<bool>("bWeightDebuffFloorIsPercentage")) { weightFloor = weightLimit * (weightFloor / 100); }
+	if (Settings::Get<bool>("bWeightDebuffFloorIsPercentage")) {
+		weightFloor = weightLimit * Settings::Get<float>("fWeightDebuffFloorPct");
+	} else {
+		weightFloor = (float)Settings::Get<uint32_t>("uWeightDebuffFloorConst");
+	}
 
 	logger::debug("Inv Weight: {} | Weight Limit: {} | Debuff floor: {}", currentWeight, weightLimit, weightFloor);
 
@@ -80,7 +74,7 @@ void Debuffs::RefreshDebuffSpell()
 
 void Debuffs::EnableWeightEffects()
 {
-	logger::trace("Enabling Weight Effects");
+	logger::debug("Enabling Weight Effects...");
 	RE::DebugNotification("The weight of your inventory is beginning to hinder you.");
 
 	if (Settings::Get<bool>("bWeightAffectsSpeed")) { EnableSpellMGEF(Forms::Global::debuffSpeed); }
@@ -96,7 +90,7 @@ void Debuffs::EnableWeightEffects()
 
 void Debuffs::DisableWeightEffects()
 {
-	logger::trace("Disabling Weight Effects");
+	logger::debug("Disabling Weight Effects...");
 	RE::DebugNotification("The weight of your inventory is no longer a burden.");
 
 	if (Settings::Get<bool>("bWeightAffectsSpeed")) { DisableSpellMGEF(Forms::Global::debuffSpeed); }
@@ -110,15 +104,15 @@ void Debuffs::DisableWeightEffects()
 	RefreshDebuffSpell();
 }
 
-void Debuffs::ModifyWeightEffects(float a_debuffAmount)
+void Debuffs::ModifyWeightEffects(float a_debuffScale)
 {
-	logger::trace("Modifying Weight Effects -> Base Debuff = {}%", a_debuffAmount);
-	if (Settings::Get<bool>("bWeightAffectsSpeed")) { ModifyMoveSpeedMGEF(a_debuffAmount); }
-	if (Settings::Get<bool>("bWeightAffectsStealth")) { ModifyStealthMGEF(a_debuffAmount); }
-	if (Settings::Get<bool>("bWeightAffectsStamDrain")) { ModifyStamDrainMGEF(a_debuffAmount); }
-	if (Settings::Get<bool>("bWeightAffectsStamRegen")) { ModifyStamRegenMGEF(a_debuffAmount); }
-	//if (Settings::Get<bool>("bWeightAffectsWeapSpeed")) { ModifyWeapSpeedMGEF(a_debuffAmount); }
-	if (Settings::Get<bool>("bWeightAffectsAttackDmg")) { ModifyAttackDmgMGEF(a_debuffAmount); }
+	logger::trace("Modifying Weight Effects -> Base Debuff = {:.2f}%", a_debuffScale);
+	if (Settings::Get<bool>("bWeightAffectsSpeed")) { ModifyMoveSpeedMGEF(a_debuffScale); }
+	if (Settings::Get<bool>("bWeightAffectsStealth")) { ModifyStealthMGEF(a_debuffScale); }
+	if (Settings::Get<bool>("bWeightAffectsStamDrain")) { ModifyStamDrainMGEF(a_debuffScale); }
+	if (Settings::Get<bool>("bWeightAffectsStamRegen")) { ModifyStamRegenMGEF(a_debuffScale); }
+	//if (Settings::Get<bool>("bWeightAffectsWeapSpeed")) { ModifyWeapSpeedMGEF(a_debuffScale); }
+	if (Settings::Get<bool>("bWeightAffectsAttackDmg")) { ModifyAttackDmgMGEF(a_debuffScale); }
 
 	RefreshDebuffSpell();
 }
@@ -135,60 +129,60 @@ void Debuffs::DisableSpellMGEF(RE::TESGlobal* a_global)
 	//logger::trace("Disabling MGEF: '{}'", a_global->GetFormEditorID());
 }
 
-void Debuffs::ModifyMoveSpeedMGEF(float a_debuffAmount)
+void Debuffs::ModifyMoveSpeedMGEF(float a_debuffScale)
 {
-	auto maxDebuff = Settings::Get<uint32_t>("uSpeedDebuffMax");
-	auto debuffMagnitude = (a_debuffAmount * ((float)maxDebuff)) / 100;
+	auto maxDebuff = Settings::Get<float>("fSpeedDebuffMax");
+	auto debuffMagnitude = (a_debuffScale * maxDebuff) / 100;
 
-	logger::trace("Speed Debuff = -{}%% Speed", debuffMagnitude);
+	logger::trace("Speed Debuff = -{:.2f}% Speed", debuffMagnitude);
 
 	if (debuffMagnitude >= 100) { debuffMagnitude = 99; }
 	Forms::Effect::debuffSpeed->effectItem.magnitude = debuffMagnitude;
 }
 
-void Debuffs::ModifyStealthMGEF(float a_debuffAmount)
+void Debuffs::ModifyStealthMGEF(float a_debuffScale)
 {
-	auto maxDebuff = Settings::Get<uint32_t>("uStealthDebuffMax");
-	auto debuffPercent = (a_debuffAmount * maxDebuff) / 100;
+	auto maxDebuff = Settings::Get<float>("fStealthDebuffMax");
+	auto debuffPercent = (a_debuffScale * maxDebuff) / 100;
 	auto debuffMagnitude = debuffPercent / 100;
 
-	logger::trace("Stealth Debuff = +{}% Noise ({})", debuffPercent, debuffMagnitude);
+	logger::trace("Stealth Debuff = +{:.2f}% Noise ({:.2f})", debuffPercent, debuffMagnitude);
 
 	Forms::Global::debuffStealthDisplay->value = debuffPercent;
 	Forms::Effect::debuffStealth->effectItem.magnitude = debuffMagnitude;
 }
 
-void Debuffs::ModifyStamDrainMGEF(float a_debuffAmount)
+void Debuffs::ModifyStamDrainMGEF(float a_debuffScale)
 {
-	auto maxDebuff = Settings::Get<uint32_t>("uStamDrainDebuffMax");
-	auto debuffPercent = (a_debuffAmount * maxDebuff) / 100;
+	auto maxDebuff = Settings::Get<float>("fStamDrainDebuffMax");
+	auto debuffPercent = (a_debuffScale * maxDebuff) / 100;
 	auto baseStaminaDrain = 7; //NOTE: I'm pretty sure the actual in-game value will be different, depending on armour equipped. But, can't figure out how to find that value anywhere, so this will have to do for now.
 	auto debuffMagnitude = baseStaminaDrain * (debuffPercent / 100);
 
-	logger::trace("Stam Drain Debuff = +{}%% Cost (+{}SP/s)", debuffPercent, debuffMagnitude);
+	logger::trace("Stam Drain Debuff = +{:.2f}% Cost (+{:.2f}SP/s)", debuffPercent, debuffMagnitude);
 
 	Forms::Global::debuffStamDrainDisplay->value = debuffPercent;
 	Forms::Effect::debuffStamDrain->effectItem.magnitude = debuffMagnitude;
 }
 
-void Debuffs::ModifyStamRegenMGEF(float a_debuffAmount)
+void Debuffs::ModifyStamRegenMGEF(float a_debuffScale)
 {
-	auto maxDebuff = Settings::Get<uint32_t>("uStamRegenDebuffMax");
-	auto debuffMagnitude = (a_debuffAmount * (float)maxDebuff) / 100;
+	auto maxDebuff = Settings::Get<float>("fStamRegenDebuffMax");
+	auto debuffMagnitude = (a_debuffScale * maxDebuff) / 100;
 
-	logger::trace("Stam Regen Debuff = -{}%% SP/s", debuffMagnitude);
+	logger::trace("Stam Regen Debuff = -{:.2f}% SP/s", debuffMagnitude);
 
 	Forms::Effect::debuffStamRegen->effectItem.magnitude = debuffMagnitude;
 }
 
-void Debuffs::ModifyWeapSpeedMGEF(float a_debuffAmount)
+void Debuffs::ModifyWeapSpeedMGEF(float a_debuffScale)
 {
 	//NOTE: Ok, so cause of how the game handles WeaponSpeedMult, this could potentially break at any point without anyway of really knowing beforehand.
 	//? So I'm gonna try and build in a couple of weird workarounds, but I probably need to add a note on the mod page that this may break.
 	//TODO: Yeah so I'm gonna sideline this for the time being, one or two playtests and it's already looking to be an absolute nightmare to get
 	//TODO  this code working consistently. So will take effect off of debuff spell in ESP for now.
-	auto maxDebuff = Settings::Get<uint32_t>("uWeapSpeedDebuffMax");
-	auto debuffPercent = (a_debuffAmount * maxDebuff) / 100;
+	auto maxDebuff = Settings::Get<float>("fWeapSpeedDebuffMax");
+	auto debuffPercent = (a_debuffScale * maxDebuff) / 100;
 
 	auto debuffMagnitude = debuffPercent / 100;
 	auto debuffResult = 1 - debuffMagnitude;
@@ -224,13 +218,13 @@ void Debuffs::ModifyWeapSpeedMGEF(float a_debuffAmount)
 	Forms::Global::debuffWeapSpeedDisplay->value = debuffPercent;
 }
 
-void Debuffs::ModifyAttackDmgMGEF(float a_debuffAmount)
+void Debuffs::ModifyAttackDmgMGEF(float a_debuffScale)
 {
-	auto maxDebuff = Settings::Get<uint32_t>("uAttackDmgDebuffMax");
-	auto debuffPercent = (a_debuffAmount * ((float)maxDebuff)) / 100;
+	auto maxDebuff = Settings::Get<float>("fAttackDmgDebuffMax");
+	auto debuffPercent = (a_debuffScale * maxDebuff) / 100;
 	auto debuffMagnitude = debuffPercent / 100;
 
-	logger::trace("Attack Damage Debuff = -{}%", debuffPercent);
+	logger::trace("Attack Damage Debuff = -{:.2f}%", debuffPercent);
 
 	Forms::Global::debuffAttackDmgDisplay->value = debuffPercent;
 	Forms::Effect::debuffAttackDmg->effectItem.magnitude = debuffMagnitude;

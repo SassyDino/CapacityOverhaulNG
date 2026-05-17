@@ -28,21 +28,26 @@ RE::Effect* Forms::Effect::debuffAttackDmg;
 
 RE::FormID Forms::KYWD::CONG_CoinItem;
 
-RE::FormID Forms::KYWD::VendorItemPotion = 0x8CDEC;
-RE::FormID Forms::KYWD::VendorItemPoison = 0x8CDED;
-RE::FormID Forms::KYWD::VendorItemGem = 0x914ED;
-RE::FormID Forms::KYWD::ArmorShield = 0x965B2;
-
-RE::FormID Forms::MISC::BYOHMaterialLog = 0x300300E;
-
 void Forms::LoadFromGame()
 {
+	clib_util::Timer timer;
+	logger::info("{:=^50}", "Locating Forms");
+
 	dataHandler = RE::TESDataHandler::GetSingleton();
+
+	if (!dataHandler) {
+		logger::error("TESDataHandler not found -> Unable to locate forms. This mod will likely break.");
+		return;
+	}
+	
+	timer.start();
+
+	logger::debug("TESDataHandler found ---> Locating forms...");
+
 	rawModIndex = dataHandler->GetLoadedLightModIndex(pluginName);
 	uint32_t tempIndex = (rawModIndex.value() + 0xFE000) * 0x1000;
 	modIndex = {tempIndex, tempIndex + 0xFFF};
-	logger::debug("Capacity Overhaul NG modIndex Range = 0x{:X} - 0x{:X}", modIndex.first, modIndex.second);
-	logger::debug("TESDataHandler found ---> Locating forms...");
+	logger::trace("Capacity Overhaul NG modIndex Range = 0x{:X} - 0x{:X}", modIndex.first, modIndex.second);
 
 	Spell::weightDebuff = dataHandler->LookupForm(RE::FormID(0x802), pluginName)->As<RE::SpellItem>();
 
@@ -67,7 +72,8 @@ void Forms::LoadFromGame()
 
 	KYWD::CONG_CoinItem = dataHandler->LookupFormID(0x801, pluginName);
 
-	logger::debug("All forms located.\n{}", std::string(100, '='));
+	timer.stop();
+	logger::debug("All forms located. Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
 }
 
 bool Forms::IsCONGForm(uint32_t a_formID)

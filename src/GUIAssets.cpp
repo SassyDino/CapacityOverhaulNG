@@ -42,8 +42,10 @@ namespace GUI
 			return;
 		}
 
-		//NOTE: Loading textures here rather than in the actual widget function (and making use of the caching) because otherwise the game freezes for a brief moment when opening the CONG MCP while it loads the textures for the first time.
-		logger::info("Loading textures...");
+		//NOTE: I'm loading textures here rather than in the actual widget function (and making use of the caching) because otherwise the game freezes for a brief moment when opening the CONG MCP while it loads the textures for the first time.
+		clib_util::Timer timer;
+		timer.start();
+		logger::info("{:=^50}", "Loading Textures");
 
 		CheckboxEmpty = SKSEMF::LoadTexture(GetTexPath("Checkbox_Empty"));
 		CheckboxFilled = SKSEMF::LoadTexture(GetTexPath("Checkbox_Filled"));
@@ -63,6 +65,7 @@ namespace GUI
 		ScrollbarRight = SKSEMF::LoadTexture(GetTexPath("Scrollbar_Arrow_Right"));
 		ScrollbarSelector = SKSEMF::LoadTexture(GetTexPath("Scrollbar_Selector"));
 
-		logger::info("Textures loaded!\n{}", std::string(100, '='));
+		timer.stop();
+		logger::info("Textures loaded! Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
 	}
 }

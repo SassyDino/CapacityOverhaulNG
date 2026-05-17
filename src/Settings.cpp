@@ -1,5 +1,3 @@
-#include <ClibUtil/timer.hpp>
-
 const char *Settings::defaultPath = "Data/SKSE/Plugins/CapacityOverhaulNG/default_settings.ini";
 const char *Settings::userPath = "Data/SKSE/Plugins/CapacityOverhaulNG.ini";
 
@@ -11,17 +9,17 @@ void Settings::Init()
     //constexpr auto mcmPath = L"Data/MCM/Settings/CapacityOverhaulNG.ini";
     bool validSettings;
 	clib_util::Timer timer;
-
-    logger::info("Initialising settings");
 	timer.start();
 
-    logger::info("Loading default settings...");
-    Load(defaultPath);
-    logger::info("...done");
+    logger::info("{:=^50}", "Initialising settings");
 
-    logger::info("Loading user settings...");
+    logger::debug("Loading default settings...");
+    Load(defaultPath);
+    logger::debug("...done");
+
+    logger::debug("Loading user settings...");
     Load(userPath);
-    logger::info("...done");
+    logger::debug("...done");
 
     logger::info("Validating settings...");
     validSettings = Validate();
@@ -30,16 +28,15 @@ void Settings::Init()
 
     if (validSettings == true) {
         logger::info("...settings validated.");
-        logger::info("Initialisation success! Time taken: {}μs / {}ms\n{}", timer.duration_μs(), timer.duration_ms(), std::string(100, '='));
+        logger::info("Initialisation success! Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
     } else {
         logger::info("...failed to validate settings.");
-        logger::info("Initialisation complete. Mod may not function as intended. Time taken: {}μs / {}ms\n{}", timer.duration_μs(), timer.duration_ms(), std::string(100, '='));
+        logger::info("Initialisation complete. Mod may not function as intended. Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
         auto logErrorBox = std::format("Capacity Overhaul NG: An error occured while validating this mod's settings. This error suggests that an incorrect or invalid value has been provided in the mod's INI file or MCM. Continuing without rectifying this issue may result in unexpected mod behaviour. Refer to the log file for more information (My Games/Skyrim Special Edition/SKSE/CapacityOverhaulNG.log).");
         RE::DebugMessageBox(logErrorBox.c_str());
     }
 
 	settingsLoaded = true;
-	Utils::UpdateModules();
 }
 
 bool Settings::Validate()

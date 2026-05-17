@@ -32,9 +32,6 @@ namespace GUI
 					const std::string nameKey;
 			};
 
-			// {1.0f, HEX_COL32(0xA1B2C3D4)}
-
-			//NOTE: I've tried making these const (cause realistically they could be), but then I can't seem to assign them to another non-const variable later on. So un-consting for now, maybe come back to this
 			static inline Scheme gClassic = Scheme("$MCP.Widgets.Colour.Gradient.Classic", 
 				{
 					{0.0f, HEX_COL32(0xFF0000FF)},
@@ -79,7 +76,38 @@ namespace GUI
 				}
 			);
 
-			static inline std::array<Scheme*, 5> availableSchemes = {&gClassic, &gRainbow, &gViridis, &gMagma, &gGreyscale};
+			static inline Scheme gJet = Scheme("$MCP.Widgets.Colour.Gradient.Jet", 
+				{
+					{0.0f, HEX_COL32(0x00007FFF)},
+					{0.125f, HEX_COL32(0x0000FFFF)},
+					{0.25f, HEX_COL32(0x007FFFFF)},
+					{0.375f, HEX_COL32(0x00FFFFFF)},
+					{0.5f, HEX_COL32(0x7FFF7FFF)},
+					{0.625f, HEX_COL32(0xFFFF00FF)},
+					{0.750f, HEX_COL32(0xFF7F00FF)},
+					{0.875f, HEX_COL32(0xFF0000FF)},
+					{1.0f, HEX_COL32(0x7F0000FF)}
+				}
+			);
+
+			static inline Scheme gPastel = Scheme("$MCP.Widgets.Colour.Gradient.Pastel", 
+				{
+					{0.0f, HEX_COL32(0xC278F0FF)},
+					{0.091f, HEX_COL32(0xCE95F3FF)},
+					{0.182f, HEX_COL32(0xDDA5C5FF)},
+					{0.273f, HEX_COL32(0xE8B2A5FF)},
+					{0.364f, HEX_COL32(0xEFC399FF)},
+					{0.455f, HEX_COL32(0xF3D796FF)},
+					{0.546f, HEX_COL32(0xF5E997FF)},
+					{0.637f, HEX_COL32(0xF2F3A2FF)},
+					{0.728f, HEX_COL32(0xE3F1B9FF)},
+					{0.819f, HEX_COL32(0xC5E2DAFF)},
+					{0.91f, HEX_COL32(0x98CCF4FF)},
+					{1.0f, HEX_COL32(0x6EB5ECFF)}
+				}
+			);
+
+			static inline std::array<Scheme*, 7> availableSchemes = {&gClassic, &gRainbow, &gViridis, &gMagma, &gGreyscale, &gJet, &gPastel};
 
 			static void HexToRGBA(ImU32 a_col, uint8_t& r, uint8_t& g, uint8_t& b, uint8_t& a);
 

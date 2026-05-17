@@ -1,0 +1,16 @@
+#pragma once
+
+namespace Version
+{
+	inline constexpr std::size_t MAJOR = @PROJECT_VERSION_MAJOR@;
+	inline constexpr std::size_t MINOR = @PROJECT_VERSION_MINOR@;
+	inline constexpr std::size_t PATCH = @PROJECT_VERSION_PATCH@;
+
+	inline constexpr auto NAME = "@PROJECT_NAME_STR@";
+	inline constexpr auto AUTHOR = "@PROJECT_AUTHOR@";
+
+	inline constexpr auto DATE = __DATE__;
+	inline constexpr auto TIME = __TIME__;
+
+	inline constexpr auto OPT = "@OPT_LEVEL@";
+}

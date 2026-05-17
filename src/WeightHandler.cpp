@@ -67,10 +67,13 @@ namespace WeightHandler
 
     void UpdateWeightLimit()
     {
-        float playerWeightLimit = CalculateWeightLimit();
-
-        PlayerState::AsAV->SetBaseActorValue(RE::ActorValue::kCarryWeight, playerWeightLimit);
-
+		if (Settings::Get<bool>("bVanillaWeightLimit")) {
+			float playerWeightLimit = CalculateWeightLimit();
+        	PlayerState::AsAV->SetBaseActorValue(RE::ActorValue::kCarryWeight, playerWeightLimit);
+		} else {
+			logger::debug("Setting 'bVanillaWeightLimit' is set to true ---> Skipping carry weight changes.");
+		}
+		
 		Debuffs::CheckWeight();
     }
 }

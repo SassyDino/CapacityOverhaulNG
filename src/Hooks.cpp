@@ -85,6 +85,8 @@ namespace Hooks
 
 	void Install()
 	{
+		logger::info("{:=^50}", "Installing Hooks");
+
 		auto& trampoline = SKSE::GetTrampoline();
 		constexpr size_t size_per_hook = 14;
 		trampoline.create(size_per_hook * 1);

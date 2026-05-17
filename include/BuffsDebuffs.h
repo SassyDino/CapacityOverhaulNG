@@ -30,17 +30,17 @@ struct Debuffs
 
 	static void EnableWeightEffects();
 	static void DisableWeightEffects();
-	static void ModifyWeightEffects(float a_debuffAmount);
+	static void ModifyWeightEffects(float a_debuffScale);
 
 	static void EnableSpellMGEF(RE::TESGlobal* a_global);
 	static void DisableSpellMGEF(RE::TESGlobal* a_global);
 
-	static void ModifyMoveSpeedMGEF(float a_debuffAmount);
-	static void ModifyStealthMGEF(float a_debuffAmount);
-	static void ModifyStamRegenMGEF(float a_debuffAmount);
-	static void ModifyStamDrainMGEF(float a_debuffAmount);
-	static void ModifyWeapSpeedMGEF(float a_debuffAmount);
-	static void ModifyAttackDmgMGEF(float a_debuffAmount);
+	static void ModifyMoveSpeedMGEF(float a_debuffScale);
+	static void ModifyStealthMGEF(float a_debuffScale);
+	static void ModifyStamRegenMGEF(float a_debuffScale);
+	static void ModifyStamDrainMGEF(float a_debuffScale);
+	static void ModifyWeapSpeedMGEF(float a_debuffScale);
+	static void ModifyAttackDmgMGEF(float a_debuffScale);
 
 	static void CapacityEffects();
 	static void QueueEnableCapacityDebuffs();

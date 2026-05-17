@@ -55,9 +55,6 @@ namespace GUI
 		logger::trace("Generating gradient LUT for scheme '{}'", a_gradient->GetName());
 		
 		//logger::trace("Scheme stops: 0x{:X}, 0x{:X}, 0x{:X}, 0x{:X}, 0x{:X}", a_gradient.scheme.at(0).col, a_gradient.scheme.at(1).col, a_gradient.scheme.at(2).col, a_gradient.scheme.at(3).col, a_gradient.scheme.at(4).col);
-		uint8_t tr, tg, tb, ta;
-		HexToRGBA(HEX_COL32(0xA1B2C3FF), tr, tg, tb, ta);
-		
 
 		if (!LUT.empty()) {
 			for (int i = 0; i < 256; i++) {
@@ -86,7 +83,7 @@ namespace GUI
 	{
 		//TODO: Add a setting/global val that determines which gradient to use, and only default to classic if none is set.
 		if (LUT.empty() || newLUTRequested) {
-			logger::debug("New LUT requested...");
+			logger::trace("New LUT requested...");
 			if (newLUT == nullptr) { newLUT = &gClassic; }
 
 			GenerateLUT(newLUT);
@@ -94,7 +91,7 @@ namespace GUI
 		}
 
 		if (a_val > 1.0f || a_val < 0.0f) {
-			logger::warn("Value of '{}' provided to GetLUTVal is outside of bounds: [ 0.0f < val < 1.0f ] -> Clamping value", a_val);
+			logger::warn("Value of '{}' provided to GetLUTVal is outside of bounds: [ 0.0f < val < 1.0f ] ---> Clamping value...", a_val);
 			a_val = std::clamp(a_val, 0.0f, 1.0f);
 		}
 

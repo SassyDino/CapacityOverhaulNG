@@ -73,23 +73,26 @@ namespace CapacityHandler
 	void Bonus::ParseAllTOMLFiles()
 	{
 		clib_util::Timer timer;
+
 		bool tomlFilesFound = FileHandler::TOML::LoadTOMLData();
+
+		logger::info("{:=^50}", "Parsing TOML Config Files");
 
 		if (!tomlFilesFound) {
 			logger::info("No TOML config files to parse...");
 			return;
-		} else {
-			logger::info("Parsing TOML files...");
-			timer.start();
 		}
+		
+		timer.start();
 
 		for (const auto& [path, data] : FileHandler::TOML::tomlDataMap){
 			logger::debug("Parsing TOML file: '{}'", path.string());
 			ParseItemsFromFile(path.string(), data);
+			logger::debug("{}", std::string(80, '-'));
 		}
 
 		timer.stop();
-		logger::info("All TOML config files parsed successfully! Time taken: {}μs / {}ms\n{}", timer.duration_μs(), timer.duration_ms(), std::string(100, '='));
+		logger::info("All TOML config files parsed successfully! Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
 	}
 
 	void Bonus::ParseItemsFromFile(std::string modPath, toml::table tomlFile)
