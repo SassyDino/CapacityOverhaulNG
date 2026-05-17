@@ -10,14 +10,11 @@ namespace MCPDraw = MCP_API::ImDrawListManager;
 
 namespace GUI::MCP
 {
-	const float borderThick = 1.0f;
-	const float borderThin = 1.0f;
-	
-	bool CustomHeader(const char *text)
+	bool CustomHeader(std::string a_key)
 	{
-		if (!Settings::Get<bool>("bCustomMenuStyling")) { return MCP_API::CollapsingHeader(text, SKSEMenuFramework::ImGuiTreeNodeFlags_DefaultOpen); }
+		if (!Settings::Get<bool>("bCustomMenuStyling")) { return MCP_API::CollapsingHeader(Lang::Get(a_key), SKSEMenuFramework::ImGuiTreeNodeFlags_DefaultOpen); }
 
-		bool* pOpen = MCP_API::ImGuiStorageManger::GetBoolRef(MCP_API::GetStateStorage(), MCP_API::GetID(text), true);
+		bool* pOpen = MCP_API::ImGuiStorageManger::GetBoolRef(MCP_API::GetStateStorage(), MCP_API::GetID(a_key.c_str()), true);
 
 		ImVec2 p0;
 		ImDrawList *drawList = MCP_API::GetWindowDrawList();
@@ -34,7 +31,7 @@ namespace GUI::MCP
 		auto bp1 = ImVec2(headerBox.z, headerBox.w);
 
 		MCP_API::SetCursorScreenPos(bp0);
-		auto textBox = AlignedText(text, bp0, bp1, CentreHAlign, CentreVAlign);
+		auto textBox = AlignedText(Lang::Get(a_key), bp0, bp1, CentreHAlign, CentreVAlign);
 		auto tp0 = ImVec2(textBox.x, textBox.y);
 		auto tp1 = ImVec2(textBox.z, textBox.w);
 
@@ -123,10 +120,10 @@ namespace GUI::MCP
 		MCPDraw::AddImage(drawList, (is_Open ? Assets::HeaderArrowDown : Assets::HeaderArrowUpRight), arrowR_p0, arrowR_p1, ImVec2(), ImVec2(1,1), GUI::Colour::separatorLine);
 	}
 
-	void CustomSeparator(const char *text)
+	void CustomSeparator(std::string a_key)
 	{
 		if (!Settings::Get<bool>("bCustomMenuStyling")) {
-			MCP_API::SeparatorText(text);
+			MCP_API::SeparatorText(Lang::Get(a_key));
 			return;
 		}
 
@@ -157,7 +154,7 @@ namespace GUI::MCP
 		MCP_API::SameLine();
 		MCP_API::GetCursorScreenPos(&p0);
 
-		MCP_API::Text(text);
+		MCP_API::Text(Lang::Get(a_key));
 		MCP_API::SameLine();
 
 		PopCustomText();
@@ -220,10 +217,38 @@ namespace GUI::MCP
 		MCP_API::NewLine();
 	}
 
-	void CustomCheckbox(const char *text, bool *a_toggle)
+	void CustomHelpDialogueBox(std::string a_key)
 	{
+		ImDrawList *drawList = MCP_API::GetForegroundDrawList();
+		auto box = DrawHelpBox(drawList);
+		float gapY = 1.0;
+		float gapX = 3.0;
+		float wrapWidth = (box.p1.x - box.p0.x) - (gapX * 2);
+
+		MCPDraw::AddText(
+			drawList,
+			MCP_API::GetFont(),
+			MCP_API::GetFont()->FontSize*0.85f,
+			{box.p0.x+gapX, box.p0.y+gapY},
+			HEX_COL32(0xFFFFFFFF),
+			GetWidgetHelpText(a_key).c_str(),
+			(const char*)nullptr,
+			wrapWidth
+		);
+	}
+
+	void CustomHelpDialogueBoxWidget(std::string a_key)
+	{
+		if (MCP_API::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled)) {
+			CustomHelpDialogueBox(a_key);
+		}
+	}
+
+	void CustomCheckbox(std::string a_key, bool *a_toggle, bool isEnabled)
+	{
+		if (!isEnabled) { MCP_API::BeginDisabled(); }
 		if (!Settings::Get<bool>("bCustomMenuStyling")) {
-			MCP_API::Checkbox(text, a_toggle);
+			MCP_API::Checkbox(Lang::Get(a_key), a_toggle);
 			return;
 		}
 
@@ -238,20 +263,23 @@ namespace GUI::MCP
 			MCP_API::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2());
 
 			//Note: Might be worth changing the size (ImVec2) to something adjustable, in case I implement some sort of dynamic scaling etc.
-			if (MCP_API::ImageButton(text, (*a_toggle ? Assets::CheckboxFilled : Assets::CheckboxEmpty), ImVec2(40,40), ImVec2(), ImVec2(1,1), ImVec4(), ImVec4(1,1,1,1))) {
+			if (MCP_API::ImageButton(a_key.c_str(), (*a_toggle ? Assets::CheckboxFilled : Assets::CheckboxEmpty), ImVec2(40,40), ImVec2(), ImVec2(1,1), ImVec4(), ImVec4(1,1,1,1))) {
 				*a_toggle = !*a_toggle;
 			}
 
 			MCP_API::SameLine();
-			MCP_API::Text(text);
+			MCP_API::Text(Lang::Get(a_key));
 
 			MCP_API::PopStyleColor(5);
 			MCP_API::PopStyleVar(1);
 		}
 		MCP_API::EndGroup();
+
+		CustomHelpDialogueBoxWidget(a_key);
+		if (!isEnabled) { MCP_API::EndDisabled(); }
 	}
 
-	void CustomSlider(const char *text, float* a_setting, float a_minValue, float a_maxValue) {
+	void CustomSlider(std::string a_key, float* a_setting, float a_minValue, float a_maxValue, bool isEnabled) {
 		ImVec2 p0;
 		MCP_API::GetCursorScreenPos(&p0);
 		ImDrawList *drawList = MCP_API::GetWindowDrawList();
@@ -270,12 +298,26 @@ namespace GUI::MCP
 
 		MCP_API::Dummy(ImVec2(450, 60));
 		MCP_API::SameLine();
-		MCP_API::Text(text);
+		MCP_API::Text(Lang::Get(a_key));
 	}
 
-	void CustomIntSlider(const char *text) {}
+	void CustomSliderInt(std::string a_key, uint32_t* a_setting, int a_minValue, int a_maxValue, bool isEnabled)
+	{
+		if (!isEnabled) { MCP_API::BeginDisabled(); }
+		MCP_API::SliderInt(Lang::Get(a_key), (int*)a_setting, a_minValue, a_maxValue);
+		if (!isEnabled) { MCP_API::EndDisabled(); }
 
-	void CustomFloatSlider(const char *text) {}
+		CustomHelpDialogueBoxWidget(a_key);
+	}
+
+	void CustomSliderFloat(std::string a_key, float* a_setting, float a_minValue, float a_maxValue, bool isEnabled)
+	{
+		if (!isEnabled) { MCP_API::BeginDisabled(); }
+		MCP_API::SliderFloat(Lang::Get(a_key), a_setting, a_minValue, a_maxValue);
+		if (!isEnabled) { MCP_API::EndDisabled(); }
+
+		CustomHelpDialogueBoxWidget(a_key);
+	}
 
 	ImVec4 DrawSliderTrack(ImGuiMCP::ImDrawList* drawList, float scale, SKSEMenuFramework::ImVec2 p0)
 	{

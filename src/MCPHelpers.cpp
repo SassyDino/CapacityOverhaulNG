@@ -76,14 +76,59 @@ namespace GUI::MCP
 		ImVec2 textSize;
 		MCP_API::CalcTextSize(&textSize, text, NULL, false, 0.0f);
 
-		MCP_API::SetCursorScreenPos(ImVec2(a_p0.x-(textSize.x*0.5), a_p0.y-(textSize.y*0.5)));
+		MCP_API::SetCursorScreenPos(ImVec2(a_p0.x-(textSize.x*0.5f), a_p0.y-(textSize.y*0.5f)));
 		MCP_API::Text(text);
 	}
 
+/* 
 	void VerticalText(ImDrawList* draw_list, const char *text, SKSEMenuFramework::ImVec2* a_p0)
 	{
 		//TODO: try and figure out a way of doing this
 		return;
+	}
+*/
+
+	std::string GetWidgetHelpText(std::string a_key)
+	{
+		auto helpText = Lang::Get(std::string(a_key + ".HelpMarker"s));
+		return Lang::Get(std::string(a_key + ".HelpMarker"s));
+	}
+
+	VecBounds2 DrawHelpBox(ImDrawList *drawList)
+	{
+		float boxHeight = 60.0f;
+
+		ImU32 borderCol = MCP_API::GetColorU32(ImGuiCol_Border);
+		ImU32 bgCol = MCP_API::GetColorU32(ImGuiCol_WindowBg);
+
+		auto borderSize = MCP_API::GetStyle()->WindowBorderSize;
+		auto borderSizeHalf = borderSize * 0.5f;
+
+		ImVec2 pCursor;
+		MCP_API::GetCursorScreenPos(&pCursor);
+
+		auto winW = MCP_API::GetWindowWidth();
+		auto winH = MCP_API::GetWindowHeight();
+
+		ImVec2 p0;
+		MCP_API::GetWindowPos(&p0);
+		ImVec2 p1 = {p0.x + winW, p0.y + winH};
+		
+		auto currentWin = MCP_API::GetCurrentWindow();
+		auto parentWin = currentWin->ParentWindow;
+
+		auto wp0 = parentWin->Pos;
+		auto parentWinSz = parentWin->Size;
+		ImVec2 wp1 = {wp0.x+parentWinSz.x, wp0.y+parentWinSz.y};
+
+		VecBounds2 textBox = {{p0.x+borderSize-1, wp1.y+borderSizeHalf}, {p1.x-borderSizeHalf, wp1.y+boxHeight+borderSizeHalf}};
+
+		MCPDraw::AddRectFilled(drawList, textBox.p0, textBox.p1, bgCol, 0.0f, NULL);
+		MCPDraw::AddRectFilled(drawList, {p0.x-1, textBox.p0.y}, {textBox.p0.x, textBox.p1.y+borderSize}, borderCol, 0.0f, NULL);
+		MCPDraw::AddRectFilled(drawList, {textBox.p1.x, textBox.p0.y}, {p1.x+borderSizeHalf, textBox.p1.y+borderSize}, borderCol, 0.0f, NULL);
+		MCPDraw::AddRectFilled(drawList, {textBox.p0.x, textBox.p1.y}, {textBox.p1.x, textBox.p1.y+borderSize}, borderCol, 0.0f, NULL);
+
+		return textBox;
 	}
 
 	void DrawHatchFill(ImDrawList *drawList, ImVec2 p0, ImVec2 p1)
@@ -119,7 +164,7 @@ namespace GUI::MCP
 				y_end = p0.y;
 			}
 
-			MCPDraw::AddLine(drawList, ImVec2(x_start, y_start), ImVec2(x_end, y_end), borderCol, borderThick);
+			MCPDraw::AddLine(drawList, ImVec2(x_start, y_start), ImVec2(x_end, y_end), borderCol, Layout::borderThin);
 		}
 	}
 
