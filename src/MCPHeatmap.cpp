@@ -2,8 +2,10 @@
 #include "MCPColour.h"
 #include "MCPStyle.h"
 #include "MCPHelpers.h"
+#include "MCPSettings.h"
 #include "MCP.h"
 #include "Calc.h"
+#include "Player.h"
 
 using namespace ImGuiMCP;
 namespace MCP_API = ImGuiMCP::ImGui;
@@ -19,20 +21,20 @@ namespace GUI::MCP
 		m_device->GetImmediateContext(&m_ctx);
 	}
 
-	void Heatmap::Update(const std::vector<float>& data)
+	void Heatmap::Update()
 	{
-		logger::debug("Updating heatmap with new data...");
+		logger::trace("Creating heatmap image with new data...");
 
 		//TODO: Probably need to handle these errors if they happen?
-		if (!m_device || !m_ctx || data.empty()) { return; }
+		if (!m_device || !m_ctx || m_data.empty()) { return; }
 
-		if (!m_texture || Calc::Data::Plot::heatmapMaxStamina != m_width || Calc::Data::Plot::heatmapMaxLevel != m_height) { CreateTexture(); }
+		if (!m_texture || m_maxStamina != m_width || m_maxLevel != m_height) { CreateTexture(); }
 
-		GeneratePixels(data);
+		GeneratePixels(m_data);
 
 		Upload();
 
-		logger::debug("Heatmap updated!");
+		logger::trace("Heatmap image created!");
 	}
 
 	ImTextureID Heatmap::GetTextureID() const
@@ -57,8 +59,8 @@ namespace GUI::MCP
 	{
 		Release();
 
-		m_width = Calc::Data::Plot::heatmapMaxStamina;
-		m_height = Calc::Data::Plot::heatmapMaxLevel;
+		m_width = m_maxStamina;
+		m_height = m_maxLevel;
 
 		m_padWidth = m_width + 2;
 		m_padHeight = m_height + 2;
@@ -83,7 +85,7 @@ namespace GUI::MCP
 
 	void Heatmap::GeneratePixels(const std::vector<float>& data)
 	{
-		logger::debug("Generating pixels...");
+		logger::trace("Generating pixels...");
 		clib_util::Timer timer;
 		timer.start();
 
@@ -91,11 +93,11 @@ namespace GUI::MCP
 		m_padHeight = m_height + 2;
 		m_pixels.resize(m_padWidth * m_padHeight * 4);
 
-		Calc::Data::Plot::heatmapMin = *std::min_element(data.begin(), data.end());
-		Calc::Data::Plot::heatmapMax = *std::max_element(data.begin(), data.end());
+		m_lowestVal = *std::min_element(data.begin(), data.end());
+		m_highestVal = *std::max_element(data.begin(), data.end());
 
-		if (Selections::heatmapConstrainGradient && (Calc::Data::Plot::heatmapMax > Selections::heatmapConstraintVal)) {
-			Calc::Data::Plot::heatmapMax = Selections::heatmapConstraintVal;
+		if (Selections::heatmapConstrainGradient && (m_highestVal > Selections::heatmapConstraintVal)) {
+			m_highestVal = Selections::heatmapConstraintVal;
 		}
 
 		auto SetPixel = [&](int x, int y, uint8_t r, uint8_t g, uint8_t b, uint8_t a)
@@ -115,7 +117,7 @@ namespace GUI::MCP
 					dataVal = Selections::heatmapConstraintVal;
 				}
 
-				float val = (dataVal - Calc::Data::Plot::heatmapMin) / (Calc::Data::Plot::heatmapMax - Calc::Data::Plot::heatmapMin);
+				float val = (dataVal - m_lowestVal) / (m_highestVal - m_lowestVal);
 
 				ImU32 hexCol = Colour::Gradient::GetLUTVal(val);
 				uint8_t r, g, b, a;
@@ -154,12 +156,12 @@ namespace GUI::MCP
 		}
 
 		timer.stop();
-		logger::debug("Pixels generated! Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
+		logger::trace("Pixels generated! Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms());
 	}
 
 	void Heatmap::Upload()
 	{
-		logger::debug("Uploading texture to memory...");
+		logger::trace("Uploading texture to memory...");
 
 		D3D11_MAPPED_SUBRESOURCE mapped;
 
@@ -174,23 +176,38 @@ namespace GUI::MCP
 
 		m_ctx->Unmap(m_texture, 0);
 
-		logger::debug("Texture uploaded!");
+		logger::trace("Texture uploaded!");
+	}
+
+	float Heatmap::GetDataAtIndex(int a_index)
+	{
+		return m_data.at(a_index);
+	}
+
+	bool Heatmap::HasData()
+	{
+		return !heatmap.m_data.empty();
 	}
 
 	void HeatmapWidget(int plot_width, int plot_height)
 	{
-		if (Calc::Data::Plot::heatmapData.empty()) {
-			Calc::ComputeHeatmapData();
-			heatmap.Update(Calc::Data::Plot::heatmapData);
+		if (!heatmap.HasData()) {
+			logger::debug("No heatmap data found ---> Generating...");
+			heatmap.ComputeData();
+			heatmap.Update();
+			logger::debug("Heatmap successfully generated!");
 		}
 
 		HeatmapPlot(plot_width, plot_height);
 
 		HeatmapUpdateButton();
 
+		CustomSliderInt("$MCP.Widgets.Heatmap.MaxStamina", &heatmap.m_maxStamina, 150, 400);
+		CustomSliderInt("$MCP.Widgets.Heatmap.MaxLevel", &heatmap.m_maxLevel, 50, 200);
+
 		HeatmapGradientSelector();
-		CustomCheckbox("Exclude high values from gradient scaling", &Selections::heatmapConstrainGradient);
-		MCP_API::SliderFloat("Maximum value to display", &Selections::heatmapConstraintVal, 100, 3000, "%f");
+		CustomCheckbox("$MCP.Widgets.Heatmap.AdjustScaling", &Selections::heatmapConstrainGradient);
+		MCP_API::SliderFloat("$MCP.Widgets.Heatmap.ScalingLimit"_tr, &Selections::heatmapConstraintVal, 100, 3000, "%f");
 
 		//TODO: Add button to allow toggling of applying a maximum value for heatmap colour scaling
 	}
@@ -198,10 +215,10 @@ namespace GUI::MCP
 	void HeatmapUpdateButton()
 	{
 		if (MCP_API::Button("$MCP.Widgets.Heatmap.Update"_tr)) {
-			Calc::Data::Plot::heatmapData.clear();
-			Calc::ComputeHeatmapData();
-
-			heatmap.Update(Calc::Data::Plot::heatmapData);
+			logger::debug("New heatmap requested...");
+			heatmap.ComputeData();
+			heatmap.Update();
+			logger::debug("Heatmap update completed!");
 		}
 	}
 	
@@ -261,14 +278,14 @@ namespace GUI::MCP
 		MCPDraw::AddRectFilled(drawList, p1in, {p2out.x-tick, p2out.y}, borderCol, 0.0f, NULL); // bottom
 
 		CenteredText("0", ImVec2(p2out.x-15, p2out.y+15));
-		CenteredText("Stamina", ImVec2(p2out.x+(a_width*0.5f), p2out.y+15));
-		CenteredText("Level", ImVec2(p0out.x-40, p0in.y+(a_height*0.5f)));
+		CenteredText("$MCP.Widgets.Heatmap.Plot.X"_tr, ImVec2(p2out.x+(a_width*0.5f), p2out.y+15));
+		CenteredText("$MCP.Widgets.Heatmap.Plot.Y"_tr, ImVec2(p0out.x-40, p0in.y+(a_height*0.5f)));
 
 		MCP_API::SetCursorScreenPos({p1out.x+5, p1out.y});
-		MCP_API::Text("%i", Calc::Data::Plot::heatmapMaxStamina);
+		MCP_API::Text("%i", heatmap.m_maxStamina);
 
 		MCP_API::SetCursorScreenPos({p0out.x-tick, p0out.y-35});
-		MCP_API::Text("%i", Calc::Data::Plot::heatmapMaxLevel);
+		MCP_API::Text("%i", heatmap.m_maxLevel);
 
 
 		if (MCP_API::IsMouseHoveringRect(p0in, p1in)) {
@@ -277,8 +294,9 @@ namespace GUI::MCP
 			auto io = MCP_API::GetIO();
 			auto cursorData = GetHeatmapCursorVal(io->MousePos, p0in, p1in);
 
-			MCP_API::Text("Carry Weight: %.0f", cursorData.weight);
-			MCP_API::Text("S: %i | L: %i", cursorData.stamina, cursorData.level);
+			MCP_API::Text("%s: %.0f", "$MCP.Widgets.Heatmap.Plot.Tooltip"_tr, cursorData.weight);
+			MCP_API::Text("%s (X): %i", "$MCP.Widgets.Heatmap.Plot.X"_tr, cursorData.stamina);
+			MCP_API::Text("%s (Y): %i", "$MCP.Widgets.Heatmap.Plot.Y"_tr, cursorData.level);
 
 			MCP_API::EndTooltip();
 		}
@@ -296,15 +314,71 @@ namespace GUI::MCP
 		u = std::clamp(u, 0.0f, 1.0f);
 		v = std::clamp(v, 0.0f, 1.0f);
 
-		cursorData.stamina = static_cast<int>(u * (Calc::Data::Plot::heatmapMaxStamina));
-		cursorData.level = static_cast<int>((1.0f - v) * (Calc::Data::Plot::heatmapMaxLevel-1));
+		cursorData.stamina = static_cast<int>(u * heatmap.m_maxStamina);
+		cursorData.level = static_cast<int>((1.0f - v) * heatmap.m_maxLevel);
 
-		int index = ((cursorData.level) * Calc::Data::Plot::heatmapMaxStamina) + cursorData.stamina;
+		int index = (cursorData.level * heatmap.m_maxStamina) + cursorData.stamina;
 
 		//logger::trace("Stamina (X) = {} | Level (Y) = {} | heatmapData[{}]", cursorData.stamina, cursorData.level, index);
 
 		cursorData.stamina++, cursorData.level++;
-		cursorData.weight = Calc::Data::Plot::heatmapData.at(index);
+		cursorData.weight = heatmap.GetDataAtIndex(index);
 		return cursorData;
+	}
+
+	void Heatmap::ComputeData()
+	{
+		logger::trace("Computing heatmap data...");
+		clib_util::Timer timer;
+		timer.start();
+
+		int d = 0;
+
+		m_data.clear();
+
+		for (int l = 1; l <= heatmap.m_maxLevel; l++) {
+			for (int s = 1; s <= heatmap.m_maxStamina; s++) {
+				m_data.push_back(static_cast<float>(Settings::Get<uint32_t>("uBaseCarryWeight")));
+
+				if (Settings::Get<bool>("bStaminaAffectsWeight")) {
+					PlayerState::UpdateStamAtMaxGrad();
+
+					m_data.at(d) += (
+						Calc::StaminaWeightBonus(
+							s,
+							Settings::Get<float>("fStaminaWeightRate"),
+							Settings::Get<uint32_t>("uStaminaWeightPivot"),
+							Settings::Get<uint32_t>("uBaseCarryWeight"),
+							PlayerState::StamAtMaxGrad
+						)
+						* Settings::Get<float>("fStaminaWeightMod"));
+				}
+
+				if (Settings::Get<bool>("bLevelAffectsWeight")) {
+					PlayerState::UpdateLevelAtMaxGrad();
+
+					m_data.at(d) += (
+						Calc::LevelWeightBonus(
+							l,
+							Settings::Get<float>("fLevelWeightRate"),
+							Settings::Get<uint32_t>("uLevelWeightPivot"),
+							Settings::Get<uint32_t>("uBaseCarryWeight"),
+							PlayerState::LevelAtMaxGrad
+						)
+						* Settings::Get<float>("fLevelWeightMod"));
+				}
+
+				if (Settings::Get<bool>("bRaceAffectsWeight")) {
+					m_data.at(d) *= PlayerState::raceWeightMod;
+				}
+
+				ceil(m_data.at(d));
+
+				d++;
+			}
+		}
+
+		timer.stop();
+		logger::trace("Finished computing heatmap data ({} entries). Time taken: {}μs / {}ms", m_data.size(), timer.duration_μs(), timer.duration_ms());
 	}
 }

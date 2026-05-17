@@ -16,27 +16,40 @@ namespace GUI::MCP
 
 		std::vector<uint8_t> m_pixels;
 
+		std::vector<float> m_data;
+
 		int m_width;
 		int m_height;
+
+		float m_lowestVal;
+		float m_highestVal;
 
 		public:
 			Heatmap() = default;
 			~Heatmap() = default;
+
+			uint32_t m_maxLevel = 150;
+			uint32_t m_maxStamina = 300;
 
 			int m_padWidth;
 			int m_padHeight;
 
 			void Init();
 
-			void Update(const std::vector<float>& data);
+			void Update();
 
 			ImGuiMCP::ImTextureID GetTextureID() const;
 
 			void Release();
+			
+			void ComputeData();
 
 			void CreateTexture();
 			void GeneratePixels(const std::vector<float>& data);
 			void Upload();
+
+			float GetDataAtIndex(int a_index);
+			bool HasData();
 	};
 
 	extern Heatmap heatmap;
