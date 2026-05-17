@@ -1,38 +1,21 @@
 #include "CapacityHandler.h"
 #include "ExtraStorage.h"
 #include "Player.h"
-#include <ClibUtil/timer.hpp>
 #include "FormHandler.h"
+#include "MCPSettings.h"
 #undef GetObject
 
 namespace CapacityHandler
 {
-	const std::array<CategoryID, 5> mainCategories = {kHuge, kLarge, kMedium, kSmall, kTiny};
-	const std::array<CategoryID, 3> miscCategories = {kAlchemy, kAmmo, kCoin};
-	const std::array<CategoryID, 5> weaponCategories = {kWeaponLarge, kWeaponMedium, kWeaponSmall, kWeaponRanged, kShield};
 
-	//TODO: Could possibly make this configurable (saving changes in config might be tricky though). Also check that crossbows are considered WeapTypeBow
-	const std::unordered_map<std::string_view, CategoryID> weaponKeywords = {
-		{"WeapTypeGreatsword", kWeaponLarge}, {"WeapTypeBattleaxe", kWeaponLarge}, {"WeapTypeWarhammer", kWeaponLarge}, {"WeapTypeStaff", kWeaponLarge},
-		{"WeapTypeSword", kWeaponMedium}, {"WeapTypeWarAxe", kWeaponMedium}, {"WeapTypeMace", kWeaponMedium},
-		{"WeapTypeDagger", kWeaponSmall},
-		{"WeapTypeBow", kWeaponRanged}
-	};
-
-	uint32_t hugeToTiny = 0;
-	uint32_t largeToTiny = 0;
-	uint32_t mediumToTiny = 0;
-	uint32_t smallToTiny = 0;
-	uint32_t tinyToTiny = 1;
-
-	ItemCat::ItemCat(CategoryID a_id, std::string a_idStr, std::string a_name, std::string a_tooltipName)
+	ItemCat::ItemCat(CategoryID a_id, std::string a_idStr, std::string a_name, std::string a_tooltipKey, ImU32 a_visualiserColour)
 	{
 		id = a_id;
 		idStr = a_idStr;
 		name = a_name;
-		tooltipName = a_tooltipName;
+		tooltipKey = a_tooltipKey;
 
-		visualiserColour = Settings::Get<uint32_t>(a_idStr);
+		visualiserColour = a_visualiserColour;
 
 		switch (id) {
 			case kWeaponLarge:
@@ -99,14 +82,14 @@ namespace CapacityHandler
 		}
 	}
 
-	const char* ItemCat::GetTooltipName()
+	const char* ItemCat::GetTooltipText()
 	{
-		return Lang::Get(this->tooltipName).c_str();
+		return Lang::Get(this->tooltipKey);
 	}
 
 	float ItemCat::GetCapacityForGUI()
 	{
-		if (Settings::Get<bool>("bCapacityVisualiserBaseValues")) {
+		if (GUI::MCP::Selections::visualiserBaseValues || !PlayerState::IsGameWorldLoaded()) {
 			return static_cast<float>(baseCap);
 		} else {
 			return static_cast<float>(capacity);
@@ -161,10 +144,11 @@ namespace CapacityHandler
 
 	int ItemCat::GetOverflow()
 	{
-		int overflow = this->GetNormCount() - this->GetNormCapacity();
-
-		if (overflow < 0) { overflow = 0; }
-		return overflow;
+		if (this->count > this->capacity) {
+			return this->GetNormCount() - this->GetNormCapacity();
+		} else {
+			return 0;
+		}
 	}
 
 	float ItemCat::GetMCPPercent()
@@ -210,20 +194,20 @@ namespace CapacityHandler
 		return std::format("{}/{}", this->count, this->capacity);
 	}
 
-	ItemCat cHuge = ItemCat::ItemCat(kHuge, "kHuge", "Huge", "$Category.Huge.TooltipName");
-	ItemCat cLarge = ItemCat::ItemCat(kLarge, "kLarge", "Large", "$Category.Large.TooltipName");
-	ItemCat cMedium = ItemCat::ItemCat(kMedium, "kMedium", "Medium", "$Category.Medium.TooltipName");
-	ItemCat cSmall = ItemCat::ItemCat(kSmall, "kSmall", "Small", "$Category.Small.TooltipName");
-	ItemCat cTiny = ItemCat::ItemCat(kTiny, "kTiny", "Tiny", "$Category.Tiny.TooltipName");
-	ItemCat cAlchemy = ItemCat::ItemCat(kAlchemy, "kAlchemy", "Alchemy", "$Category.Alchemy.TooltipName");
-	ItemCat cAmmo = ItemCat::ItemCat(kAmmo, "kAmmo", "Ammo", "$Category.Ammo.TooltipName");
-	ItemCat cCoin = ItemCat::ItemCat(kCoin, "kCoin", "Coin", "$Category.Coin.TooltipName");
-	ItemCat cGemstone = ItemCat::ItemCat(kGemstone, "kGemstone", "Coin<Gemstone>", "$Category.Gemstone.TooltipName");
-	ItemCat cWeaponLarge = ItemCat::ItemCat(kWeaponLarge, "kWeaponLarge", "Weapon<Large>", "$Category.WeaponLarge.TooltipName");
-	ItemCat cWeaponMedium = ItemCat::ItemCat(kWeaponMedium, "kWeaponMedium", "Weapon<Medium>", "$Category.WeaponMedium.TooltipName");
-	ItemCat cWeaponSmall = ItemCat::ItemCat(kWeaponSmall, "kWeaponSmall", "Weapon<Small>", "$Category.WeaponSmall.TooltipName");
-	ItemCat cWeaponRanged = ItemCat::ItemCat(kWeaponRanged, "kWeaponRanged", "Weapon<Ranged>", "$Category.WeaponRanged.TooltipName");
-	ItemCat cShield = ItemCat::ItemCat(kShield, "kShield", "Shield", "$Category.Shield.TooltipName");
+	ItemCat cHuge = ItemCat::ItemCat(kHuge, "kHuge", "Huge", "$Category.Huge.TooltipName", HEX_COL32(0xA8005BFF));
+	ItemCat cLarge = ItemCat::ItemCat(kLarge, "kLarge", "Large", "$Category.Large.TooltipName", HEX_COL32(0xBA422FFF));
+	ItemCat cMedium = ItemCat::ItemCat(kMedium, "kMedium", "Medium", "$Category.Medium.TooltipName", HEX_COL32(0xA87A00FF));
+	ItemCat cSmall = ItemCat::ItemCat(kSmall, "kSmall", "Small", "$Category.Small.TooltipName", HEX_COL32(0x7AA62EFF));
+	ItemCat cTiny = ItemCat::ItemCat(kTiny, "kTiny", "Tiny", "$Category.Tiny.TooltipName", HEX_COL32(0x00CC85FF));
+	ItemCat cAlchemy = ItemCat::ItemCat(kAlchemy, "kAlchemy", "Alchemy", "$Category.Alchemy.TooltipName", HEX_COL32(0xBF4FB0FF));
+	ItemCat cAmmo = ItemCat::ItemCat(kAmmo, "kAmmo", "Ammo", "$Category.Ammo.TooltipName", HEX_COL32(0xA64FD6FF));
+	ItemCat cCoin = ItemCat::ItemCat(kCoin, "kCoin", "Coin", "$Category.Coin.TooltipName", HEX_COL32(0x635CFFFF));
+	ItemCat cGemstone = ItemCat::ItemCat(kGemstone, "kGemstone", "Coin<Gemstone>", "$Category.Gemstone.TooltipName", HEX_COL32(0xFFFFFFFF));
+	ItemCat cWeaponLarge = ItemCat::ItemCat(kWeaponLarge, "kWeaponLarge", "Weapon<Large>", "$Category.WeaponLarge.TooltipName", HEX_COL32(0x292E57FF));
+	ItemCat cWeaponMedium = ItemCat::ItemCat(kWeaponMedium, "kWeaponMedium", "Weapon<Medium>", "$Category.WeaponMedium.TooltipName", HEX_COL32(0x6B4573FF));
+	ItemCat cWeaponSmall = ItemCat::ItemCat(kWeaponSmall, "kWeaponSmall", "Weapon<Small>", "$Category.WeaponSmall.TooltipName", HEX_COL32(0xAD597DFF));
+	ItemCat cWeaponRanged = ItemCat::ItemCat(kWeaponRanged, "kWeaponRanged", "Weapon<Ranged>", "$Category.WeaponRanged.TooltipName", HEX_COL32(0xE07D78FF));
+	ItemCat cShield = ItemCat::ItemCat(kShield, "kShield", "Shield", "$Category.Shield.TooltipName", HEX_COL32(0xFAB270FF));
 	ItemCat cWeightless = ItemCat::ItemCat(kWeightless, "kWeightless", "Weightless", "$Category.Weightless.TooltipName");
 
 	const std::array<ItemCat*, 15> categoryArr = {&cHuge, &cLarge, &cMedium, &cSmall, &cTiny, &cAlchemy, &cAmmo, &cCoin, &cGemstone, &cWeaponLarge, &cWeaponMedium, &cWeaponSmall, &cWeaponRanged, &cShield, &cWeightless};
@@ -283,11 +267,14 @@ namespace CapacityHandler
 				if (!data.second->IsWorn() || (Settings::Get<bool>("bSeparateWeaponCategories") && category->isWeaponCat)) {
 					category->IncreaseCount(data.first);
 				} else {
-					if (!suppressLog) { logger::trace("{} is Worn", item->GetName()); }
+					if (!suppressLog) { logger::trace("\t-> '{}' is Worn", item->GetName()); }
 					if (isStorage) { Bonus::AddEquippedStorage(itemID); }
 				}
 			}
 		}
+
+		timer.stop();
+		if (!suppressLog) { logger::debug("Capacity category update completed! Time taken: {}μs / {}ms", timer.duration_μs(), timer.duration_ms()); }
 	}
 
 	void UpdateBaseCapacities()
@@ -321,12 +308,11 @@ namespace CapacityHandler
 
 		//TODO: Need to do some experimentation - GetActorValue vs GetBaseActorValue etc., and kAlchemy vs kAlchemyModifier etc.
 		if (*Settings::Get<bool*>("bSkillsAffectCapacity")) {
-			auto playerAVs = RE::PlayerCharacter::GetSingleton()->AsActorValueOwner();
-			auto alchemyLvl = playerAVs->GetActorValue(RE::ActorValue::kAlchemy);
-			auto archeryLvl = playerAVs->GetActorValue(RE::ActorValue::kArchery);
-			auto speechLvl = playerAVs->GetActorValue(RE::ActorValue::kSpeech);
-			auto lockpickLvl = playerAVs->GetActorValue(RE::ActorValue::kLockpicking);
-			auto pickpocketLvl = playerAVs->GetActorValue(RE::ActorValue::kPickpocket);
+			auto alchemyLvl = PlayerState::AsAV->GetActorValue(RE::ActorValue::kAlchemy);
+			auto archeryLvl = PlayerState::AsAV->GetActorValue(RE::ActorValue::kArchery);
+			auto speechLvl = PlayerState::AsAV->GetActorValue(RE::ActorValue::kSpeech);
+			auto lockpickLvl = PlayerState::AsAV->GetActorValue(RE::ActorValue::kLockpicking);
+			auto pickpocketLvl = PlayerState::AsAV->GetActorValue(RE::ActorValue::kPickpocket);
 
 			//TODO: Consider making these configurable rather than hardcoded
 			auto alchemySkillMod = 1 + (alchemyLvl/100);
@@ -348,7 +334,7 @@ namespace CapacityHandler
 	}
 
 	void UpdateCategoryRatios()
-	{
+	{		
 		//TODO: If I can figure out some sort of "settingsChanged" bool, these can be made into global/static variables, rather than being recalculated every time UpdateTotalCount() runs
 		hugeToTiny = (int)(Settings::Get<float>("fLargePerHuge") * 
 				Settings::Get<float>("fMediumPerLarge") * 
@@ -373,16 +359,14 @@ namespace CapacityHandler
 			totalCount = (cHuge.count * hugeToTiny) + (cLarge.count * largeToTiny) + (cMedium.count * mediumToTiny) + (cSmall.count * smallToTiny) + cTiny.count;
 		}
 
-		if (cAlchemy.IsOverflowing()) { totalCount += cAlchemy.GetOverflow(); }
-		if (cAmmo.IsOverflowing()) { totalCount += cAmmo.GetOverflow(); }
-		if (cCoin.IsOverflowing()) { totalCount += cCoin.GetOverflow(); }
+		totalCount += cAlchemy.GetOverflow();
+		totalCount += cAmmo.GetOverflow();
+		totalCount += cCoin.GetOverflow();
 
 		//NOTE: Currently, overflowing weapons are considered huge/large/medium items - could probably come up with a way of making this either more specialised, or user-defined.
 		//? Additionally/alternatively, maybe find some way of making it so that, for example, ranged weapons first overflow into the large weapon category, then into totalCount if no space.
-		for (CategoryID weapCatID: weaponCategories) {
-			if (auto weapCat = GetCategory(weapCatID); weapCat->IsOverflowing()) {
-				totalCount += weapCat->GetOverflow();
-			}
+		for (ItemCat* weapCat: weaponCategories) {
+			totalCount += weapCat->GetOverflow();
 		}
 	}
 
@@ -515,7 +499,7 @@ namespace CapacityHandler
 		for (auto keyword : kwItem->GetKeywords()) {
 			std::string_view kwEditorID{keyword->GetFormEditorID()};
 			if (auto it = weaponKeywords.find(kwEditorID); it != weaponKeywords.end()) {
-				return GetCategory(it->second);
+				return it->second;
 			}
 		}
 
@@ -540,13 +524,11 @@ namespace CapacityHandler
 
 	void LogAllCategories()
 	{
-		logger::debug("{}\nCapacity Category Counts:\nMAIN || Huge = {}, Large = {}, Medium = {}, Small = {}, Tiny = {}\nMISC || Alchemy = {}, Ammo = {}, Coins = {}\nWEAP || Large = {}, Medium = {}, Small = {}, Ranged = {}, Shields = {}\nTotal = {}/{}, Weightless = {}\n{}", 
-			std::string(100, '='),
-			cHuge.FractionStr(), cLarge.FractionStr(), cMedium.FractionStr(), cSmall.FractionStr(), cTiny.FractionStr(),
-			cAlchemy.FractionStr(), cAmmo.FractionStr(), cCoin.FractionStr(),
-			cWeaponLarge.FractionStr(), cWeaponMedium.FractionStr(), cWeaponSmall.FractionStr(), cWeaponRanged.FractionStr(), cShield.FractionStr(),
-			totalCount, cTiny.capacity, cWeightless.count,
-			std::string(100, '=')
-		);
+		logger::debug("{:~^50}", "Capacity Category Counts");
+		logger::debug("\tMAIN || Huge = {}, Large = {}, Medium = {}, Small = {}, Tiny = {}", cHuge.FractionStr(), cLarge.FractionStr(), cMedium.FractionStr(), cSmall.FractionStr(), cTiny.FractionStr());
+		logger::debug("\tMISC || Alchemy = {}, Ammo = {}, Coins = {}", cAlchemy.FractionStr(), cAmmo.FractionStr(), cCoin.FractionStr());
+		logger::debug("\tWEAP || Large = {}, Medium = {}, Small = {}, Ranged = {}, Shields = {}", cWeaponLarge.FractionStr(), cWeaponMedium.FractionStr(), cWeaponSmall.FractionStr(), cWeaponRanged.FractionStr(), cShield.FractionStr());
+		logger::debug("\tTotal = {}/{}, Weightless = {}", totalCount, cTiny.capacity, cWeightless.count);
+		logger::debug("{}", std::string(50, '~'));
 	}
 }

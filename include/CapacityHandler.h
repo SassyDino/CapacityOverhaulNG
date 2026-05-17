@@ -19,24 +19,17 @@ namespace CapacityHandler
 		kShield,
 		kWeightless
     };
-	
-	const extern std::array<CategoryID, 5> mainCategories;
-	const extern std::array<CategoryID, 3> miscCategories;
-	const extern std::array<CategoryID, 5> weaponCategories;
-	const extern std::unordered_map<std::string_view, CategoryID> weaponKeywords;
 
-	extern uint32_t hugeToTiny;
-	extern uint32_t largeToTiny;
-	extern uint32_t mediumToTiny;
-	extern uint32_t smallToTiny;
-	extern uint32_t tinyToTiny;
+	inline uint32_t hugeToTiny = 0;
+	inline uint32_t largeToTiny = 0;
+	inline uint32_t mediumToTiny = 0;
+	inline uint32_t smallToTiny = 0;
+	inline uint32_t tinyToTiny = 1;
 
 	struct ItemCat
 	{
 		CategoryID id;
 		std::string idStr;
-
-		static const std::unordered_map<CategoryID, std::string> idStrMap;
 
 		int baseCap = 0;
 		int capacity = 0;
@@ -49,12 +42,12 @@ namespace CapacityHandler
 
 		std::string name;
 
-		unsigned int visualiserColour;
+		ImU32 visualiserColour = HEX_COL32(0x00000000);
 
 		// NOTE: I know I'm implementing this class to try and avoid using a load of maps, but I could possibly consider keeping a couple of maps to associate the id enums with the category names/tooltips etc.
-		ItemCat(CategoryID a_id = kWeightless, std::string a_idStr = "kCategory", std::string a_name = "cCategory", std::string a_tooltipName = "cCategoryTT");
+		ItemCat(CategoryID a_id = kWeightless, std::string a_idStr = "kCategory", std::string a_name = "cCategory", std::string a_tooltipKey = "cCategoryTT", ImU32 a_visualiserColour = HEX_COL32(0x00000000));
 
-		const char* GetTooltipName();
+		const char* GetTooltipText();
 
 		float GetCapacityForGUI();
 		float GetCountForGUI();
@@ -73,7 +66,7 @@ namespace CapacityHandler
 		std::string FractionStr();
 
 		private:
-			std::string tooltipName;
+			std::string tooltipKey;
 	};
 
 	extern ItemCat cHuge;
@@ -95,6 +88,15 @@ namespace CapacityHandler
 	inline int totalCount = 0;
 
 	extern const std::array<ItemCat*, 15> categoryArr;
+	inline const std::array<ItemCat*, 5> weaponCategories = {&cWeaponLarge, &cWeaponMedium, &cWeaponSmall, &cWeaponRanged, &cShield};
+
+	//TODO: Could possibly make this configurable (saving changes in config might be tricky though). Also check that crossbows are considered WeapTypeBow
+	inline const std::unordered_map<std::string_view, ItemCat*> weaponKeywords = {
+		{"WeapTypeGreatsword", &cWeaponLarge}, {"WeapTypeBattleaxe", &cWeaponLarge}, {"WeapTypeWarhammer", &cWeaponLarge}, {"WeapTypeStaff", &cWeaponLarge},
+		{"WeapTypeSword", &cWeaponMedium}, {"WeapTypeWarAxe", &cWeaponMedium}, {"WeapTypeMace", &cWeaponMedium},
+		{"WeapTypeDagger", &cWeaponSmall},
+		{"WeapTypeBow", &cWeaponRanged}
+	};
 
 	ItemCat* GetCategory(CategoryID a_categoryID);
 
