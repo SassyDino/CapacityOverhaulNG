@@ -11,15 +11,6 @@ namespace GUI::MCP
 		static float testFloat;
 	};
 
-	struct Selections
-	{
-		static inline Colour::Gradient::Scheme* heatmapGradient = &Colour::Gradient::gClassic;
-		static inline bool heatmapConstrainGradient = true;
-		static inline float heatmapConstraintVal = 1500;
-	};
-
-	extern bool showSeparateWindow;
-
 	void Register();
 
 	namespace ToggleFeatures {
@@ -31,6 +22,10 @@ namespace GUI::MCP
 	}
 
 	namespace WeightConfigs {
+		void __stdcall Render();
+	}
+
+	namespace DebuffConfigs {
 		void __stdcall Render();
 	}
 
